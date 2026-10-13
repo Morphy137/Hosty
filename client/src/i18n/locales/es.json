@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "overview": "Vista General",
+    "properties": "server.properties",
+    "mods": "Configuración Mods",
+    "provisioning": "Aprovisionamiento",
+    "status": "ESTADO"
+  },
+  "header": {
+    "title": "MC-Nexus",
+    "instance": "Instancia Local (default)",
+    "mock_button": "Simular Telemetría",
+    "mock_active": "Simulador Activo",
+    "language": "Idioma",
+    "connected": "Conectado",
+    "disconnected": "Desconectado"
+  },
+  "overview": {
+    "metrics": {
+      "cpu": "Uso de CPU",
+      "ram": "Asignación de RAM",
+      "uptime": "Tiempo Activo",
+      "players_online": "Jugadores en Línea"
+    },
+    "controls": {
+      "start": "Iniciar Servidor",
+      "stop": "Detener Servidor",
+      "kill": "Forzar Detención (SIGKILL)",
+      "address": "Dirección del Servidor",
+      "status_online": "ONLINE",
+      "status_offline": "OFFLINE",
+      "status_starting": "INICIANDO",
+      "status_stopping": "DETENIENDO"
+    },
+    "quick_commands": {
+      "title": "Comandos Rápidos"
+    },
+    "players": {
+      "title": "Jugadores Conectados",
+      "empty": "No hay jugadores conectados al servidor",
+      "tp": "Teletransportar",
+      "op": "Dar OP",
+      "deop": "Quitar OP",
+      "kick": "Expulsar",
+      "ban": "Bloquear (Ban)",
+      "gamemode_creative": "Creativo",
+      "gamemode_survival": "Supervivencia",
+      "feed": "Curar / Alimentar",
+      "clear_inventory": "Vaciar Inv",
+      "dimension": {
+        "overworld": "Overworld",
+        "the_nether": "El Nether",
+        "the_end": "El End"
+      }
+    },
+    "console": {
+      "title": "Terminal en Vivo",
+      "clear": "Limpiar",
+      "placeholder": "Escribe un comando (ej: say Hola, give @p diamond)...",
+      "send": "Enviar"
+    }
+  },
+  "properties": {
+    "title": "Propiedades del Servidor",
+    "subtitle": "Ajusta mecánicas del juego, puertos y parámetros de generación de mundo.",
+    "search_placeholder": "Filtrar propiedades (ej: motd, pvp, port)...",
+    "save": "Guardar Cambios",
+    "saved": "¡Guardado!",
+    "empty": "No se encontraron propiedades con ese filtro."
+  },
+  "mods": {
+    "title": "Configuraciones de Mods",
+    "subtitle": "Inspecciona y edita en vivo archivos de configuración TOML y JSON.",
+    "file_select": "Seleccionar Archivo",
+    "search_placeholder": "Filtrar entradas de configuración...",
+    "save": "Guardar Configuración",
+    "saved": "¡Guardado!",
+    "empty": "No se encontraron entradas de configuración.",
+    "no_files": "No se encontraron archivos de configuración en el directorio config/."
+  },
+  "provisioning": {
+    "title": "Aprovisionamiento del Servidor",
+    "subtitle": "Descarga e inicializa software de servidor de Minecraft automáticamente.",
+    "loader_label": "Seleccionar Motor de Servidor",
+    "loader_fabric_desc": "Cadena de herramientas de alto rendimiento para Minecraft moderno.",
+    "loader_paper_desc": "Fork de Spigot de alto rendimiento con optimizaciones avanzadas.",
+    "loader_vanilla_desc": "Binario oficial de servidor Minecraft de Mojang sin mods.",
+    "version_label": "Seleccionar Versión",
+    "install_button": "Aprovisionar e Instalar",
+    "installing": "Aprovisionando...",
+    "server_must_be_offline": "El servidor debe estar APAGADO (OFFLINE) para instalar una nueva versión.",
+    "logs_title": "Registro de Instalación",
+    "ready_hint": "Selecciona un motor y versión para comenzar la instalación."
+  },
+  "errors": {
+    "JAR_MISSING": "No se encontró server.jar. Aprovisiona un motor de servidor primero.",
+    "JAVA_NOT_FOUND": "No se encontró el ejecutable Java. Instala Java (JDK 21) o configura MC_NEXUS_JAVA_PATH.",
+    "PROCESS_ERROR": "Ocurrió un error con el proceso del servidor.",
+    "SERVER_NOT_ONLINE": "No se pueden enviar comandos mientras el servidor está apagado.",
+    "ALREADY_RUNNING": "El servidor ya se encuentra en ejecución.",
+    "SERVER_RUNNING": "No se puede instalar software mientras el servidor está en ejecución. Detén el servidor primero.",
+    "INSTALL_IN_PROGRESS": "Ya hay una instalación en progreso.",
+    "CONFIG_NOT_FOUND": "Archivo de configuración no encontrado.",
+    "INVALID_FILENAME": "Nombre de archivo de configuración inválido.",
+    "INVALID_LOADER": "Motor de servidor inválido.",
+    "INVALID_VERSION": "Versión de Minecraft inválida.",
+    "INVALID_PAYLOAD": "Datos enviados inválidos.",
+    "UPSTREAM_ERROR": "Error al contactar los servidores de descarga. Revisa tu conexión a internet.",
+    "NETWORK_ERROR": "No se puede conectar con el daemon de MC-Nexus. Verifica que esté iniciado en el puerto 4000.",
+    "UNKNOWN": "Ocurrió un error inesperado.",
+    "dismiss": "Cerrar"
+  }
+}

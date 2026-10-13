@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "overview": "Overview",
+    "properties": "server.properties",
+    "mods": "Mod Configs",
+    "provisioning": "Provisioning",
+    "status": "STATUS"
+  },
+  "header": {
+    "title": "MC-Nexus",
+    "instance": "Local Instance (default)",
+    "mock_button": "Simulate Telemetry",
+    "mock_active": "Mock Active",
+    "language": "Language",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "overview": {
+    "metrics": {
+      "cpu": "CPU Usage",
+      "ram": "RAM Allocation",
+      "uptime": "Uptime",
+      "players_online": "Players Online"
+    },
+    "controls": {
+      "start": "Start Server",
+      "stop": "Stop Server",
+      "kill": "Kill (SIGKILL)",
+      "address": "Server Address",
+      "status_online": "ONLINE",
+      "status_offline": "OFFLINE",
+      "status_starting": "STARTING",
+      "status_stopping": "STOPPING"
+    },
+    "quick_commands": {
+      "title": "Quick Presets"
+    },
+    "players": {
+      "title": "Connected Players",
+      "empty": "No players connected to the server",
+      "tp": "Teleport",
+      "op": "OP Player",
+      "deop": "De-OP",
+      "kick": "Kick",
+      "ban": "Ban",
+      "gamemode_creative": "Creative",
+      "gamemode_survival": "Survival",
+      "feed": "Feed / Heal",
+      "clear_inventory": "Clear Inv",
+      "dimension": {
+        "overworld": "Overworld",
+        "the_nether": "The Nether",
+        "the_end": "The End"
+      }
+    },
+    "console": {
+      "title": "Live Terminal",
+      "clear": "Clear",
+      "placeholder": "Type Minecraft command (e.g., say Hello, give @p diamond)...",
+      "send": "Send"
+    }
+  },
+  "properties": {
+    "title": "Server Properties",
+    "subtitle": "Tune vanilla game mechanics, ports, and world generation parameters.",
+    "search_placeholder": "Filter properties (e.g. motd, pvp, port)...",
+    "save": "Save Changes",
+    "saved": "Saved!",
+    "empty": "No properties found matching your filter."
+  },
+  "mods": {
+    "title": "Mod Configurations",
+    "subtitle": "Inspect and live-edit TOML and JSON mod configuration files.",
+    "file_select": "Select File",
+    "search_placeholder": "Filter config entries...",
+    "save": "Save Config",
+    "saved": "Saved!",
+    "empty": "No configuration entries found.",
+    "no_files": "No mod configuration files found in config/ directory."
+  },
+  "provisioning": {
+    "title": "Server Engine Provisioning",
+    "subtitle": "Download and bootstrap high-performance Minecraft loaders automatically.",
+    "loader_label": "Select Server Engine",
+    "loader_fabric_desc": "High performance modding toolchain for modern Minecraft.",
+    "loader_paper_desc": "High-performance Spigot fork with advanced optimization.",
+    "loader_vanilla_desc": "Official Mojang Minecraft server binary without mods.",
+    "version_label": "Select Release Version",
+    "install_button": "Provision & Install",
+    "installing": "Provisioning...",
+    "server_must_be_offline": "The server must be OFFLINE before installing a new binary.",
+    "logs_title": "Provisioning Output",
+    "ready_hint": "Select an engine and version to begin installation."
+  },
+  "errors": {
+    "JAR_MISSING": "Server jar not found. Provision a server engine first.",
+    "JAVA_NOT_FOUND": "Java executable not found. Please install Java (JDK 21) or set MC_NEXUS_JAVA_PATH.",
+    "PROCESS_ERROR": "An error occurred with the server process.",
+    "SERVER_NOT_ONLINE": "Cannot send commands while the server is offline.",
+    "ALREADY_RUNNING": "The server process is already running.",
+    "SERVER_RUNNING": "Cannot install new software while the server is running. Stop the server first.",
+    "INSTALL_IN_PROGRESS": "An installation is already running.",
+    "CONFIG_NOT_FOUND": "Configuration file not found.",
+    "INVALID_FILENAME": "Invalid configuration filename.",
+    "INVALID_LOADER": "Invalid server engine loader.",
+    "INVALID_VERSION": "Invalid Minecraft version.",
+    "INVALID_PAYLOAD": "Invalid payload received.",
+    "UPSTREAM_ERROR": "Failed to contact download servers. Check your internet connection.",
+    "NETWORK_ERROR": "Cannot reach the MC-Nexus daemon. Ensure the daemon is running on port 4000.",
+    "UNKNOWN": "An unexpected error occurred.",
+    "dismiss": "Dismiss"
+  }
+}
