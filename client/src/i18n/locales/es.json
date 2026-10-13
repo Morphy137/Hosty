@@ -1,14 +1,18 @@
 {
   "nav": {
     "overview": "Vista General",
-    "properties": "server.properties",
+    "players": "Jugadores",
+    "mod_files": "Mods (.jar)",
     "mods": "Configuración Mods",
-    "provisioning": "Aprovisionamiento",
+    "properties": "server.properties",
     "status": "ESTADO"
   },
   "header": {
     "title": "MC-Nexus",
-    "instance": "Instancia Local (default)",
+    "instance": "Instancia Local",
+    "instance_tooltip": "Cambiar servidor local activo",
+    "new_server": "Nuevo Servidor",
+    "import_server": "Importar",
     "mock_button": "Simular Telemetría",
     "mock_active": "Simulador Activo",
     "language": "Idioma",
@@ -60,6 +64,43 @@
       "send": "Enviar"
     }
   },
+  "players": {
+    "search_placeholder": "Filtrar jugadores por nombre...",
+    "refresh_list": "Actualizar Lista",
+    "empty_description": "Conéctate al servidor desde un cliente de Minecraft o usa Simular Telemetría para inspeccionar sesiones activas.",
+    "manage_title": "Administrar Jugador",
+    "gamemode_label": "Cambiar Modo de Juego",
+    "permissions_label": "Privilegios de Operador",
+    "teleport_coords_label": "Teletransportar a Coordenadas",
+    "tp_spawn": "Spawn"
+  },
+  "mod_files": {
+    "total_mods": "Total de Mods",
+    "active_mods": "Activos",
+    "disabled_mods": "Desactivados",
+    "search_placeholder": "Filtrar mods por nombre...",
+    "empty": "No se encontraron archivos .jar en el directorio /mods.",
+    "active": "Habilitado",
+    "disabled": "Desactivado",
+    "open_config": "Abrir Configuración",
+    "delete": "Eliminar Mod",
+    "delete_confirm": "¿Estás seguro de que deseas eliminar {{filename}}?"
+  },
+  "create_server": {
+    "modal_title": "Nuevo Servidor de Minecraft",
+    "modal_subtitle": "Configura e instala automáticamente una nueva instancia local de Minecraft.",
+    "name_label": "Nombre del Servidor",
+    "id_label": "ID de Directorio (identificador)",
+    "submit_button": "Crear e Instalar Servidor"
+  },
+  "import_server": {
+    "modal_title": "Importar Servidor Existente",
+    "path_label": "Ruta de la Carpeta del Servidor",
+    "path_hint": "Ruta absoluta a una carpeta que contenga server.properties o server.jar.",
+    "name_label": "Nombre Visible (opcional)",
+    "submit_button": "Importar Servidor",
+    "submitting": "Importando..."
+  },
   "properties": {
     "title": "Propiedades del Servidor",
     "subtitle": "Ajusta mecánicas del juego, puertos y parámetros de generación de mundo.",
@@ -98,7 +139,7 @@
     "PROCESS_ERROR": "Ocurrió un error con el proceso del servidor.",
     "SERVER_NOT_ONLINE": "No se pueden enviar comandos mientras el servidor está apagado.",
     "ALREADY_RUNNING": "El servidor ya se encuentra en ejecución.",
-    "SERVER_RUNNING": "No se puede instalar software mientras el servidor está en ejecución. Detén el servidor primero.",
+    "SERVER_RUNNING": "No se puede realizar la operación mientras el servidor está en ejecución. Detén el servidor primero.",
     "INSTALL_IN_PROGRESS": "Ya hay una instalación en progreso.",
     "CONFIG_NOT_FOUND": "Archivo de configuración no encontrado.",
     "INVALID_FILENAME": "Nombre de archivo de configuración inválido.",

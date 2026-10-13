@@ -4,6 +4,9 @@ import type {
   ConfigPayload,
   DaemonErrorPayload,
   HealthResponse,
+  InstanceInfo,
+  InstancesResponse,
+  ModFileInfo,
   ServerLoader
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
@@ -82,10 +85,32 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) });
 }
 
+function deleteRequest<T>(path: string): Promise<T> {
+  return request<T>(path, { method: 'DELETE' });
+}
+
 export function fetchHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/api/health');
 }
 
+// Instances
+export function fetchInstances(): Promise<InstancesResponse> {
+  return request<InstancesResponse>('/api/instances');
+}
+
+export async function selectInstance(id: string): Promise<void> {
+  await postJson<unknown>('/api/instances/select', { id });
+}
+
+export function createInstance(id: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/create', { id, name });
+}
+
+export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', { path: folderPath, name });
+}
+
+// Properties
 export function fetchServerProperties(): Promise<ConfigEntry[]> {
   return request<ConfigEntry[]>('/api/properties');
 }
@@ -94,6 +119,20 @@ export async function saveServerProperties(entries: ConfigEntry[]): Promise<void
   await postJson<unknown>('/api/properties', toConfigPayload(entries));
 }
 
+// Physical Mods .jar Files
+export function fetchModFiles(): Promise<ModFileInfo[]> {
+  return request<ModFileInfo[]>('/api/mods/files');
+}
+
+export function toggleModFile(filename: string): Promise<{ ok: boolean; file: ModFileInfo }> {
+  return postJson<{ ok: boolean; file: ModFileInfo }>('/api/mods/files/toggle', { filename });
+}
+
+export async function deleteModFile(filename: string): Promise<void> {
+  await deleteRequest<unknown>(`/api/mods/files/${encodeURIComponent(filename)}`);
+}
+
+// Mod Configurations (/config)
 export function fetchModConfigFiles(): Promise<string[]> {
   return request<string[]>('/api/mods/configs');
 }
@@ -107,10 +146,21 @@ export async function saveModConfig(filename: string, entries: ConfigEntry[]): P
   await postJson<unknown>(`/api/mods/configs/${encodeURIComponent(filename)}`, payload);
 }
 
+// Provisioning
 export function fetchLoaderVersions(loader: ServerLoader): Promise<string[]> {
   return request<string[]>(`/api/provisioning/versions/${encodeURIComponent(loader)}`);
 }
 
-export async function installServer(loader: ServerLoader, version: string): Promise<void> {
-  await postJson<unknown>('/api/provisioning/install', { loader, version });
+export async function installServer(
+  loader: ServerLoader,
+  version: string,
+  instanceId?: string,
+  instanceName?: string
+): Promise<void> {
+  await postJson<unknown>('/api/provisioning/install', {
+    loader,
+    version,
+    instanceId,
+    instanceName
+  });
 }

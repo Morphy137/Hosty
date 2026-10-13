@@ -42,6 +42,33 @@ export interface HealthResponse {
   status: 'ok';
   mockEnabled: boolean;
   serverStatus: ServerStatus;
+  activeInstance?: string;
+}
+
+export interface InstanceInfo {
+  id: string;
+  name: string;
+  dir: string;
+  port: number;
+  motd: string;
+  hasJar: boolean;
+  isImported: boolean;
+  createdAt: string;
+}
+
+export interface InstancesResponse {
+  instances: InstanceInfo[];
+  activeId: string;
+}
+
+export interface ModFileInfo {
+  filename: string;
+  originalName: string;
+  sizeBytes: number;
+  sizeFormatted: string;
+  modifiedAt: string;
+  enabled: boolean;
+  hasConfig: boolean;
 }
 
 export type DaemonMessage =

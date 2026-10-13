@@ -1,21 +1,27 @@
 import { useState, useCallback } from 'react';
 import { useDaemonSocket } from './hooks/useDaemonSocket';
 import { useDaemonHealth } from './hooks/useDaemonHealth';
+import { useInstances } from './hooks/useInstances';
+import { useModFiles } from './hooks/useModFiles';
 import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
-import { useProvisioning } from './hooks/useProvisioning';
-import { toErrorPayload } from './api/daemonApi';
-import type { DaemonErrorPayload } from './types/daemon';
+import { toErrorPayload, installServer } from './api/daemonApi';
+import type { DaemonErrorPayload, ServerLoader } from './types/daemon';
 import { Header, type TabId } from './components/layout/Header';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
+import { PlayersTab } from './components/tabs/PlayersTab';
+import { ModFilesTab } from './components/tabs/ModFilesTab';
 import { PropertiesTab } from './components/tabs/PropertiesTab';
 import { ModsTab } from './components/tabs/ModsTab';
-import { ProvisioningTab } from './components/tabs/ProvisioningTab';
+import { CreateServerModal } from './components/modals/CreateServerModal';
+import { ImportServerModal } from './components/modals/ImportServerModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const {
     status,
@@ -41,23 +47,52 @@ export default function App() {
     setLocalError(null);
   }, [clearError]);
 
+  const instances = useInstances(connectionState, handleError);
+  const modFiles = useModFiles(connectionState, instances.activeId, handleError);
   const serverProperties = useServerProperties(connectionState, handleError);
   const modConfigs = useModConfigs(connectionState, handleError);
-  const provisioning = useProvisioning(connectionState, handleError);
 
   const activeError = lastError || localError;
-
-  const handleInstallServer = useCallback(() => {
-    provisioning.install((loader, version) => {
-      resetProvisionLogs([`[Provisioner] Initiating ${loader.toUpperCase()} ${version} install...`]);
-    });
-  }, [provisioning, resetProvisionLogs]);
 
   const handleSendCommand = useCallback(
     (command: string) => {
       sendAction('COMMAND', command);
     },
     [sendAction]
+  );
+
+  const handleCreateServer = useCallback(
+    async (params: {
+      loader: ServerLoader;
+      version: string;
+      instanceId: string;
+      instanceName: string;
+    }) => {
+      resetProvisionLogs([
+        `[Provisioner] Initializing ${params.loader.toUpperCase()} ${params.version} for "${params.instanceName}"...`
+      ]);
+      try {
+        await installServer(params.loader, params.version, params.instanceId, params.instanceName);
+        await instances.refresh();
+      } catch (err) {
+        handleError(err);
+        throw err;
+      }
+    },
+    [handleError, instances, resetProvisionLogs]
+  );
+
+  const handleImportServer = useCallback(
+    async (folderPath: string, name?: string) => {
+      try {
+        const imported = await instances.importInstance(folderPath, name);
+        await instances.selectInstance(imported.id);
+      } catch (err) {
+        handleError(err);
+        throw err;
+      }
+    },
+    [handleError, instances]
   );
 
   return (
@@ -68,6 +103,11 @@ export default function App() {
         status={status}
         mockEnabled={health?.mockEnabled ?? true}
         onSendAction={sendAction}
+        instances={instances.instances}
+        activeInstanceId={instances.activeId}
+        onSelectInstance={instances.selectInstance}
+        onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        onOpenImportModal={() => setIsImportModalOpen(true)}
       />
 
       <ErrorAlert error={activeError} onDismiss={handleDismissError} />
@@ -83,13 +123,18 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'properties' && (
-            <PropertiesTab
-              entries={serverProperties.entries}
-              filter={serverProperties.filter}
-              onFilterChange={serverProperties.setFilter}
-              onUpdateEntry={serverProperties.updateEntry}
-              onSave={serverProperties.save}
+          {activeTab === 'players' && (
+            <PlayersTab players={players} onSendCommand={handleSendCommand} />
+          )}
+
+          {activeTab === 'mod_files' && (
+            <ModFilesTab
+              files={modFiles.files}
+              filter={modFiles.filter}
+              onFilterChange={modFiles.setFilter}
+              onToggleMod={modFiles.toggleMod}
+              onDeleteMod={modFiles.deleteMod}
+              onOpenConfigTab={() => setActiveTab('mods')}
             />
           )}
 
@@ -106,21 +151,31 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'provisioning' && (
-            <ProvisioningTab
-              selectedLoader={provisioning.selectedLoader}
-              onSelectLoader={provisioning.setSelectedLoader}
-              availableVersions={provisioning.availableVersions}
-              selectedVersion={provisioning.selectedVersion}
-              onSelectVersion={provisioning.setSelectedVersion}
-              isInstalling={provisioning.isInstalling}
-              provisionLogs={provisionLogs}
-              serverStatus={status}
-              onInstall={handleInstallServer}
+          {activeTab === 'properties' && (
+            <PropertiesTab
+              entries={serverProperties.entries}
+              filter={serverProperties.filter}
+              onFilterChange={serverProperties.setFilter}
+              onUpdateEntry={serverProperties.updateEntry}
+              onSave={serverProperties.save}
             />
           )}
         </div>
       </main>
+
+      {/* Creation and Import Modals */}
+      <CreateServerModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onInstall={handleCreateServer}
+        provisionLogs={provisionLogs}
+      />
+
+      <ImportServerModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportServer}
+      />
     </div>
   );
 }

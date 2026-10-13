@@ -1,14 +1,18 @@
 {
   "nav": {
     "overview": "Overview",
-    "properties": "server.properties",
+    "players": "Players",
+    "mod_files": "Mods (.jar)",
     "mods": "Mod Configs",
-    "provisioning": "Provisioning",
+    "properties": "server.properties",
     "status": "STATUS"
   },
   "header": {
     "title": "MC-Nexus",
-    "instance": "Local Instance (default)",
+    "instance": "Local Instance",
+    "instance_tooltip": "Switch active server instance",
+    "new_server": "New Server",
+    "import_server": "Import",
     "mock_button": "Simulate Telemetry",
     "mock_active": "Mock Active",
     "language": "Language",
@@ -60,6 +64,43 @@
       "send": "Send"
     }
   },
+  "players": {
+    "search_placeholder": "Filter players by username...",
+    "refresh_list": "Refresh List",
+    "empty_description": "Connect to the server with a Minecraft client or use Simulate Telemetry to inspect active player sessions.",
+    "manage_title": "Manage Player",
+    "gamemode_label": "Change Game Mode",
+    "permissions_label": "Operator Privileges",
+    "teleport_coords_label": "Teleport to Coordinates",
+    "tp_spawn": "Spawn"
+  },
+  "mod_files": {
+    "total_mods": "Total Mods",
+    "active_mods": "Active",
+    "disabled_mods": "Disabled",
+    "search_placeholder": "Filter mods by name...",
+    "empty": "No mod jar files found in /mods directory.",
+    "active": "Enabled",
+    "disabled": "Disabled",
+    "open_config": "Open Configuration",
+    "delete": "Delete Mod",
+    "delete_confirm": "Are you sure you want to delete {{filename}}?"
+  },
+  "create_server": {
+    "modal_title": "New Minecraft Server",
+    "modal_subtitle": "Configure and automatically bootstrap a new local Minecraft server instance.",
+    "name_label": "Server Name",
+    "id_label": "Directory ID (slug)",
+    "submit_button": "Create & Install Server"
+  },
+  "import_server": {
+    "modal_title": "Import Existing Server",
+    "path_label": "Server Folder Path",
+    "path_hint": "Absolute path to a folder containing server.properties or server.jar.",
+    "name_label": "Display Name (optional)",
+    "submit_button": "Import Server",
+    "submitting": "Importing..."
+  },
   "properties": {
     "title": "Server Properties",
     "subtitle": "Tune vanilla game mechanics, ports, and world generation parameters.",
@@ -98,7 +139,7 @@
     "PROCESS_ERROR": "An error occurred with the server process.",
     "SERVER_NOT_ONLINE": "Cannot send commands while the server is offline.",
     "ALREADY_RUNNING": "The server process is already running.",
-    "SERVER_RUNNING": "Cannot install new software while the server is running. Stop the server first.",
+    "SERVER_RUNNING": "Cannot perform operation while server is running. Stop the server first.",
     "INSTALL_IN_PROGRESS": "An installation is already running.",
     "CONFIG_NOT_FOUND": "Configuration file not found.",
     "INVALID_FILENAME": "Invalid configuration filename.",
