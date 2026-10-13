@@ -100,6 +100,14 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     return this.process !== null;
   }
 
+  public setInstance(id: string, workingDir: string): void {
+    if (this.process) {
+      throw new Error('Cannot switch instance while server is running.');
+    }
+    this.config.id = id;
+    this.config.workingDir = workingDir;
+  }
+
   public start(): void {
     if (this.process) {
       this.fail('ALREADY_RUNNING', 'The server process is already running.');
