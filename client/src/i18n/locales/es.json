@@ -343,5 +343,11 @@
     "NETWORK_ERROR": "No se puede conectar con el daemon MC-Nexus. Asegúrate de que esté corriendo en el puerto 4000.",
     "UNKNOWN": "Ocurrió un error inesperado.",
     "dismiss": "Descartar"
+  },
+  "environment": {
+    "java_missing_title": "Java Runtime No Detectado",
+    "java_missing_desc": "Minecraft y los servidores basados en Java requieren Java (JDK 21) para ejecutarse en tu sistema.",
+    "java_download_btn": "Descargar Java (Temurin 21)",
+    "java_detected": "Java {{version}} detectado"
   }
 }

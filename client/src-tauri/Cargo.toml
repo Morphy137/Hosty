@@ -1,6 +1,6 @@
 [package]
 name = "mc-nexus"
-version = "1.0.0"
+version = "0.1.0"
 description = "MC-Nexus Desktop Server Manager"
 authors = ["you"]
 license = ""
