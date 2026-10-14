@@ -228,3 +228,7 @@ export async function uploadServerJar(
     }
   );
 }
+
+export async function fetchSystemEnvironment(): Promise<import('../types/daemon').SystemEnvironmentResponse> {
+  return request<import('../types/daemon').SystemEnvironmentResponse>('/api/system/environment');
+}

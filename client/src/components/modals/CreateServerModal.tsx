@@ -15,11 +15,12 @@ import {
   Server,
   Layers,
   Settings2,
-  Gamepad2
+  Gamepad2,
+  AlertCircle
 } from 'lucide-react';
 import type { ServerLoader, InstanceSettings } from '../../types/daemon';
 import { SERVER_LOADERS, LOADER_METADATA } from '../../types/daemon';
-import { fetchLoaderVersions } from '../../api/daemonApi';
+import { fetchLoaderVersions, fetchSystemEnvironment } from '../../api/daemonApi';
 import { GameLogo } from '../common/GameIcons';
 
 interface CreateServerModalProps {
@@ -116,6 +117,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [useCustomJar, setUseCustomJar] = useState(false);
   const [pzBranch, setPzBranch] = useState<'stable' | 'unstable'>('stable');
+  const [isJavaMissing, setIsJavaMissing] = useState(false);
 
   const currentLoaderMeta = LOADER_METADATA[selectedLoader];
   const requiresManualJar = selectedGame === 'minecraft' && !currentLoaderMeta.isAutomatic;
@@ -124,6 +126,23 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     setStep('game');
     onClose();
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let ignore = false;
+    fetchSystemEnvironment()
+      .then((env) => {
+        if (!ignore && env?.java) {
+          setIsJavaMissing(!env.java.detected);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully on network error or offline mock
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || selectedGame !== 'minecraft') return;
@@ -399,6 +418,31 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               {/* MINECRAFT SETUP */}
               {selectedGame === 'minecraft' && (
                 <>
+                  {isJavaMissing && (
+                    <div className="p-3.5 rounded-[6px] bg-[#fff8eb] dark:bg-[#231805] border border-[#f5d9a8] dark:border-[#f5a623]/30 flex items-start gap-3 text-[12px]">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-[#f5a623] mt-0.5" />
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="font-semibold text-[#171717] dark:text-[#ededed]">
+                          {t('environment.java_missing_title')}
+                        </div>
+                        <p className="text-[12px] leading-relaxed text-[#666666] dark:text-[#a1a1a1]">
+                          {t('environment.java_missing_desc')}
+                        </p>
+                        <div className="pt-0.5">
+                          <a
+                            href="https://adoptium.net/temurin/releases/?version=21"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-[4px] bg-[#f5a623] text-black hover:bg-[#e09612] transition no-underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {t('environment.java_download_btn')}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                       {t('create_server.install_method_label')}

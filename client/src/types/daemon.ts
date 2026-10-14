@@ -227,3 +227,19 @@ export type DaemonMessageType = DaemonMessage['type'];
 
 export type SocketConnectionState = 'connecting' | 'open' | 'closed';
 
+export interface JavaEnvironmentInfo {
+  detected: boolean;
+  majorVersion: number | null;
+  versionString: string | null;
+  path: string;
+  recommended: boolean;
+  downloadUrl: string;
+}
+
+export interface SystemEnvironmentResponse {
+  java: JavaEnvironmentInfo;
+  platform: string;
+  arch: string;
+  nodeVersion: string;
+}
+

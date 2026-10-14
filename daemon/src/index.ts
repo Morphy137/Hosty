@@ -18,6 +18,7 @@ import { ModConfigParser } from './parsers/ModConfigParser';
 import { ServerInstaller, LoaderType } from './provisioning/ServerInstaller';
 import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
+import { detectJavaEnvironment } from './core/EnvironmentDetector';
 
 const config = loadConfig();
 
@@ -138,6 +139,17 @@ app.get('/api/health', (_req, res) => {
     mockEnabled: config.mockEnabled,
     serverStatus: sup.getStatus(),
     activeInstance: instanceManager.getActiveInstanceId()
+  });
+});
+
+// System Environment Check API
+app.get('/api/system/environment', (_req, res) => {
+  const javaInfo = detectJavaEnvironment(config.javaPath);
+  res.json({
+    java: javaInfo,
+    platform: process.platform,
+    arch: process.arch,
+    nodeVersion: process.version
   });
 });
 

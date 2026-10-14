@@ -1,6 +1,6 @@
 {
   "name": "mc-nexus",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "MC-Nexus: Local Game Server Manager",
   "private": true,
   "scripts": {

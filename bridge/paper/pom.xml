@@ -9,7 +9,7 @@
     <packaging>jar</packaging>
 
     <name>MCNexusBridge</name>
-    <description>MC-Nexus High Performance Telemetry Bridge for Paper & Spigot</description>
+    <description>MC-Nexus High Performance Telemetry Bridge for Paper and Spigot</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

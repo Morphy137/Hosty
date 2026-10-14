@@ -4,6 +4,12 @@ dist/
 coverage/
 src-tauri/target/
 **/src-tauri/target/
+target/
+**/target/
+.gradle/
+**/.gradle/
+**/build/
+dependency-reduced-pom.xml
 
 # Environment & secrets
 .env

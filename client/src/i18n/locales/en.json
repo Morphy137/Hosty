@@ -343,5 +343,11 @@
     "NETWORK_ERROR": "Cannot reach the MC-Nexus daemon. Ensure the daemon is running on port 4000.",
     "UNKNOWN": "An unexpected error occurred.",
     "dismiss": "Dismiss"
+  },
+  "environment": {
+    "java_missing_title": "Java Runtime Not Detected",
+    "java_missing_desc": "Minecraft and Java-based game servers require Java (JDK 21) to run on your system.",
+    "java_download_btn": "Download Java (Temurin 21)",
+    "java_detected": "Java {{version}} detected"
   }
 }

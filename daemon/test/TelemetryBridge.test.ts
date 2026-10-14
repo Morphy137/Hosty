@@ -218,4 +218,27 @@ describe('TelemetryBridgeManager', () => {
     });
     expect(smiteSent).toBe(true);
   });
+
+  it('installs loader-specific jar when present in assets directory', () => {
+    const instanceDir = path.join(tmpDir, 'test-instance');
+    fs.mkdirSync(instanceDir, { recursive: true });
+
+    // Create dummy jar files in tmpDir (which acts as baseAssetsDir)
+    const fabricContent = 'dummy-fabric-jar-bytes';
+    const paperContent = 'dummy-paper-jar-bytes';
+    fs.writeFileSync(path.join(tmpDir, 'mc-nexus-bridge-fabric.jar'), fabricContent);
+    fs.writeFileSync(path.join(tmpDir, 'mc-nexus-bridge-paper.jar'), paperContent);
+
+    // Install for fabric (mod)
+    manager.installBridge(instanceDir, 'fabric');
+    const fabricInstalled = path.join(instanceDir, 'mods', 'mc-nexus-bridge.jar');
+    expect(fs.existsSync(fabricInstalled)).toBe(true);
+    expect(fs.readFileSync(fabricInstalled, 'utf8')).toBe(fabricContent);
+
+    // Install for paper (plugin)
+    manager.installBridge(instanceDir, 'paper');
+    const paperInstalled = path.join(instanceDir, 'plugins', 'mc-nexus-bridge.jar');
+    expect(fs.existsSync(paperInstalled)).toBe(true);
+    expect(fs.readFileSync(paperInstalled, 'utf8')).toBe(paperContent);
+  });
 });
