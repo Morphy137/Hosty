@@ -21,6 +21,9 @@
     "mock_button": "Simulate Telemetry",
     "mock_active": "Mock Active",
     "language": "Language",
+    "theme_toggle": "Toggle Theme",
+    "theme_dark": "Switch to Dark Mode",
+    "theme_light": "Switch to Light Mode",
     "connected": "Connected",
     "disconnected": "Disconnected"
   },
@@ -48,6 +51,10 @@
     "players": {
       "title": "Connected Players",
       "empty": "No players connected to the server",
+      "search_placeholder": "Filter connected players...",
+      "no_matches": "No players found matching search",
+      "no_matches_description": "Try searching with a different username.",
+      "clear_search": "Clear",
       "tp": "Teleport",
       "op": "OP Player",
       "deop": "De-OP",
@@ -80,6 +87,10 @@
     "permissions_label": "Operator Privileges",
     "teleport_coords_label": "Teleport to Coordinates",
     "tp_spawn": "Spawn",
+    "kick_reason_placeholder": "Kick reason...",
+    "ban_reason_placeholder": "Ban reason...",
+    "kick_default_reason": "Kicked by administrator",
+    "ban_default_reason": "Banned by administrator",
     "actions": {
       "heal_title": "Heal {{player}}",
       "damage_title": "Damage {{player}}",
@@ -90,7 +101,12 @@
       "gift_select_item": "Select Item Preset",
       "gift_custom_item": "Or Custom Item ID",
       "gift_quantity": "Quantity",
-      "execute_button": "Apply Action"
+      "execute_button": "Apply Action",
+      "hearts_label": "Hearts",
+      "heart_single": "1 Heart",
+      "hearts_full": "10 (Full)",
+      "hearts_boost": "20 (Boost)",
+      "custom_item_placeholder": "e.g. minecraft:nether_star"
     }
   },
   "edit_server": {
@@ -128,7 +144,15 @@
     "disabled": "Disabled",
     "open_config": "Open Configuration",
     "delete": "Delete Mod",
-    "delete_confirm": "Are you sure you want to delete {{filename}}?"
+    "delete_confirm": "Are you sure you want to delete {{filename}}?",
+    "directory_hint": "/mods directory",
+    "headers": {
+      "index": "#",
+      "name": "Mod Name / Jar File",
+      "size": "File Size",
+      "status": "Status",
+      "actions": "Actions"
+    }
   },
   "create_server": {
     "modal_title": "New Minecraft Server",
@@ -166,7 +190,14 @@
     "save": "Save Config",
     "saved": "Saved!",
     "empty": "No configuration entries found.",
-    "no_files": "No mod configuration files found in config/ directory."
+    "no_files": "No mod configuration files found in config/ directory.",
+    "directory_hint": "/config directory",
+    "headers": {
+      "index": "#",
+      "path": "Config Node Path",
+      "type": "Type",
+      "value": "Value"
+    }
   },
   "provisioning": {
     "title": "Server Engine Provisioning",
@@ -176,6 +207,7 @@
     "loader_paper_desc": "High-performance Spigot fork with advanced optimization.",
     "loader_vanilla_desc": "Official Mojang Minecraft server binary without mods.",
     "version_label": "Select Release Version",
+    "loading_versions": "Loading...",
     "install_button": "Provision & Install",
     "installing": "Provisioning...",
     "server_must_be_offline": "The server must be OFFLINE before installing a new binary.",

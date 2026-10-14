@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --ds-primary: #171717;
   --ds-on-primary: #ffffff;
@@ -7,7 +9,7 @@
   --ds-body: #4d4d4d;
   --ds-mute: #888888;
   --ds-hairline: #ebebeb;
-  --ds-hairline-strong: #a1a1a1;
+  --ds-hairline-strong: #d4d4d4;
   --ds-canvas: #ffffff;
   --ds-canvas-soft: #fafafa;
   --ds-canvas-soft-2: #f5f5f5;
@@ -18,6 +20,24 @@
   --ds-warning-soft: #ffefcf;
 }
 
+.dark {
+  --ds-primary: #ededed;
+  --ds-on-primary: #000000;
+  --ds-ink: #ededed;
+  --ds-body: #a1a1a1;
+  --ds-mute: #707070;
+  --ds-hairline: #262626;
+  --ds-hairline-strong: #383838;
+  --ds-canvas: #0d0d0d;
+  --ds-canvas-soft: #050505;
+  --ds-canvas-soft-2: #141414;
+  --ds-link: #0070f3;
+  --ds-error: #ee0000;
+  --ds-error-soft: #381215;
+  --ds-warning: #f5a623;
+  --ds-warning-soft: #3b280c;
+}
+
 @layer base {
   body {
     background-color: var(--ds-canvas-soft);
@@ -26,6 +46,7 @@
     font-feature-settings: "ss01", "ss02";
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   code, pre, .font-mono {
@@ -36,15 +57,30 @@
 /* Level 2 — Subtle Drop + Inset Hairline */
 .geist-card {
   background-color: var(--ds-canvas);
-  box-shadow: inset 0 0 0 1px #00000014, 0px 1px 1px #00000005, 0px 2px 2px #0000000a;
+  border: 1px solid var(--ds-hairline);
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.04);
   border-radius: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dark .geist-card {
+  background-color: #0d0d0d;
+  border-color: #262626;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* Level 3 — Soft Stack */
 .geist-card-elevated {
   background-color: var(--ds-canvas);
-  box-shadow: inset 0 0 0 1px #00000014, 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a;
+  border: 1px solid var(--ds-hairline);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06);
   border-radius: 8px;
+}
+
+.dark .geist-card-elevated {
+  background-color: #0d0d0d;
+  border-color: #262626;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 ::-webkit-scrollbar {
@@ -58,6 +94,12 @@
   background: #e0e0e0;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #404040;
 }

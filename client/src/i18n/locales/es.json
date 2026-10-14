@@ -21,6 +21,9 @@
     "mock_button": "Simular Telemetría",
     "mock_active": "Simulador Activo",
     "language": "Idioma",
+    "theme_toggle": "Cambiar Tema",
+    "theme_dark": "Modo Oscuro",
+    "theme_light": "Modo Claro",
     "connected": "Conectado",
     "disconnected": "Desconectado"
   },
@@ -48,6 +51,10 @@
     "players": {
       "title": "Jugadores Conectados",
       "empty": "No hay jugadores conectados al servidor",
+      "search_placeholder": "Filtrar jugadores conectados...",
+      "no_matches": "No se encontraron jugadores que coincidan",
+      "no_matches_description": "Prueba buscando con otro nombre de usuario.",
+      "clear_search": "Limpiar",
       "tp": "Teletransportar",
       "op": "Dar OP",
       "deop": "Quitar OP",
@@ -80,6 +87,10 @@
     "permissions_label": "Privilegios de Operador",
     "teleport_coords_label": "Teletransportar a Coordenadas",
     "tp_spawn": "Punto de Regeneración",
+    "kick_reason_placeholder": "Motivo de expulsión...",
+    "ban_reason_placeholder": "Motivo de bloqueo...",
+    "kick_default_reason": "Expulsado por el administrador",
+    "ban_default_reason": "Bloqueado por el administrador",
     "actions": {
       "heal_title": "Curar a {{player}}",
       "damage_title": "Dañar a {{player}}",
@@ -90,7 +101,12 @@
       "gift_select_item": "Seleccionar Objeto Predefinido",
       "gift_custom_item": "O ID de Objeto Personalizado",
       "gift_quantity": "Cantidad",
-      "execute_button": "Aplicar Acción"
+      "execute_button": "Aplicar Acción",
+      "hearts_label": "Corazones",
+      "heart_single": "1 Corazón",
+      "hearts_full": "10 (Lleno)",
+      "hearts_boost": "20 (Aumento)",
+      "custom_item_placeholder": "ej: minecraft:nether_star"
     }
   },
   "edit_server": {
@@ -128,7 +144,15 @@
     "disabled": "Desactivado",
     "open_config": "Abrir Configuración",
     "delete": "Eliminar Mod",
-    "delete_confirm": "¿Estás seguro de que deseas eliminar {{filename}}?"
+    "delete_confirm": "¿Estás seguro de que deseas eliminar {{filename}}?",
+    "directory_hint": "directorio /mods",
+    "headers": {
+      "index": "#",
+      "name": "Nombre del Mod / Archivo Jar",
+      "size": "Tamaño",
+      "status": "Estado",
+      "actions": "Acciones"
+    }
   },
   "create_server": {
     "modal_title": "Nuevo Servidor de Minecraft",
@@ -166,7 +190,14 @@
     "save": "Guardar Configuración",
     "saved": "¡Guardado!",
     "empty": "No se encontraron entradas de configuración.",
-    "no_files": "No se encontraron archivos de configuración en la carpeta config/."
+    "no_files": "No se encontraron archivos de configuración en la carpeta config/.",
+    "directory_hint": "directorio /config",
+    "headers": {
+      "index": "#",
+      "path": "Ruta del Nodo de Configuración",
+      "type": "Tipo",
+      "value": "Valor"
+    }
   },
   "provisioning": {
     "title": "Aprovisionamiento del Servidor",
@@ -176,6 +207,7 @@
     "loader_paper_desc": "Bifurcación de Spigot de alto rendimiento con optimizaciones avanzadas.",
     "loader_vanilla_desc": "Binario oficial de Mojang sin modificaciones.",
     "version_label": "Selecciona la Versión",
+    "loading_versions": "Cargando...",
     "install_button": "Aprovisionar e Instalar",
     "installing": "Aprovisionando...",
     "server_must_be_offline": "El servidor debe estar en estado OFFLINE antes de instalar una nueva versión.",

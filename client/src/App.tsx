@@ -7,6 +7,7 @@ import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
 import { toErrorPayload, installServer, uploadServerJar } from './api/daemonApi';
 import type { DaemonErrorPayload, ServerLoader, InstanceSettings } from './types/daemon';
+import { useTheme } from './hooks/useTheme';
 import { Header, type TabId } from './components/layout/Header';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
@@ -19,6 +20,7 @@ import { ImportServerModal } from './components/modals/ImportServerModal';
 import { EditServerModal } from './components/modals/EditServerModal';
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -137,7 +139,7 @@ export default function App() {
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#fafafa] select-none overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#fafafa] dark:bg-[#050505] text-[#171717] dark:text-[#ededed] select-none overflow-hidden transition-colors">
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -150,6 +152,8 @@ export default function App() {
         onSelectInstance={instances.selectInstance}
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
         onOpenImportModal={() => setIsImportModalOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <ErrorAlert error={activeError} onDismiss={handleDismissError} />

@@ -66,17 +66,17 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white max-w-md w-full p-6 shadow-2xl space-y-5">
+      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-md w-full p-6 shadow-2xl space-y-5">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#ebebeb] pb-4">
+        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
           <div className="flex items-center gap-3">
             <img
               src={`https://mc-heads.net/avatar/${player.username}/40`}
               alt={player.username}
-              className="w-9 h-9 rounded-[4px] border border-[#ebebeb]"
+              className="w-9 h-9 rounded-[4px] border border-[#ebebeb] dark:border-[#262626]"
             />
             <div>
-              <h2 className="text-[15px] font-semibold text-[#171717] tracking-[-0.3px] flex items-center gap-1.5">
+              <h2 className="text-[15px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px] flex items-center gap-1.5">
                 {actionType === 'HEAL' && (
                   <>
                     <Heart className="w-4 h-4 text-[#ee0000]" />
@@ -91,19 +91,19 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                 )}
                 {actionType === 'GIFT' && (
                   <>
-                    <Gift className="w-4 h-4 text-[#0070f3]" />
+                    <Gift className="w-4 h-4 text-[#0070f3] dark:text-[#3291ff]" />
                     <span>{t('players.actions.gift_title', { player: player.username })}</span>
                   </>
                 )}
               </h2>
-              <p className="text-[12px] text-[#888888]">{player.username}</p>
+              <p className="text-[12px] text-[#888888] dark:text-[#a1a1a1]">{player.username}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-[4px] hover:bg-[#fafafa] text-[#888888] hover:text-[#171717] transition cursor-pointer"
+            className="p-1.5 rounded-[4px] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,9 +115,9 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           {actionType === 'HEAL' && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888] flex justify-between">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex justify-between">
                   <span>{t('players.actions.heal_amount')}</span>
-                  <span className="text-[#171717] font-semibold">{healHearts} Hearts</span>
+                  <span className="text-[#171717] dark:text-[#ededed] font-semibold">{healHearts} {t('players.actions.hearts_label')}</span>
                 </label>
                 <input
                   type="range"
@@ -125,21 +125,21 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                   max="20"
                   value={healHearts}
                   onChange={(e) => setHealHearts(Number(e.target.value))}
-                  className="w-full h-1.5 bg-[#f0f0f0] rounded-[2px] appearance-none cursor-pointer accent-[#171717]"
+                  className="w-full h-1.5 bg-[#f0f0f0] dark:bg-[#262626] rounded-[2px] appearance-none cursor-pointer accent-[#171717] dark:accent-[#ededed]"
                 />
-                <div className="flex justify-between font-mono text-[10px] text-[#888888]">
-                  <span>1 Heart</span>
-                  <span>10 (Full)</span>
-                  <span>20 (Boost)</span>
+                <div className="flex justify-between font-mono text-[10px] text-[#888888] dark:text-[#a1a1a1]">
+                  <span>{t('players.actions.heart_single')}</span>
+                  <span>{t('players.actions.hearts_full')}</span>
+                  <span>{t('players.actions.hearts_boost')}</span>
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 pt-1 text-[13px] text-[#171717] cursor-pointer">
+              <label className="flex items-center gap-2 pt-1 text-[13px] text-[#171717] dark:text-[#ededed] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={healFeed}
                   onChange={(e) => setHealFeed(e.target.checked)}
-                  className="rounded-[3px] border-[#ebebeb] text-[#171717] focus:ring-0 cursor-pointer"
+                  className="rounded-[3px] border-[#ebebeb] dark:border-[#262626] accent-[#171717] dark:accent-[#ededed] focus:ring-0 cursor-pointer"
                 />
                 <span>{t('players.actions.feed_checkbox')}</span>
               </label>
@@ -150,9 +150,9 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           {actionType === 'DAMAGE' && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888] flex justify-between">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex justify-between">
                   <span>{t('players.actions.damage_amount')}</span>
-                  <span className="text-[#ee0000] font-semibold">{damageAmount} HP ({damageAmount / 2} Hearts)</span>
+                  <span className="text-[#ee0000] dark:text-[#ff6b6b] font-semibold">{damageAmount} HP ({damageAmount / 2} {t('players.actions.hearts_label')})</span>
                 </label>
                 <input
                   type="range"
@@ -160,7 +160,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                   max="20"
                   value={damageAmount}
                   onChange={(e) => setDamageAmount(Number(e.target.value))}
-                  className="w-full h-1.5 bg-[#f0f0f0] rounded-[2px] appearance-none cursor-pointer accent-[#ee0000]"
+                  className="w-full h-1.5 bg-[#f0f0f0] dark:bg-[#262626] rounded-[2px] appearance-none cursor-pointer accent-[#ee0000]"
                 />
               </div>
 
@@ -173,8 +173,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                     onClick={() => setDamageAmount(hp)}
                     className={`flex-1 py-1 rounded-[4px] border font-mono text-[11px] transition cursor-pointer ${
                       damageAmount === hp
-                        ? 'bg-[#171717] text-white border-[#171717]'
-                        : 'bg-[#fafafa] hover:bg-[#f5f5f5] text-[#4d4d4d] border-[#ebebeb]'
+                        ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
+                        : 'bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#4d4d4d] dark:text-[#a1a1a1] border-[#ebebeb] dark:border-[#262626]'
                     }`}
                   >
                     {hp} HP
@@ -188,7 +188,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           {actionType === 'GIFT' && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888]">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                   {t('players.actions.gift_select_item')}
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -202,8 +202,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                       }}
                       className={`p-2 rounded-[4px] border text-left text-[12px] font-medium transition cursor-pointer ${
                         giftItem === item.id && !giftCustomItem
-                          ? 'bg-[#171717] text-white border-[#171717]'
-                          : 'bg-[#fafafa] hover:bg-[#f5f5f5] text-[#171717] border-[#ebebeb]'
+                          ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
+                          : 'bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#171717] dark:text-[#ededed] border-[#ebebeb] dark:border-[#262626]'
                       }`}
                     >
                       {item.label}
@@ -213,22 +213,22 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888]">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                   {t('players.actions.gift_custom_item')}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. minecraft:nether_star"
+                  placeholder={t('players.actions.custom_item_placeholder')}
                   value={giftCustomItem}
                   onChange={(e) => setGiftCustomItem(e.target.value)}
-                  className="w-full h-8 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[12px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                  className="w-full h-8 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888] flex justify-between">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex justify-between">
                   <span>{t('players.actions.gift_quantity')}</span>
-                  <span className="text-[#171717] font-semibold">{giftQuantity}</span>
+                  <span className="text-[#171717] dark:text-[#ededed] font-semibold">{giftQuantity}</span>
                 </label>
                 <div className="flex gap-2 items-center">
                   <input
@@ -237,7 +237,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                     max="64"
                     value={giftQuantity}
                     onChange={(e) => setGiftQuantity(Number(e.target.value))}
-                    className="w-20 h-8 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[12px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                    className="w-20 h-8 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                   />
                   <div className="flex gap-1.5 flex-1">
                     {[1, 16, 32, 64].map((qty) => (
@@ -247,8 +247,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                         onClick={() => setGiftQuantity(qty)}
                         className={`flex-1 h-8 rounded-[4px] border font-mono text-[11px] transition cursor-pointer ${
                           giftQuantity === qty
-                            ? 'bg-[#171717] text-white border-[#171717]'
-                            : 'bg-[#fafafa] hover:bg-[#f5f5f5] text-[#4d4d4d] border-[#ebebeb]'
+                            ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
+                            : 'bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#4d4d4d] dark:text-[#a1a1a1] border-[#ebebeb] dark:border-[#262626]'
                         }`}
                       >
                         {qty}x
@@ -261,17 +261,17 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           )}
 
           {/* Action Footer Buttons */}
-          <div className="flex gap-2 pt-2 border-t border-[#ebebeb]">
+          <div className="flex gap-2 pt-2 border-t border-[#ebebeb] dark:border-[#262626]">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-9 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[13px] font-medium text-[#4d4d4d] transition cursor-pointer"
+              className="flex-1 h-9 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[13px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] transition cursor-pointer"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
-              className="flex-1 h-9 rounded-[4px] bg-[#171717] hover:bg-[#333333] text-white text-[13px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="flex-1 h-9 rounded-[4px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] text-[13px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
             >
               <Check className="w-3.5 h-3.5" />
               {t('players.actions.execute_button')}

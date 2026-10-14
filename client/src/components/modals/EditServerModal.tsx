@@ -179,14 +179,14 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#ebebeb] pb-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4 shrink-0">
           <div>
-            <h2 className="text-[17px] font-semibold text-[#171717] tracking-[-0.3px]">
+            <h2 className="text-[17px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
               {t('edit_server.modal_title')}
             </h2>
-            <p className="text-[13px] text-[#888888] mt-0.5">
+            <p className="text-[13px] text-[#888888] dark:text-[#a1a1a1] mt-0.5">
               {t('edit_server.modal_subtitle', { name: instance.name })}
             </p>
           </div>
@@ -194,21 +194,21 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="p-1.5 rounded-[4px] hover:bg-[#fafafa] text-[#888888] hover:text-[#171717] transition cursor-pointer disabled:opacity-40"
+            className="p-1.5 rounded-[4px] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer disabled:opacity-40"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-4 border-b border-[#ebebeb] pb-2 text-[13px] font-medium shrink-0">
+        <div className="flex items-center gap-4 border-b border-[#ebebeb] dark:border-[#262626] pb-2 text-[13px] font-medium shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
             className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'general'
-                ? 'border-[#171717] text-[#171717]'
-                : 'border-transparent text-[#888888] hover:text-[#171717]'
+                ? 'border-[#171717] dark:border-[#ededed] text-[#171717] dark:text-[#ededed]'
+                : 'border-transparent text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed]'
             }`}
           >
             <Server className="w-4 h-4" />
@@ -220,8 +220,8 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             onClick={() => setActiveTab('advanced')}
             className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'advanced'
-                ? 'border-[#171717] text-[#171717]'
-                : 'border-transparent text-[#888888] hover:text-[#171717]'
+                ? 'border-[#171717] dark:border-[#ededed] text-[#171717] dark:text-[#ededed]'
+                : 'border-transparent text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed]'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -236,7 +236,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
               {/* Left Column (7 cols) */}
               <div className="col-span-7 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.name_label')}
                   </label>
                   <input
@@ -244,12 +244,12 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                    className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.motd_label')}
                   </label>
                   <input
@@ -257,13 +257,13 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                     value={motd}
                     onChange={(e) => setMotd(e.target.value)}
                     placeholder="A Minecraft Server"
-                    className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                    className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                   />
                 </div>
 
                 {/* Folder Path Display */}
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.folder_path')}
                   </label>
                   <div className="flex items-center gap-1.5">
@@ -271,12 +271,12 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       type="text"
                       value={instance.dir}
                       readOnly
-                      className="flex-1 h-8 px-2.5 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] text-[#666666] select-all focus:outline-none"
+                      className="flex-1 h-8 px-2.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[11px] text-[#666666] dark:text-[#a1a1a1] select-all focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleCopyPath}
-                      className="h-8 px-2 rounded-[4px] bg-white border border-[#ebebeb] hover:bg-[#fafafa] text-[#4d4d4d] flex items-center justify-center transition cursor-pointer"
+                      className="h-8 px-2 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center justify-center transition cursor-pointer"
                       title="Copy Path"
                     >
                       {copiedPath ? <Check className="w-3.5 h-3.5 text-[#50e3c2]" /> : <Copy className="w-3.5 h-3.5" />}
@@ -286,22 +286,22 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
                 {/* Checkboxes */}
                 <div className="pt-2 space-y-2.5">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[#171717]">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[#171717] dark:text-[#ededed]">
                     <input
                       type="checkbox"
                       checked={forceSaveOnStop}
                       onChange={(e) => setForceSaveOnStop(e.target.checked)}
-                      className="w-4 h-4 rounded border-[#ebebeb] text-[#171717] focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded border-[#ebebeb] dark:border-[#262626] accent-[#171717] dark:accent-[#ededed] focus:ring-0 cursor-pointer"
                     />
                     <span>{t('edit_server.force_save_label')}</span>
                   </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[#171717]">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[#171717] dark:text-[#ededed]">
                     <input
                       type="checkbox"
                       checked={autostart}
                       onChange={(e) => setAutostart(e.target.checked)}
-                      className="w-4 h-4 rounded border-[#ebebeb] text-[#171717] focus:ring-0 cursor-pointer"
+                      className="w-4 h-4 rounded border-[#ebebeb] dark:border-[#262626] accent-[#171717] dark:accent-[#ededed] focus:ring-0 cursor-pointer"
                     />
                     <span>{t('edit_server.autostart_label')}</span>
                   </label>
@@ -312,11 +312,11 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
               <div className="col-span-5 space-y-4">
                 {/* Server Icon Box */}
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.icon_label')}
                   </label>
-                  <div className="p-3 rounded-[4px] border border-[#ebebeb] bg-[#fafafa] flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-[4px] border border-[#d4d4d4] bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                  <div className="p-3 rounded-[4px] border border-[#ebebeb] dark:border-[#262626] bg-[#fafafa] dark:bg-[#141414] flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-[4px] border border-[#d4d4d4] dark:border-[#333333] bg-white dark:bg-[#0a0a0a] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
                       {iconPreview ? (
                         <img
                           src={iconPreview}
@@ -339,7 +339,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="h-7 px-2.5 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[11px] font-medium text-[#171717] flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        className="h-7 px-2.5 rounded-[4px] bg-white dark:bg-[#1f1f1f] hover:bg-[#f5f5f5] dark:hover:bg-[#262626] border border-[#ebebeb] dark:border-[#333333] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                       >
                         <Upload className="w-3 h-3 text-[#0070f3]" />
                         <span>{t('edit_server.upload_icon')}</span>
@@ -349,7 +349,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                         <button
                           type="button"
                           onClick={handleRemoveIcon}
-                          className="h-6 px-2 rounded-[4px] text-[11px] font-medium text-[#ee0000] hover:bg-[#f7d4d6]/40 flex items-center gap-1 transition cursor-pointer self-start"
+                          className="h-6 px-2 rounded-[4px] text-[11px] font-medium text-[#ee0000] dark:text-[#ff6b6b] hover:bg-[#f7d4d6]/40 dark:hover:bg-[#381215]/50 flex items-center gap-1 transition cursor-pointer self-start"
                         >
                           <Trash2 className="w-3 h-3" />
                           <span>{t('edit_server.remove_icon')}</span>
@@ -357,14 +357,14 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       )}
                     </div>
                   </div>
-                  <p className="text-[10px] text-[#888888]">
+                  <p className="text-[10px] text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.icon_hint')}
                   </p>
                 </div>
 
                 {/* RAM Allocation */}
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.ram_label')}
                   </label>
                   <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       step={ramUnit === 'GB' ? 1 : 256}
                       value={ramValue}
                       onChange={(e) => setRamValue(Math.max(1, Number(e.target.value)))}
-                      className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                      className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                     />
                     <select
                       value={ramUnit}
@@ -388,7 +388,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                         }
                         setRamUnit(nextUnit);
                       }}
-                      className="h-9 px-2 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[12px] text-[#171717] focus:outline-none cursor-pointer"
+                      className="h-9 px-2 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] focus:outline-none cursor-pointer"
                     >
                       <option value="GB">GB</option>
                       <option value="MB">MB</option>
@@ -399,19 +399,19 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                 {/* Server Port & Max Players */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
-                    <label className="font-mono text-[11px] uppercase text-[#888888]">
+                    <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                       {t('edit_server.port_label')}
                     </label>
                     <input
                       type="number"
                       value={port}
                       onChange={(e) => setPort(Number(e.target.value))}
-                      className="w-full h-9 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                      className="w-full h-9 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-mono text-[11px] uppercase text-[#888888]">
+                    <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                       {t('edit_server.max_players_label')}
                     </label>
                     <input
@@ -420,7 +420,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       max={9999}
                       value={maxPlayers}
                       onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                      className="w-full h-9 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                      className="w-full h-9 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                     />
                   </div>
                 </div>
@@ -432,7 +432,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             <div className="space-y-4">
               {/* Java Path Override */}
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888]">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                   {t('edit_server.java_path_label')}
                 </label>
                 <input
@@ -440,9 +440,9 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   value={javaPath}
                   onChange={(e) => setJavaPath(e.target.value)}
                   placeholder="e.g. C:\Program Files\Java\jdk-21\bin\java.exe"
-                  className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] font-mono text-[12px] text-[#171717] placeholder-[#888888] focus:outline-none focus:border-[#171717]"
+                  className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                 />
-                <p className="text-[11px] text-[#888888]">
+                <p className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
                   {t('edit_server.java_path_hint')}
                 </p>
               </div>
@@ -450,15 +450,15 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
               {/* Startup Line / JVM Flags */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="font-mono text-[11px] uppercase text-[#888888]">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                     {t('edit_server.jvm_args_label')}
                   </label>
                   <button
                     type="button"
                     onClick={handleApplyAikarFlags}
-                    className="text-[11px] text-[#0070f3] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-[#0070f3] dark:text-[#3291ff] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Sparkles className="w-3 h-3 text-[#0070f3]" />
+                    <Sparkles className="w-3 h-3 text-[#0070f3] dark:text-[#3291ff]" />
                     {t('edit_server.apply_aikar_preset')}
                   </button>
                 </div>
@@ -467,16 +467,16 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   onChange={(e) => setJvmArgsString(e.target.value)}
                   placeholder="-XX:+UseG1GC -XX:+ParallelRefProcEnabled"
                   rows={3}
-                  className="w-full p-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[12px] text-[#171717] placeholder-[#888888] focus:outline-none focus:border-[#171717]"
+                  className="w-full p-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                 />
               </div>
 
               {/* Startup Line Preview */}
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888]">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                   {t('edit_server.startup_preview_label')}
                 </label>
-                <div className="p-3 rounded-[4px] bg-[#171717] text-white font-mono text-[11px] break-all leading-relaxed">
+                <div className="p-3 rounded-[4px] bg-[#171717] dark:bg-[#0a0a0a] border border-transparent dark:border-[#262626] text-white dark:text-[#ededed] font-mono text-[11px] break-all leading-relaxed">
                   {startupPreview}
                 </div>
               </div>
@@ -485,26 +485,26 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
           {/* Warning banner when server is online */}
           {serverStatus !== 'OFFLINE' && (
-            <div className="p-2.5 rounded-[4px] bg-[#fff7ed] border border-[#ffedd5] flex items-center gap-2 text-[12px] text-[#c2410c]">
+            <div className="p-2.5 rounded-[4px] bg-[#fff7ed] dark:bg-[#2d1b09] border border-[#ffedd5] dark:border-[#7c2d12] flex items-center gap-2 text-[12px] text-[#c2410c] dark:text-[#fdba74]">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{t('edit_server.running_warning')}</span>
             </div>
           )}
 
           {/* Modal Footer Controls */}
-          <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[#ebebeb]">
+          <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[#ebebeb] dark:border-[#262626]">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="h-9 px-4 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[13px] font-medium text-[#4d4d4d] transition cursor-pointer"
+              className="h-9 px-4 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[13px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] transition cursor-pointer"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="h-9 px-5 rounded-[4px] bg-[#171717] hover:bg-[#333333] disabled:opacity-40 text-white text-[13px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="h-9 px-5 rounded-[4px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] disabled:opacity-40 text-[13px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs"
             >
               {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{t('common.save')}</span>
