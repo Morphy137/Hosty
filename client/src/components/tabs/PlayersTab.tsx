@@ -301,40 +301,40 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
                     <button
                       type="button"
                       onClick={() => setActionTarget({ player, type: 'HEAL' })}
-                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[10px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                       title={t('overview.players.feed')}
                     >
-                      <Heart className="w-2.5 h-2.5 text-[#0070f3] dark:text-[#50e3c2] shrink-0" />
+                      <Heart className="w-[11px] h-[11px] text-[#ee0000] dark:text-[#ff4d4f] shrink-0" />
                       <SlidingText>{t('overview.players.feed')}</SlidingText>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setActionTarget({ player, type: 'GIFT' })}
-                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[10px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                       title={t('players.actions.gift')}
                     >
-                      <Gift className="w-2.5 h-2.5 text-[#0070f3] shrink-0" />
+                      <Gift className="w-[11px] h-[11px] text-[#0070f3] dark:text-[#3291ff] shrink-0" />
                       <SlidingText>{t('players.actions.gift')}</SlidingText>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setActionTarget({ player, type: 'DAMAGE' })}
-                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[10px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#f5a623]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                       title={t('players.actions.hurt')}
                     >
-                      <Zap className="w-2.5 h-2.5 text-[#ee0000] dark:text-[#ff6b6b] shrink-0" />
+                      <Zap className="w-[11px] h-[11px] text-[#f5a623] dark:text-[#f7b955] shrink-0" />
                       <SlidingText>{t('players.actions.hurt')}</SlidingText>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handlePlayerAction(player.username, 'KILL')}
-                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fff0f0] dark:hover:bg-[#381215] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[10px] font-medium text-[#ee0000] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                      className="h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fff0f0] dark:hover:bg-[#381215] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#ee0000] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                       title={t('players.actions.kill')}
                     >
-                      <Skull className="w-2.5 h-2.5 shrink-0" />
+                      <Skull className="w-[11px] h-[11px] text-[#ee0000] dark:text-[#ff4d4f] shrink-0" />
                       <SlidingText>{t('players.actions.kill')}</SlidingText>
                     </button>
                   </div>

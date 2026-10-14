@@ -36,11 +36,11 @@ export const SlidingText: React.FC<SlidingTextProps> = ({ children, className = 
         setIsHovered(true);
       }}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative inline-block overflow-hidden whitespace-nowrap max-w-full align-middle ${className}`}
+      className={`relative inline-flex items-center overflow-hidden whitespace-nowrap max-w-full leading-none ${className}`}
     >
       <span
         ref={textRef}
-        className="inline-block whitespace-nowrap will-change-transform"
+        className="inline-block whitespace-nowrap will-change-transform leading-none"
         style={{
           transform: isHovered && overflowDistance > 0 ? `translateX(-${overflowDistance + 4}px)` : 'translateX(0)',
           transition:
