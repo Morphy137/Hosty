@@ -448,7 +448,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         disabled={isInstalling}
                         className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
+                            ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3]/5 dark:bg-[#0070f3]/10 text-[#0070f3] dark:text-[#3291ff]'
                             : 'bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed] border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f]'
                         }`}
                       >
@@ -459,7 +459,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                           <span
                             className={`font-mono text-[9px] uppercase px-1 py-0.5 rounded-[2px] ${
                               isSelected
-                                ? 'bg-white/20 dark:bg-black/20 text-white dark:text-[#171717]'
+                                ? 'bg-[#0070f3]/15 dark:bg-[#3291ff]/20 text-[#0070f3] dark:text-[#3291ff]'
                                 : meta.isAutomatic
                                 ? 'bg-[#50e3c2]/15 text-[#0070f3] dark:text-[#50e3c2]'
                                 : 'bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]'
@@ -470,7 +470,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         </div>
                         <span
                           className={`text-[10px] mt-1 capitalize ${
-                            isSelected ? 'text-[#a1a1a1] dark:text-[#4d4d4d]' : 'text-[#888888] dark:text-[#a1a1a1]'
+                            isSelected ? 'text-[#0070f3]/80 dark:text-[#3291ff]/80' : 'text-[#888888] dark:text-[#a1a1a1]'
                           }`}
                         >
                           {meta.category}

@@ -64,14 +64,18 @@ export const ModsTab: React.FC<ModsTabProps> = ({
                 key={file}
                 type="button"
                 onClick={() => onSelectFile(file)}
-                className={`w-full px-4 py-3 text-left font-mono text-[13px] flex items-center justify-between transition cursor-pointer ${
+                className={`w-full px-4 py-3 text-left font-mono text-[13px] flex items-center justify-between transition cursor-pointer border-l-2 ${
                   selectedFile === file
-                    ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] font-medium'
-                    : 'text-[#171717] dark:text-[#ededed] hover:bg-[#fafafa] dark:hover:bg-[#141414]'
+                    ? 'border-[#171717] dark:border-[#ededed] bg-[#f4f4f5] dark:bg-[#1f1f1f] text-[#171717] dark:text-[#ededed] font-medium'
+                    : 'border-transparent text-[#666666] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed] hover:bg-[#fafafa] dark:hover:bg-[#141414]'
                 }`}
               >
                 <span className="truncate">{file}</span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                <ChevronRight
+                  className={`w-3.5 h-3.5 shrink-0 transition-opacity ${
+                    selectedFile === file ? 'opacity-100 text-[#171717] dark:text-[#ededed]' : 'opacity-40'
+                  }`}
+                />
               </button>
             ))
           )}
