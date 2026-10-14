@@ -61,7 +61,7 @@ jobs:
         with:
           projectPath: client
           tagName: ${{ github.ref_name }}
-          releaseName: 'MC-Nexus v__VERSION__'
-          releaseBody: 'Automated release of MC-Nexus desktop application.'
+          releaseName: 'Hosty v__VERSION__'
+          releaseBody: 'Automated release of Hosty desktop application.'
           releaseDraft: false
           prerelease: false

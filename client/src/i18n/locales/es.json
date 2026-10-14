@@ -13,7 +13,7 @@
     "status": "ESTADO"
   },
   "header": {
-    "title": "MC-Nexus",
+    "title": "Hosty",
     "instance": "Instancia Local",
     "instance_tooltip": "Cambiar servidor local activo",
     "new_server": "Nuevo Servidor",
@@ -178,7 +178,7 @@
     "startup_preview_label": "Vista Previa de Inicio",
     "running_warning": "Apaga el servidor para aplicar cambios en el puerto o argumentos JVM.",
     "tab_bridge": "Bridge de Telemetría",
-    "bridge_title": "Bridge de Telemetría MC-Nexus",
+    "bridge_title": "Bridge de Telemetría Hosty",
     "bridge_description": "Instala el bridge nativo de alta frecuencia (plugin de Paper o mod de Fabric) para habilitar monitoreo de TPS, MSPT, chunks cargados y telemetría de jugadores directamente por WebSocket sin saturar la consola.",
     "bridge_install_button": "Instalar Plugin/Mod del Bridge",
     "bridge_installing": "Instalando Bridge...",
@@ -340,7 +340,7 @@
     "INVALID_VERSION": "Versión de Minecraft inválida.",
     "INVALID_PAYLOAD": "Carga útil recibida no válida.",
     "UPSTREAM_ERROR": "Error al contactar con los servidores de descarga. Verifica tu conexión a internet.",
-    "NETWORK_ERROR": "No se puede conectar con el daemon MC-Nexus. Asegúrate de que esté corriendo en el puerto 4000.",
+    "NETWORK_ERROR": "No se puede conectar con el daemon Hosty. Asegúrate de que esté corriendo en el puerto 4000.",
     "UNKNOWN": "Ocurrió un error inesperado.",
     "dismiss": "Descartar"
   },

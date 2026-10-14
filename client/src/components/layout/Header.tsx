@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 min-w-0">
           <img
             src="/logo.svg"
-            alt="MC-Nexus"
+            alt="Hosty"
             className="w-7 h-7 rounded-[6px] shrink-0 object-contain shadow-xs"
           />
           <span className="text-[#ebebeb] dark:text-[#333333] text-lg font-light shrink-0">/</span>
