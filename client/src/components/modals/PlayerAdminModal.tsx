@@ -16,6 +16,7 @@ import {
 import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { DimensionIcon } from '../common/DimensionIcon';
 import { formatDimensionName } from '../../utils/format';
+import { SlidingText } from '../common/SlidingText';
 
 interface PlayerAdminModalProps {
   player: PlayerState | null;
@@ -191,9 +192,9 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                 key={mode}
                 type="button"
                 onClick={() => handleSetGamemode(mode)}
-                className="py-1.5 px-2 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#171717] dark:hover:bg-[#ededed] hover:text-white dark:hover:text-[#171717] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium capitalize text-[#4d4d4d] dark:text-[#ededed] transition cursor-pointer text-center"
+                className="py-1.5 px-2 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#171717] dark:hover:bg-[#ededed] hover:text-white dark:hover:text-[#171717] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium capitalize text-[#4d4d4d] dark:text-[#ededed] transition cursor-pointer text-center whitespace-nowrap overflow-hidden"
               >
-                {mode}
+                <SlidingText>{mode}</SlidingText>
               </button>
             ))}
           </div>
@@ -208,17 +209,17 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             <button
               type="button"
               onClick={() => handleOpToggle(true)}
-              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Shield className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" />
-              {t('overview.players.op')}
+              <Shield className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0" />
+              <SlidingText>{t('overview.players.op')}</SlidingText>
             </button>
             <button
               type="button"
               onClick={() => handleOpToggle(false)}
-              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#888888] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#888888] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              {t('overview.players.deop')}
+              <SlidingText>{t('overview.players.deop')}</SlidingText>
             </button>
             {onInspectInventory && (
               <button
@@ -227,19 +228,19 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                   onInspectInventory(player);
                   onClose();
                 }}
-                className="py-1.5 px-2.5 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[12px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                className="py-1.5 px-2 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[12px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
               >
-                <PackageSearch className="w-3.5 h-3.5" />
-                {t('players.inspect_inventory')}
+                <PackageSearch className="w-3.5 h-3.5 shrink-0" />
+                <SlidingText>{t('players.inspect_inventory')}</SlidingText>
               </button>
             )}
             <button
               type="button"
               onClick={() => onSendCommand(`clear ${player.username}`)}
-              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#f5a623]" />
-              {t('overview.players.clear_inventory')}
+              <Sparkles className="w-3.5 h-3.5 text-[#f5a623] shrink-0" />
+              <SlidingText>{t('overview.players.clear_inventory')}</SlidingText>
             </button>
           </div>
         </div>
@@ -253,56 +254,56 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             <button
               type="button"
               onClick={handleToggleFreeze}
-              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0 ${
                 player.isFrozen
                   ? 'bg-[#0070f3]/10 dark:bg-[#0070f3]/20 border-[#0070f3]/40 text-[#0070f3] dark:text-[#3291ff]'
                   : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
               }`}
             >
-              <Snowflake className="w-3.5 h-3.5 text-[#0070f3]" />
-              {player.isFrozen ? t('players.unfreeze') : t('players.freeze')}
+              <Snowflake className="w-3.5 h-3.5 text-[#0070f3] shrink-0" />
+              <SlidingText>{player.isFrozen ? t('players.unfreeze') : t('players.freeze')}</SlidingText>
             </button>
 
             <button
               type="button"
               onClick={handleToggleMute}
-              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0 ${
                 player.isMuted
                   ? 'bg-[#ee0000]/10 dark:bg-[#ee0000]/20 border-[#ee0000]/40 text-[#ee0000]'
                   : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
               }`}
             >
-              <VolumeX className="w-3.5 h-3.5 text-[#ee0000]" />
-              {player.isMuted ? t('players.unmute') : t('players.mute')}
+              <VolumeX className="w-3.5 h-3.5 text-[#ee0000] shrink-0" />
+              <SlidingText>{player.isMuted ? t('players.unmute') : t('players.mute')}</SlidingText>
             </button>
 
             <button
               type="button"
               onClick={handleSmite}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Zap className="w-3.5 h-3.5 text-[#f5a623]" />
-              {t('players.smite')}
+              <Zap className="w-3.5 h-3.5 text-[#f5a623] shrink-0" />
+              <SlidingText>{t('players.smite')}</SlidingText>
             </button>
 
-            <div className="flex gap-1">
+            <div className="flex gap-1 min-w-0">
               <button
                 type="button"
                 onClick={() => handleGiveExp(5)}
-                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer"
+                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
                 title={t('players.give_exp')}
               >
-                <Award className="w-3 h-3 text-[#50e3c2]" />
-                {t('players.exp_5')}
+                <Award className="w-3 h-3 text-[#50e3c2] shrink-0" />
+                <SlidingText>{t('players.exp_5')}</SlidingText>
               </button>
               <button
                 type="button"
                 onClick={() => handleGiveExp(30)}
-                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer"
+                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
                 title={t('players.give_exp')}
               >
-                <Award className="w-3 h-3 text-[#50e3c2]" />
-                {t('players.exp_30')}
+                <Award className="w-3 h-3 text-[#50e3c2] shrink-0" />
+                <SlidingText>{t('players.exp_30')}</SlidingText>
               </button>
             </div>
           </div>
@@ -313,9 +314,9 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                 type="checkbox"
                 checked={frostEffect}
                 onChange={(e) => setFrostEffect(e.target.checked)}
-                className="rounded-[3px] border-[#ebebeb] dark:border-[#262626] text-[#0070f3] focus:ring-0"
+                className="rounded-[3px] border-[#ebebeb] dark:border-[#262626] text-[#0070f3] focus:ring-0 shrink-0"
               />
-              <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+              <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1] leading-tight">
                 {t('players.frost_effect_label')}
               </span>
             </label>
@@ -351,10 +352,10 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             />
             <button
               type="submit"
-              className="flex-1 h-8 px-3 rounded-[6px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] text-[12px] font-medium flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+              className="flex-1 h-8 px-3 rounded-[6px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] text-[12px] font-medium flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
             >
-              <Navigation className="w-3.5 h-3.5" />
-              {t('overview.players.tp')}
+              <Navigation className="w-3.5 h-3.5 shrink-0" />
+              <SlidingText>{t('overview.players.tp')}</SlidingText>
             </button>
           </div>
         </form>
@@ -371,10 +372,10 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             />
             <button
               type="submit"
-              className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center gap-1 transition cursor-pointer"
+              className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center gap-1 transition cursor-pointer whitespace-nowrap overflow-hidden"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              {t('overview.players.kick')}
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <SlidingText>{t('overview.players.kick')}</SlidingText>
             </button>
           </form>
 
@@ -388,10 +389,10 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             />
             <button
               type="submit"
-              className="h-8 px-3 rounded-[6px] bg-[#ee0000] hover:bg-[#cc0000] text-white text-[12px] font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs"
+              className="h-8 px-3 rounded-[6px] bg-[#ee0000] hover:bg-[#cc0000] text-white text-[12px] font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
             >
-              <Ban className="w-3.5 h-3.5" />
-              {t('overview.players.ban')}
+              <Ban className="w-3.5 h-3.5 shrink-0" />
+              <SlidingText>{t('overview.players.ban')}</SlidingText>
             </button>
           </form>
         </div>

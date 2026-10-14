@@ -87,3 +87,13 @@ export function formatDimensionName(
   return norm.charAt(0).toUpperCase() + norm.slice(1);
 }
 
+/** Normalizes dimension strings (e.g. "minecraft:overworld" -> "overworld") for consistent filtering. */
+export function normalizeDimension(dim: string): string {
+  if (!dim) return 'overworld';
+  const norm = dim.toLowerCase().trim();
+  if (norm === 'minecraft:overworld' || norm === 'overworld') return 'overworld';
+  if (norm === 'minecraft:the_nether' || norm === 'the_nether' || norm === 'nether') return 'the_nether';
+  if (norm === 'minecraft:the_end' || norm === 'the_end' || norm === 'end') return 'the_end';
+  return norm;
+}
+
