@@ -3,9 +3,20 @@ import path from 'path';
 import { Readable } from 'stream';
 import { finished } from 'stream/promises';
 import { DaemonError } from '../errors';
+import { PropertiesParser } from '../parsers/PropertiesParser';
 
-export const VALID_LOADERS = ['paper', 'fabric', 'vanilla'] as const;
+export const VALID_LOADERS = [
+  'paper',
+  'purpur',
+  'fabric',
+  'vanilla',
+  'forge',
+  'neoforge',
+  'spigot'
+] as const;
 export type LoaderType = (typeof VALID_LOADERS)[number];
+
+export const AUTOMATIC_LOADERS: readonly LoaderType[] = ['paper', 'purpur', 'fabric', 'vanilla'];
 
 const USER_AGENT = 'mc-nexus/1.0.0 (contact@mc-nexus.local)';
 const DEFAULT_HEADERS = { 'User-Agent': USER_AGENT };
@@ -21,9 +32,18 @@ export class ServerInstaller {
       throw new DaemonError('INVALID_LOADER', `Invalid loader: "${loader}". Expected one of: ${VALID_LOADERS.join(', ')}`);
     }
 
+    if (!AUTOMATIC_LOADERS.includes(loader)) {
+      // Manual loaders (Forge, NeoForge, Spigot) rely on external installer/manual jar upload
+      return [];
+    }
+
     try {
       if (loader === 'paper') {
         return await this.getPaperVersions();
+      }
+
+      if (loader === 'purpur') {
+        return await this.getPurpurVersions();
       }
 
       if (loader === 'fabric') {
@@ -46,6 +66,13 @@ export class ServerInstaller {
   ): Promise<void> {
     if (!this.isValidLoader(loader)) {
       throw new DaemonError('INVALID_LOADER', `Invalid loader: "${loader}".`);
+    }
+
+    if (!AUTOMATIC_LOADERS.includes(loader)) {
+      throw new DaemonError(
+        'INVALID_LOADER',
+        `Loader "${loader}" requires a manual server jar attachment/upload.`
+      );
     }
 
     if (!mcVersion || typeof mcVersion !== 'string' || !/^[0-9a-zA-Z._-]+$/.test(mcVersion)) {
@@ -80,6 +107,10 @@ export class ServerInstaller {
     await finished(Readable.fromWeb(response.body as any).pipe(fileStream));
 
     fs.writeFileSync(path.join(workingDir, 'eula.txt'), 'eula=true\n', 'utf-8');
+    const propsPath = path.join(workingDir, 'server.properties');
+    if (!fs.existsSync(propsPath)) {
+      PropertiesParser.createDefaultProperties(propsPath);
+    }
     onProgress(`[Provisioner] server.jar installed & eula.txt signed automatically.`);
   }
 
@@ -106,6 +137,15 @@ export class ServerInstaller {
     }
     const data = (await fallbackRes.json()) as { versions: string[] };
     return data.versions.reverse().slice(0, MAX_VERSIONS);
+  }
+
+  private static async getPurpurVersions(): Promise<string[]> {
+    const res = await fetch('https://api.purpurmc.org/v2/purpur', { headers: DEFAULT_HEADERS });
+    if (!res.ok) {
+      throw new DaemonError('UPSTREAM_ERROR', `Purpur API responded with status ${res.status}`);
+    }
+    const data = (await res.json()) as { versions: string[] };
+    return data.versions.slice().reverse().slice(0, MAX_VERSIONS);
   }
 
   private static async getFabricVersions(): Promise<string[]> {
@@ -159,6 +199,10 @@ export class ServerInstaller {
       const latest = v2Data.builds[v2Data.builds.length - 1];
       const fileName = latest.downloads.application.name;
       return `https://api.papermc.io/v2/projects/paper/versions/${mcVersion}/builds/${latest.build}/downloads/${fileName}`;
+    }
+
+    if (loader === 'purpur') {
+      return `https://api.purpurmc.org/v2/purpur/${mcVersion}/latest/download`;
     }
 
     if (loader === 'fabric') {

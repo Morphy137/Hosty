@@ -15,6 +15,8 @@ import {
 import type { Metrics, PlayerState } from '../../types/daemon';
 import { calculateRamPercent } from '../../utils/format';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
+import { DimensionIcon } from '../common/DimensionIcon';
+import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
 
 interface OverviewTabProps {
   metrics: Metrics;
@@ -23,10 +25,10 @@ interface OverviewTabProps {
   onSendCommand: (command: string) => void;
 }
 
-const DIMENSION_STYLES: Record<string, { key: string; dot: string }> = {
-  overworld: { key: 'overview.players.dimension.overworld', dot: 'bg-[#0070f3]' },
-  the_nether: { key: 'overview.players.dimension.the_nether', dot: 'bg-[#ee0000]' },
-  the_end: { key: 'overview.players.dimension.the_end', dot: 'bg-[#7928ca]' }
+const DIMENSION_STYLES: Record<string, { key: string }> = {
+  overworld: { key: 'overview.players.dimension.overworld' },
+  the_nether: { key: 'overview.players.dimension.the_nether' },
+  the_end: { key: 'overview.players.dimension.the_end' }
 };
 
 const QUICK_COMMANDS = [
@@ -44,6 +46,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
+  const [actionTarget, setActionTarget] = useState<{
+    player: PlayerState;
+    type: DynamicActionType;
+  } | null>(null);
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   const ramPercent = calculateRamPercent(metrics.ramMb, metrics.maxRamMb);
@@ -82,7 +88,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </span>
             <span className="font-mono text-[12px] text-[#888888]">java.exe</span>
           </div>
-          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] rounded-[2px] overflow-hidden">
             <div
               className="h-full bg-[#171717] transition-all duration-300"
               style={{ width: `${Math.min(100, metrics.cpu)}%` }}
@@ -105,7 +111,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               / {metrics.maxRamMb} MB ({ramPercent}%)
             </span>
           </div>
-          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] rounded-full overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] rounded-[2px] overflow-hidden">
             <div
               className="h-full bg-[#171717] transition-all duration-300"
               style={{ width: `${ramPercent}%` }}
@@ -190,8 +196,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         </div>
                       </div>
 
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] text-[#4d4d4d]">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dimStyle.dot}`} />
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] text-[#4d4d4d]">
+                        <DimensionIcon dimension={p.dimension} className="w-3.5 h-3.5" />
                         {dimLabel}
                       </span>
                     </div>
@@ -199,32 +205,32 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <div className="flex items-center gap-1.5 pt-1">
                       <button
                         type="button"
-                        onClick={() => handlePlayerAction(p.username, 'HEAL')}
-                        className="flex-1 h-7 rounded-[6px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
+                        onClick={() => setActionTarget({ player: p, type: 'HEAL' })}
+                        className="flex-1 h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
                       >
-                        <Heart className="w-3 h-3 text-[#4d4d4d]" />
+                        <Heart className="w-3 h-3 text-[#ee0000]" />
                         {t('overview.players.feed')}
                       </button>
                       <button
                         type="button"
-                        onClick={() => handlePlayerAction(p.username, 'GIFT')}
-                        className="flex-1 h-7 rounded-[6px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
+                        onClick={() => setActionTarget({ player: p, type: 'GIFT' })}
+                        className="flex-1 h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
                       >
-                        <Gift className="w-3 h-3 text-[#4d4d4d]" />
-                        Diamond
+                        <Gift className="w-3 h-3 text-[#0070f3]" />
+                        Gift
                       </button>
                       <button
                         type="button"
-                        onClick={() => handlePlayerAction(p.username, 'DAMAGE')}
-                        className="flex-1 h-7 rounded-[6px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
+                        onClick={() => setActionTarget({ player: p, type: 'DAMAGE' })}
+                        className="flex-1 h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
                       >
-                        <Zap className="w-3 h-3 text-[#4d4d4d]" />
+                        <Zap className="w-3 h-3 text-[#f5a623]" />
                         Hurt
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KILL')}
-                        className="flex-1 h-7 rounded-[6px] bg-white hover:bg-[#f7d4d6]/40 border border-[#ebebeb] text-[12px] font-medium text-[#ee0000] flex items-center justify-center gap-1 transition cursor-pointer"
+                        className="flex-1 h-7 rounded-[4px] bg-white hover:bg-[#f7d4d6]/40 border border-[#ebebeb] text-[12px] font-medium text-[#ee0000] flex items-center justify-center gap-1 transition cursor-pointer"
                       >
                         <Skull className="w-3 h-3" />
                         Kill
@@ -232,7 +238,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KICK')}
-                        className="flex-1 h-7 rounded-[6px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center justify-center gap-1 transition cursor-pointer"
+                        className="flex-1 h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center justify-center gap-1 transition cursor-pointer"
                       >
                         <LogOut className="w-3 h-3" />
                         {t('overview.players.kick')}
@@ -315,6 +321,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </form>
         </div>
       </div>
+
+      {actionTarget && (
+        <PlayerActionModal
+          player={actionTarget.player}
+          actionType={actionTarget.type}
+          onClose={() => setActionTarget(null)}
+          onExecute={onSendCommand}
+        />
+      )}
     </>
   );
 };

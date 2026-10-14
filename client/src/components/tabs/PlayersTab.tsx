@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import type { PlayerState } from '../../types/daemon';
 import { PlayerAdminModal } from '../modals/PlayerAdminModal';
+import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
+import { DimensionIcon } from '../common/DimensionIcon';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
 
 interface PlayersTabProps {
@@ -18,16 +20,20 @@ interface PlayersTabProps {
   onSendCommand: (command: string) => void;
 }
 
-const DIMENSION_STYLES: Record<string, { key: string; dot: string }> = {
-  overworld: { key: 'overview.players.dimension.overworld', dot: 'bg-[#0070f3]' },
-  the_nether: { key: 'overview.players.dimension.the_nether', dot: 'bg-[#ee0000]' },
-  the_end: { key: 'overview.players.dimension.the_end', dot: 'bg-[#7928ca]' }
+const DIMENSION_STYLES: Record<string, { key: string }> = {
+  overworld: { key: 'overview.players.dimension.overworld' },
+  the_nether: { key: 'overview.players.dimension.the_nether' },
+  the_end: { key: 'overview.players.dimension.the_end' }
 };
 
 export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerState | null>(null);
+  const [actionTarget, setActionTarget] = useState<{
+    player: PlayerState;
+    type: DynamicActionType;
+  } | null>(null);
 
   const filteredPlayers = players.filter((p) =>
     p.username.toLowerCase().includes(filter.toLowerCase())
@@ -105,8 +111,8 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                         <div className="text-[15px] font-semibold text-[#171717] tracking-[-0.3px]">
                           {player.username}
                         </div>
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] text-[#4d4d4d] mt-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${dimStyle.dot}`} />
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] text-[#4d4d4d] mt-1">
+                          <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
                           {dimLabel}
                         </span>
                       </div>
@@ -115,7 +121,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                     <button
                       type="button"
                       onClick={() => setSelectedPlayer(player)}
-                      className="p-1.5 rounded-[6px] hover:bg-[#f5f5f5] text-[#888888] hover:text-[#171717] transition cursor-pointer"
+                      className="p-1.5 rounded-[4px] hover:bg-[#f5f5f5] text-[#888888] hover:text-[#171717] transition cursor-pointer"
                       title={t('players.manage_title')}
                     >
                       <Settings2 className="w-4 h-4" />
@@ -123,7 +129,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                   </div>
 
                   {/* Coordinates */}
-                  <div className="p-2 rounded-[6px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[12px] flex items-center justify-around text-[#4d4d4d]">
+                  <div className="p-2 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[12px] flex items-center justify-around text-[#4d4d4d]">
                     <span>X: {player.x}</span>
                     <span className="text-[#ebebeb]">|</span>
                     <span>Y: {player.y}</span>
@@ -135,7 +141,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                   <div className="grid grid-cols-4 gap-1.5 pt-1">
                     <button
                       type="button"
-                      onClick={() => handlePlayerAction(player.username, 'HEAL')}
+                      onClick={() => setActionTarget({ player, type: 'HEAL' })}
                       className="h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[11px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
                       title={t('overview.players.feed')}
                     >
@@ -145,9 +151,9 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
 
                     <button
                       type="button"
-                      onClick={() => handlePlayerAction(player.username, 'GIFT')}
+                      onClick={() => setActionTarget({ player, type: 'GIFT' })}
                       className="h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[11px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
-                      title="Give 5 Diamonds"
+                      title="Gift Items"
                     >
                       <Gift className="w-3 h-3 text-[#0070f3]" />
                       Gift
@@ -155,7 +161,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
 
                     <button
                       type="button"
-                      onClick={() => handlePlayerAction(player.username, 'DAMAGE')}
+                      onClick={() => setActionTarget({ player, type: 'DAMAGE' })}
                       className="h-7 rounded-[4px] bg-white hover:bg-[#f5f5f5] border border-[#ebebeb] text-[11px] font-medium text-[#171717] flex items-center justify-center gap-1 transition cursor-pointer"
                       title="Hurt Player"
                     >
@@ -186,6 +192,16 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
           onSendCommand={onSendCommand}
+        />
+      )}
+
+      {/* Dynamic Action Modal */}
+      {actionTarget && (
+        <PlayerActionModal
+          player={actionTarget.player}
+          actionType={actionTarget.type}
+          onClose={() => setActionTarget(null)}
+          onExecute={onSendCommand}
         />
       )}
     </div>

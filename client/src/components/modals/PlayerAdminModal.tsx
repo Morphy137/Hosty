@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Shield, LogOut, Ban, Navigation, Sparkles } from 'lucide-react';
 import type { PlayerState } from '../../types/daemon';
+import { DimensionIcon } from '../common/DimensionIcon';
 
 interface PlayerAdminModalProps {
   player: PlayerState | null;
@@ -61,9 +62,12 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               <h2 className="text-[16px] font-semibold text-[#171717] tracking-[-0.3px]">
                 {player.username}
               </h2>
-              <span className="font-mono text-[12px] text-[#888888]">
-                {player.dimension} &bull; XYZ: {player.x}, {player.y}, {player.z}
-              </span>
+              <div className="font-mono text-[12px] text-[#888888] flex items-center gap-1.5 mt-0.5">
+                <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
+                <span>{player.dimension}</span>
+                <span>&bull;</span>
+                <span>XYZ: {player.x}, {player.y}, {player.z}</span>
+              </div>
             </div>
           </div>
           <button

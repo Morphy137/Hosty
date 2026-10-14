@@ -3,6 +3,8 @@ import cors from 'cors';
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
+import { finished } from 'stream/promises';
 import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics, ServerStatus } from './core/ProcessSupervisor';
 import { InstanceManager } from './core/InstanceManager';
@@ -146,6 +148,50 @@ app.post('/api/instances/import', (req, res, next) => {
 
     const imported = instanceManager.importInstance(folderPath, name);
     res.json({ ok: true, instance: imported });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/upload-server-jar', async (req, res, next) => {
+  try {
+    if (supervisor.getStatus() !== 'OFFLINE') {
+      throw new DaemonError('SERVER_RUNNING', 'Cannot upload server jar while server is running.');
+    }
+
+    const instanceId = req.query.instanceId as string;
+    const instanceName = (req.query.name as string) || undefined;
+    if (!instanceId) {
+      throw new DaemonError('INVALID_PAYLOAD', 'instanceId query parameter is required.');
+    }
+
+    let targetDir = getActiveDir();
+    const existing = instanceManager.getInstance(instanceId);
+    if (existing) {
+      targetDir = existing.dir;
+    } else {
+      const created = instanceManager.createInstance(instanceId, instanceName);
+      targetDir = created.dir;
+    }
+
+    const jarDest = path.join(targetDir, 'server.jar');
+    const writeStream = fs.createWriteStream(jarDest);
+    await finished(req.pipe(writeStream));
+
+    // Sign EULA and generate full properties if missing
+    fs.writeFileSync(path.join(targetDir, 'eula.txt'), 'eula=true\n', 'utf-8');
+    const propsPath = path.join(targetDir, 'server.properties');
+    if (!fs.existsSync(propsPath)) {
+      PropertiesParser.createDefaultProperties(propsPath, { motd: instanceName || instanceId });
+    }
+
+    if (instanceManager.getActiveInstanceId() !== instanceId) {
+      instanceManager.setActiveInstanceId(instanceId);
+      supervisor.setInstance(instanceId, targetDir);
+    }
+
+    broadcast('CONSOLE', `[Hypervisor] server.jar uploaded and registered for instance "${instanceId}".\r\n`);
+    res.json({ ok: true, instanceId: instanceManager.getActiveInstanceId() });
   } catch (err) {
     next(err);
   }

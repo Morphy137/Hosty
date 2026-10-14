@@ -1,4 +1,8 @@
 {
+  "common": {
+    "cancel": "Cancel",
+    "apply": "Apply"
+  },
   "nav": {
     "overview": "Overview",
     "players": "Players",
@@ -72,7 +76,19 @@
     "gamemode_label": "Change Game Mode",
     "permissions_label": "Operator Privileges",
     "teleport_coords_label": "Teleport to Coordinates",
-    "tp_spawn": "Spawn"
+    "tp_spawn": "Spawn",
+    "actions": {
+      "heal_title": "Heal {{player}}",
+      "damage_title": "Damage {{player}}",
+      "gift_title": "Gift Item to {{player}}",
+      "heal_amount": "Hearts to Restore",
+      "feed_checkbox": "Also restore hunger and saturation",
+      "damage_amount": "Damage Amount",
+      "gift_select_item": "Select Item Preset",
+      "gift_custom_item": "Or Custom Item ID",
+      "gift_quantity": "Quantity",
+      "execute_button": "Apply Action"
+    }
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -107,7 +123,12 @@
     "search_placeholder": "Filter properties (e.g. motd, pvp, port)...",
     "save": "Save Changes",
     "saved": "Saved!",
-    "empty": "No properties found matching your filter."
+    "empty": "No properties found matching your filter.",
+    "headers": {
+      "key": "Property Key",
+      "type": "Type",
+      "value": "Value"
+    }
   },
   "mods": {
     "title": "Mod Configurations",
@@ -131,7 +152,16 @@
     "installing": "Provisioning...",
     "server_must_be_offline": "The server must be OFFLINE before installing a new binary.",
     "logs_title": "Provisioning Output",
-    "ready_hint": "Select an engine and version to begin installation."
+    "ready_hint": "Select an engine and version to begin installation.",
+    "manual_loader_badge": "Manual JAR Upload",
+    "auto_loader_badge": "Auto Download Available",
+    "switch_to_custom_jar": "Or attach custom server .jar",
+    "switch_to_auto_download": "Switch back to automated download",
+    "manual_download_instructions": "{{loader}} requires downloading the official server binary or installer. Visit the official website, download the file, and attach it below.",
+    "visit_official_site": "Official Download Site",
+    "upload_jar_dropzone": "Drop .jar file here or click to browse",
+    "upload_jar_hint": "Attach your server.jar or loader installer .jar",
+    "create_and_upload": "Create Server & Upload JAR"
   },
   "errors": {
     "JAR_MISSING": "Server jar not found. Provision a server engine first.",

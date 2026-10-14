@@ -13,7 +13,8 @@ import {
   Globe,
   Plus,
   FolderInput,
-  Server
+  Server,
+  ChevronDown
 } from 'lucide-react';
 import type { DaemonAction, InstanceInfo, ServerStatus } from '../../types/daemon';
 import { changeLanguage, type SupportedLanguage } from '../../i18n';
@@ -76,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
               value={activeInstanceId}
               onChange={(e) => onSelectInstance(e.target.value)}
               disabled={status !== 'OFFLINE'}
-              className="h-8 pl-8 pr-7 rounded-[6px] bg-[#fafafa] hover:bg-[#f5f5f5] border border-[#ebebeb] text-[13px] font-medium text-[#171717] focus:outline-none focus:border-[#171717] cursor-pointer disabled:opacity-50 appearance-none min-w-[180px]"
+              className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] hover:bg-[#f5f5f5] border border-[#ebebeb] hover:border-[#d4d4d4] text-[13px] font-medium text-[#171717] focus:outline-none focus:border-[#171717] cursor-pointer disabled:opacity-50 appearance-none min-w-[180px] transition"
               title={t('header.instance_tooltip')}
             >
               {instances.map((inst) => (
@@ -85,9 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </option>
               ))}
             </select>
-            <span className="text-[10px] text-[#888888] absolute right-2.5 pointer-events-none">
-              ▼
-            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-[#888888] absolute right-2.5 pointer-events-none" />
           </div>
 
           {/* New / Import Buttons */}
@@ -95,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenCreateModal}
             disabled={status !== 'OFFLINE'}
-            className="h-8 px-2.5 rounded-[6px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
+            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
             title={t('header.new_server')}
           >
             <Plus className="w-3.5 h-3.5 text-[#0070f3]" />
@@ -106,25 +105,27 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenImportModal}
             disabled={status !== 'OFFLINE'}
-            className="h-8 px-2.5 rounded-[6px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
+            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
             title={t('header.import_server')}
           >
             <FolderInput className="w-3.5 h-3.5 text-[#888888]" />
             <span className="hidden sm:inline">{t('header.import_server')}</span>
           </button>
 
-          {/* Server Status Pill (fixed width to prevent layout shift) */}
-          <div className="flex items-center justify-center gap-2 px-2.5 py-0.5 rounded-full bg-[#fafafa] border border-[#ebebeb] min-w-[90px] shrink-0">
+          {/* Server Status Badge (fixed width to prevent layout shift) */}
+          <div className="flex items-center justify-center gap-2 px-2.5 py-1 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] min-w-[95px] shrink-0">
             <span
-              className={`w-2 h-2 rounded-full shrink-0 ${
+              className={`w-2 h-2 rounded-[2px] shrink-0 ${
                 status === 'ONLINE'
-                  ? 'bg-[#0070f3]'
+                  ? 'bg-[#50e3c2] shadow-[0_0_6px_rgba(80,227,194,0.35)]'
                   : status === 'STARTING'
-                  ? 'bg-[#f5a623]'
+                  ? 'bg-[#f5a623] animate-pulse'
                   : 'bg-[#888888]'
               }`}
             />
-            <span className="font-mono text-[11px] text-[#4d4d4d]">{status}</span>
+            <span className="font-mono text-[11px] font-semibold tracking-wider text-[#171717] uppercase">
+              {status}
+            </span>
           </div>
         </div>
 

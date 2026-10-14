@@ -1,8 +1,72 @@
 export const SERVER_STATUSES = ['OFFLINE', 'STARTING', 'ONLINE', 'STOPPING'] as const;
 export type ServerStatus = (typeof SERVER_STATUSES)[number];
 
-export const SERVER_LOADERS = ['fabric', 'paper', 'vanilla'] as const;
+export const SERVER_LOADERS = [
+  'fabric',
+  'paper',
+  'purpur',
+  'vanilla',
+  'forge',
+  'neoforge',
+  'spigot'
+] as const;
 export type ServerLoader = (typeof SERVER_LOADERS)[number];
+
+export interface LoaderInfo {
+  id: ServerLoader;
+  name: string;
+  category: 'modded' | 'plugin' | 'vanilla';
+  isAutomatic: boolean;
+  officialUrl?: string;
+}
+
+export const LOADER_METADATA: Record<ServerLoader, LoaderInfo> = {
+  fabric: {
+    id: 'fabric',
+    name: 'Fabric',
+    category: 'modded',
+    isAutomatic: true
+  },
+  paper: {
+    id: 'paper',
+    name: 'PaperMC',
+    category: 'plugin',
+    isAutomatic: true
+  },
+  purpur: {
+    id: 'purpur',
+    name: 'Purpur',
+    category: 'plugin',
+    isAutomatic: true
+  },
+  vanilla: {
+    id: 'vanilla',
+    name: 'Vanilla',
+    category: 'vanilla',
+    isAutomatic: true
+  },
+  forge: {
+    id: 'forge',
+    name: 'Forge',
+    category: 'modded',
+    isAutomatic: false,
+    officialUrl: 'https://files.minecraftforge.net/net/minecraftforge/forge/'
+  },
+  neoforge: {
+    id: 'neoforge',
+    name: 'NeoForge',
+    category: 'modded',
+    isAutomatic: false,
+    officialUrl: 'https://neoforged.net/'
+  },
+  spigot: {
+    id: 'spigot',
+    name: 'SpigotMC',
+    category: 'plugin',
+    isAutomatic: false,
+    officialUrl: 'https://www.spigotmc.org/wiki/buildtools/'
+  }
+};
 
 export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK';
 

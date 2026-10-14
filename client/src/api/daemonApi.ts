@@ -164,3 +164,21 @@ export async function installServer(
     instanceName
   });
 }
+
+export async function uploadServerJar(
+  file: File,
+  instanceId: string,
+  instanceName?: string
+): Promise<{ ok: boolean; instanceId: string }> {
+  const query = new URLSearchParams({ instanceId });
+  if (instanceName) query.set('name', instanceName);
+
+  return request<{ ok: boolean; instanceId: string }>(
+    `/api/instances/upload-server-jar?${query.toString()}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file
+    }
+  );
+}

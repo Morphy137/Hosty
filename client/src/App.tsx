@@ -5,7 +5,7 @@ import { useInstances } from './hooks/useInstances';
 import { useModFiles } from './hooks/useModFiles';
 import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
-import { toErrorPayload, installServer } from './api/daemonApi';
+import { toErrorPayload, installServer, uploadServerJar } from './api/daemonApi';
 import type { DaemonErrorPayload, ServerLoader } from './types/daemon';
 import { Header, type TabId } from './components/layout/Header';
 import { ErrorAlert } from './components/common/ErrorAlert';
@@ -73,6 +73,22 @@ export default function App() {
       ]);
       try {
         await installServer(params.loader, params.version, params.instanceId, params.instanceName);
+        await instances.refresh();
+      } catch (err) {
+        handleError(err);
+        throw err;
+      }
+    },
+    [handleError, instances, resetProvisionLogs]
+  );
+
+  const handleUploadServerJar = useCallback(
+    async (params: { file: File; instanceId: string; instanceName: string }) => {
+      resetProvisionLogs([
+        `[Provisioner] Uploading server binary "${params.file.name}" for "${params.instanceName}"...`
+      ]);
+      try {
+        await uploadServerJar(params.file, params.instanceId, params.instanceName);
         await instances.refresh();
       } catch (err) {
         handleError(err);
@@ -168,6 +184,7 @@ export default function App() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onInstall={handleCreateServer}
+        onUploadJar={handleUploadServerJar}
         provisionLogs={provisionLogs}
       />
 

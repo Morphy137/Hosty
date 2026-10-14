@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
+import { PropertiesParser } from '../parsers/PropertiesParser';
 
 export interface InstanceInfo {
   id: string;
@@ -103,19 +104,13 @@ export class InstanceManager {
     fs.mkdirSync(path.join(targetDir, 'mods'), { recursive: true });
     fs.mkdirSync(path.join(targetDir, 'config'), { recursive: true });
 
-    // Create minimal default server.properties with next free port
+    // Create default server.properties with next free port and complete standard schema
     const port = this.findNextAvailablePort();
     const serverName = name?.trim() || safeId;
-    const defaultProps = [
-      '# Minecraft server properties',
-      `motd=MC-Nexus - ${serverName}`,
-      `server-port=${port}`,
-      'max-players=20',
-      'online-mode=true',
-      'difficulty=normal',
-      'gamemode=survival'
-    ].join('\n');
-    fs.writeFileSync(path.join(targetDir, 'server.properties'), defaultProps + '\n', 'utf-8');
+    PropertiesParser.createDefaultProperties(path.join(targetDir, 'server.properties'), {
+      port,
+      motd: `MC-Nexus - ${serverName}`
+    });
 
     return this.inspectInstance(safeId, targetDir, false, serverName);
   }

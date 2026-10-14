@@ -1,4 +1,8 @@
 {
+  "common": {
+    "cancel": "Cancelar",
+    "apply": "Aplicar"
+  },
   "nav": {
     "overview": "Vista General",
     "players": "Jugadores",
@@ -71,8 +75,20 @@
     "manage_title": "Administrar Jugador",
     "gamemode_label": "Cambiar Modo de Juego",
     "permissions_label": "Privilegios de Operador",
-    "teleport_coords_label": "Teletransportar a Coordenadas",
-    "tp_spawn": "Spawn"
+    "teleport_coords_label": "Teleportar a Coordenadas",
+    "tp_spawn": "Spawn",
+    "actions": {
+      "heal_title": "Curar a {{player}}",
+      "damage_title": "Dañar a {{player}}",
+      "gift_title": "Dar Ítem a {{player}}",
+      "heal_amount": "Corazones a Restaurar",
+      "feed_checkbox": "Restaurar también hambre y saturación",
+      "damage_amount": "Cantidad de Daño",
+      "gift_select_item": "Seleccionar Ítem Predeterminado",
+      "gift_custom_item": "O ID de Ítem Personalizado",
+      "gift_quantity": "Cantidad",
+      "execute_button": "Aplicar Acción"
+    }
   },
   "mod_files": {
     "total_mods": "Total de Mods",
@@ -107,7 +123,12 @@
     "search_placeholder": "Filtrar propiedades (ej: motd, pvp, port)...",
     "save": "Guardar Cambios",
     "saved": "¡Guardado!",
-    "empty": "No se encontraron propiedades con ese filtro."
+    "empty": "No se encontraron propiedades con ese filtro.",
+    "headers": {
+      "key": "Clave de Propiedad",
+      "type": "Tipo",
+      "value": "Valor"
+    }
   },
   "mods": {
     "title": "Configuraciones de Mods",
@@ -131,7 +152,16 @@
     "installing": "Aprovisionando...",
     "server_must_be_offline": "El servidor debe estar APAGADO (OFFLINE) para instalar una nueva versión.",
     "logs_title": "Registro de Instalación",
-    "ready_hint": "Selecciona un motor y versión para comenzar la instalación."
+    "ready_hint": "Selecciona un motor y versión para comenzar la instalación.",
+    "manual_loader_badge": "Subida Manual de JAR",
+    "auto_loader_badge": "Descarga Automática Disponible",
+    "switch_to_custom_jar": "O adjuntar archivo .jar personalizado",
+    "switch_to_auto_download": "Volver a la descarga automatizada",
+    "manual_download_instructions": "{{loader}} requiere descargar el binario o instalador oficial. Visita el sitio web oficial, descarga el archivo y adjúntalo a continuación.",
+    "visit_official_site": "Sitio Oficial de Descarga",
+    "upload_jar_dropzone": "Arrastra el archivo .jar aquí o haz clic para explorar",
+    "upload_jar_hint": "Adjunta tu server.jar o el instalador del motor .jar",
+    "create_and_upload": "Crear Servidor y Subir JAR"
   },
   "errors": {
     "JAR_MISSING": "No se encontró server.jar. Aprovisiona un motor de servidor primero.",
