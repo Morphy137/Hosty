@@ -6,13 +6,15 @@ import type {
   BridgeIncomingMessage,
   BridgeActionMessage,
   BridgeServerTelemetry,
-  BridgePlayerTelemetry
+  BridgePlayerTelemetry,
+  PlayerInventoryData
 } from './BridgeProtocol';
 
 export interface TelemetryBridgeEvents {
   bridge_connected: [instanceId: string, loader?: string, version?: string];
   bridge_disconnected: [instanceId: string];
   telemetry: [instanceId: string, server: BridgeServerTelemetry, players: BridgePlayerTelemetry[]];
+  inventory_data: [instanceId: string, inventory: PlayerInventoryData];
   action_result: [instanceId: string, result: unknown];
 }
 
@@ -56,6 +58,11 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
 
         if (msg.type === 'TICK_TELEMETRY') {
           this.emit('telemetry', instanceId, msg.server, msg.players);
+          return;
+        }
+
+        if (msg.type === 'INVENTORY_DATA') {
+          this.emit('inventory_data', instanceId, msg.inventory);
           return;
         }
 

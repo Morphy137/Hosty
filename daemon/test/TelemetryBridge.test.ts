@@ -163,4 +163,59 @@ describe('TelemetryBridgeManager', () => {
     expect(installedFabric).toBe(true);
     expect(fs.existsSync(path.join(fabricDir, 'mods', 'mc-nexus-bridge.jar'))).toBe(true);
   });
+
+  it('emits inventory_data events when bridge responds with INVENTORY_DATA message', () => {
+    const ws = new MockWebSocket() as unknown as WebSocket;
+    const invSpy = vi.fn();
+    manager.on('inventory_data', invSpy);
+    manager.handleConnection(ws);
+
+    (ws as unknown as MockWebSocket).emit(
+      'message',
+      Buffer.from(
+        JSON.stringify({
+          type: 'BRIDGE_HELLO',
+          instanceId: 'server-beta'
+        })
+      )
+    );
+
+    const mockInvPayload = {
+      type: 'INVENTORY_DATA',
+      instanceId: 'server-beta',
+      inventory: {
+        username: 'MorphyCD',
+        armor: [],
+        offhand: null,
+        hotbar: [],
+        inventory: []
+      }
+    };
+
+    (ws as unknown as MockWebSocket).emit('message', Buffer.from(JSON.stringify(mockInvPayload)));
+    expect(invSpy).toHaveBeenCalledWith('server-beta', mockInvPayload.inventory);
+  });
+
+  it('sends FREEZE, UNFREEZE, and SMITE actions over bridge', () => {
+    const ws = new MockWebSocket() as unknown as WebSocket;
+    manager.handleConnection(ws);
+
+    (ws as unknown as MockWebSocket).emit(
+      'message',
+      Buffer.from(JSON.stringify({ type: 'BRIDGE_HELLO', instanceId: 'server-gamma' }))
+    );
+
+    const freezeSent = manager.sendAction('server-gamma', {
+      action: 'FREEZE',
+      username: 'TargetUser',
+      frostEffect: true
+    });
+    expect(freezeSent).toBe(true);
+
+    const smiteSent = manager.sendAction('server-gamma', {
+      action: 'SMITE',
+      username: 'TargetUser'
+    });
+    expect(smiteSent).toBe(true);
+  });
 });

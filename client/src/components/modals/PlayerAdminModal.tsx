@@ -1,24 +1,42 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Shield, LogOut, Ban, Navigation, Sparkles } from 'lucide-react';
-import type { PlayerState } from '../../types/daemon';
+import {
+  X,
+  Shield,
+  LogOut,
+  Ban,
+  Navigation,
+  Sparkles,
+  PackageSearch,
+  Snowflake,
+  VolumeX,
+  Zap,
+  Award
+} from 'lucide-react';
+import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { DimensionIcon } from '../common/DimensionIcon';
+import { formatDimensionName } from '../../utils/format';
 
 interface PlayerAdminModalProps {
   player: PlayerState | null;
   onClose: () => void;
   onSendCommand: (command: string) => void;
+  onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
+  onInspectInventory?: (player: PlayerState) => void;
 }
 
 export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
   player,
   onClose,
-  onSendCommand
+  onSendCommand,
+  onSendAction,
+  onInspectInventory
 }) => {
   const { t } = useTranslation();
   const [kickReason, setKickReason] = useState('');
   const [banReason, setBanReason] = useState('');
   const [tpCoords, setTpCoords] = useState({ x: '0', y: '64', z: '0' });
+  const [frostEffect, setFrostEffect] = useState(false);
 
   if (!player) return null;
 
@@ -27,13 +45,29 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
   const handleKick = (e: React.FormEvent) => {
     e.preventDefault();
-    onSendCommand(`kick ${player.username} ${resolvedKickReason}`);
+    if (onSendAction) {
+      onSendAction('ACTION', {
+        action: 'KICK',
+        username: player.username,
+        reason: resolvedKickReason
+      });
+    } else {
+      onSendCommand(`kick ${player.username} ${resolvedKickReason}`);
+    }
     onClose();
   };
 
   const handleBan = (e: React.FormEvent) => {
     e.preventDefault();
-    onSendCommand(`ban ${player.username} ${resolvedBanReason}`);
+    if (onSendAction) {
+      onSendAction('ACTION', {
+        action: 'BAN',
+        username: player.username,
+        reason: resolvedBanReason
+      });
+    } else {
+      onSendCommand(`ban ${player.username} ${resolvedBanReason}`);
+    }
     onClose();
   };
 
@@ -50,9 +84,59 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
     onSendCommand(`${isOp ? 'op' : 'deop'} ${player.username}`);
   };
 
+  const handleToggleFreeze = () => {
+    if (player.isFrozen) {
+      if (onSendAction) {
+        onSendAction('ACTION', { action: 'UNFREEZE', username: player.username });
+      } else {
+        onSendCommand(`effect clear ${player.username} slowness`);
+        onSendCommand(`effect clear ${player.username} jump_boost`);
+      }
+    } else {
+      if (onSendAction) {
+        onSendAction('ACTION', {
+          action: 'FREEZE',
+          username: player.username,
+          frostEffect
+        });
+      } else {
+        onSendCommand(`effect give ${player.username} slowness 99999 255 true`);
+        onSendCommand(`effect give ${player.username} jump_boost 99999 250 true`);
+      }
+    }
+  };
+
+  const handleToggleMute = () => {
+    if (player.isMuted) {
+      if (onSendAction) {
+        onSendAction('ACTION', { action: 'UNMUTE', username: player.username });
+      }
+    } else {
+      if (onSendAction) {
+        onSendAction('ACTION', { action: 'MUTE', username: player.username });
+      }
+    }
+  };
+
+  const handleSmite = () => {
+    if (onSendAction) {
+      onSendAction('ACTION', { action: 'SMITE', username: player.username });
+    } else {
+      onSendCommand(`execute at ${player.username} run summon lightning_bolt`);
+    }
+  };
+
+  const handleGiveExp = (levels: number) => {
+    if (onSendAction) {
+      onSendAction('ACTION', { action: 'GIVE_EXP', username: player.username, levels });
+    } else {
+      onSendCommand(`experience add ${player.username} ${levels} levels`);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-lg w-full p-6 shadow-2xl space-y-6">
+      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-lg w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
           <div className="flex items-center gap-3">
@@ -62,12 +146,26 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               className="w-10 h-10 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
             />
             <div>
-              <h2 className="text-[16px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
-                {player.username}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[16px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
+                  {player.username}
+                </h2>
+                {player.isFrozen && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#0070f3]/15 border border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] font-mono text-[10px] font-bold">
+                    <Snowflake className="w-2.5 h-2.5" />
+                    {t('players.frozen')}
+                  </span>
+                )}
+                {player.isMuted && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#ee0000]/15 border border-[#ee0000]/30 text-[#ee0000] font-mono text-[10px] font-bold">
+                    <VolumeX className="w-2.5 h-2.5" />
+                    {t('players.muted')}
+                  </span>
+                )}
+              </div>
               <div className="font-mono text-[12px] text-[#888888] dark:text-[#a1a1a1] flex items-center gap-1.5 mt-0.5">
                 <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
-                <span>{player.dimension}</span>
+                <span>{formatDimensionName(player.dimension, t)}</span>
                 <span>&bull;</span>
                 <span>XYZ: {player.x}, {player.y}, {player.z}</span>
               </div>
@@ -101,16 +199,16 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
           </div>
         </div>
 
-        {/* Operator Privileges */}
+        {/* Operator Privileges & Inventory Inspection */}
         <div className="space-y-2">
           <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
             {t('players.permissions_label')}
           </label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => handleOpToggle(true)}
-              className="flex-1 py-1.5 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <Shield className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" />
               {t('overview.players.op')}
@@ -118,19 +216,110 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
             <button
               type="button"
               onClick={() => handleOpToggle(false)}
-              className="flex-1 py-1.5 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#888888] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#888888] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               {t('overview.players.deop')}
             </button>
+            {onInspectInventory && (
+              <button
+                type="button"
+                onClick={() => {
+                  onInspectInventory(player);
+                  onClose();
+                }}
+                className="py-1.5 px-2.5 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[12px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <PackageSearch className="w-3.5 h-3.5" />
+                {t('players.inspect_inventory')}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onSendCommand(`clear ${player.username}`)}
-              className="flex-1 py-1.5 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#f5a623]" />
               {t('overview.players.clear_inventory')}
             </button>
           </div>
+        </div>
+
+        {/* Advanced Admin Controls (Freeze, Mute, Smite, Exp) */}
+        <div className="space-y-2 pt-1 border-t border-[#ebebeb] dark:border-[#262626]">
+          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+            {t('players.admin_actions')}
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={handleToggleFreeze}
+              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                player.isFrozen
+                  ? 'bg-[#0070f3]/10 dark:bg-[#0070f3]/20 border-[#0070f3]/40 text-[#0070f3] dark:text-[#3291ff]'
+                  : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
+              }`}
+            >
+              <Snowflake className="w-3.5 h-3.5 text-[#0070f3]" />
+              {player.isFrozen ? t('players.unfreeze') : t('players.freeze')}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleMute}
+              className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                player.isMuted
+                  ? 'bg-[#ee0000]/10 dark:bg-[#ee0000]/20 border-[#ee0000]/40 text-[#ee0000]'
+                  : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
+              }`}
+            >
+              <VolumeX className="w-3.5 h-3.5 text-[#ee0000]" />
+              {player.isMuted ? t('players.unmute') : t('players.mute')}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSmite}
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#f5a623]" />
+              {t('players.smite')}
+            </button>
+
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => handleGiveExp(5)}
+                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer"
+                title={t('players.give_exp')}
+              >
+                <Award className="w-3 h-3 text-[#50e3c2]" />
+                {t('players.exp_5')}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGiveExp(30)}
+                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer"
+                title={t('players.give_exp')}
+              >
+                <Award className="w-3 h-3 text-[#50e3c2]" />
+                {t('players.exp_30')}
+              </button>
+            </div>
+          </div>
+
+          {!player.isFrozen && (
+            <label className="flex items-center gap-2 pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={frostEffect}
+                onChange={(e) => setFrostEffect(e.target.checked)}
+                className="rounded-[3px] border-[#ebebeb] dark:border-[#262626] text-[#0070f3] focus:ring-0"
+              />
+              <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                {t('players.frost_effect_label')}
+              </span>
+            </label>
+          )}
         </div>
 
         {/* Teleport Coordinates */}

@@ -6,7 +6,7 @@ import { useModFiles } from './hooks/useModFiles';
 import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
 import { toErrorPayload, installServer, uploadServerJar } from './api/daemonApi';
-import type { DaemonErrorPayload, ServerLoader, InstanceSettings } from './types/daemon';
+import type { DaemonErrorPayload, ServerLoader, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
 import { Header, type TabId } from './components/layout/Header';
 import { ErrorAlert } from './components/common/ErrorAlert';
@@ -18,6 +18,7 @@ import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerModal } from './components/modals/CreateServerModal';
 import { ImportServerModal } from './components/modals/ImportServerModal';
 import { EditServerModal } from './components/modals/EditServerModal';
+import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
@@ -26,11 +27,14 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [inspectingPlayer, setInspectingPlayer] = useState<PlayerState | null>(null);
 
   const {
     status,
     metrics,
     players,
+    inventory,
+    clearInventory,
     logs,
     provisionLogs,
     lastError,
@@ -64,6 +68,34 @@ export default function App() {
     },
     [sendAction]
   );
+
+  const handleInspectInventory = useCallback(
+    (player: PlayerState) => {
+      setInspectingPlayer(player);
+      sendAction('ACTION', { action: 'INVENTORY_VIEW', username: player.username });
+    },
+    [sendAction]
+  );
+
+  const handleCloseInventory = useCallback(() => {
+    setInspectingPlayer(null);
+    clearInventory();
+  }, [clearInventory]);
+
+  const handleRefreshInventory = useCallback(() => {
+    if (inspectingPlayer) {
+      sendAction('ACTION', { action: 'INVENTORY_VIEW', username: inspectingPlayer.username });
+    }
+  }, [inspectingPlayer, sendAction]);
+
+  const handleClearInspectedInventory = useCallback(() => {
+    if (inspectingPlayer) {
+      handleSendCommand(`clear ${inspectingPlayer.username}`);
+      setTimeout(() => {
+        sendAction('ACTION', { action: 'INVENTORY_VIEW', username: inspectingPlayer.username });
+      }, 200);
+    }
+  }, [handleSendCommand, inspectingPlayer, sendAction]);
 
   const handleRestartServer = useCallback(async () => {
     try {
@@ -171,6 +203,7 @@ export default function App() {
               onSendAction={sendAction}
               onOpenEditModal={() => setIsEditModalOpen(true)}
               onRestart={handleRestartServer}
+              onInspectInventory={handleInspectInventory}
             />
           )}
 
@@ -179,6 +212,7 @@ export default function App() {
               players={players}
               onSendCommand={handleSendCommand}
               onSendAction={sendAction}
+              onInspectInventory={handleInspectInventory}
             />
           )}
 
@@ -241,6 +275,18 @@ export default function App() {
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
       />
+
+      {/* Player Inventory Inspector Modal */}
+      {inspectingPlayer && (
+        <PlayerInventoryModal
+          player={inspectingPlayer}
+          inventory={inventory}
+          isLoading={!inventory}
+          onClose={handleCloseInventory}
+          onRefresh={handleRefreshInventory}
+          onClearInventory={handleClearInspectedInventory}
+        />
+      )}
     </div>
   );
 }

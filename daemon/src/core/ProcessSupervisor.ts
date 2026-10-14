@@ -34,6 +34,8 @@ export interface PlayerState {
   ping?: number;
   gamemode?: string;
   isOp?: boolean;
+  isFrozen?: boolean;
+  isMuted?: boolean;
 }
 
 export interface ServerMetrics {

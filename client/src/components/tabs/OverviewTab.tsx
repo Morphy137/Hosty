@@ -19,10 +19,13 @@ import {
   Layers,
   Search,
   Activity,
-  Wifi
+  Wifi,
+  Snowflake,
+  VolumeX,
+  PackageSearch
 } from 'lucide-react';
 import type { DaemonAction, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
-import { calculateRamPercent } from '../../utils/format';
+import { calculateRamPercent, formatDimensionName } from '../../utils/format';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
 import { DimensionIcon } from '../common/DimensionIcon';
 import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
@@ -38,13 +41,8 @@ interface OverviewTabProps {
   onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
   onOpenEditModal: () => void;
   onRestart: () => void;
+  onInspectInventory?: (player: PlayerState) => void;
 }
-
-const DIMENSION_STYLES: Record<string, { key: string }> = {
-  overworld: { key: 'overview.players.dimension.overworld' },
-  the_nether: { key: 'overview.players.dimension.the_nether' },
-  the_end: { key: 'overview.players.dimension.the_end' }
-};
 
 const QUICK_COMMANDS = [
   { label: 'weather clear', cmd: 'weather clear' },
@@ -62,7 +60,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onSendCommand,
   onSendAction,
   onOpenEditModal,
-  onRestart
+  onRestart,
+  onInspectInventory
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
@@ -414,10 +413,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
             ) : (
               filteredOverviewPlayers.map((p) => {
-                const dimStyle = DIMENSION_STYLES[p.dimension] || {
-                  key: 'overview.players.dimension.overworld'
-                };
-                const dimLabel = t(dimStyle.key, { defaultValue: p.dimension });
+                const dimLabel = formatDimensionName(p.dimension, t);
 
                 return (
                   <div
@@ -432,13 +428,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                           className="w-9 h-9 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
                         />
                         <div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[14px] font-medium tracking-[-0.28px] text-[#171717] dark:text-[#ededed]">
                               {p.username}
                             </span>
                             {p.isOp && (
                               <span className="px-1 py-0.2 rounded-[3px] bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[9px] font-bold">
                                 {t('overview.players.operator')}
+                              </span>
+                            )}
+                            {p.isFrozen && (
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#0070f3]/15 border border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] font-mono text-[9px] font-bold">
+                                <Snowflake className="w-2.5 h-2.5" />
+                                {t('players.frozen')}
+                              </span>
+                            )}
+                            {p.isMuted && (
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#ee0000]/15 border border-[#ee0000]/30 text-[#ee0000] font-mono text-[9px] font-bold">
+                                <VolumeX className="w-2.5 h-2.5" />
+                                {t('players.muted')}
                               </span>
                             )}
                           </div>
@@ -473,6 +481,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5 pt-1">
+                      {onInspectInventory && (
+                        <button
+                          type="button"
+                          onClick={() => onInspectInventory(p)}
+                          className="flex-1 h-7 rounded-[4px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[12px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1 transition cursor-pointer"
+                          title={t('players.inspect_inventory')}
+                        >
+                          <PackageSearch className="w-3 h-3" />
+                          <span>Inv</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'HEAL' })}

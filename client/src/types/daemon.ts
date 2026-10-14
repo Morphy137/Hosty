@@ -83,6 +83,27 @@ export interface PlayerState {
   ping?: number;
   gamemode?: string;
   isOp?: boolean;
+  isFrozen?: boolean;
+  isMuted?: boolean;
+}
+
+export interface InventorySlotItem {
+  slot: number;
+  id: string; // e.g. "minecraft:netherite_sword", "create:wrench"
+  count: number;
+  damage?: number;
+  maxDamage?: number;
+  customName?: string;
+  enchantments?: Array<{ id: string; level: number }>;
+}
+
+export interface PlayerInventoryData {
+  username: string;
+  uuid?: string;
+  armor: (InventorySlotItem | null)[];
+  offhand: InventorySlotItem | null;
+  hotbar: (InventorySlotItem | null)[];
+  inventory: (InventorySlotItem | null)[];
 }
 
 export interface Metrics {
@@ -199,7 +220,8 @@ export type DaemonMessage =
   | { type: 'CONSOLE'; payload: string }
   | { type: 'PROVISION_LOG'; payload: string }
   | { type: 'ERROR'; payload: DaemonErrorPayload }
-  | { type: 'INSTANCE_STATUS'; payload: { instanceId: string; status: ServerStatus } };
+  | { type: 'INSTANCE_STATUS'; payload: { instanceId: string; status: ServerStatus } }
+  | { type: 'INVENTORY_DATA'; payload: PlayerInventoryData };
 
 export type DaemonMessageType = DaemonMessage['type'];
 

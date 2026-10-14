@@ -8,32 +8,32 @@ import {
   Gift,
   Zap,
   Skull,
-  Wifi
+  Wifi,
+  Snowflake,
+  VolumeX,
+  PackageSearch
 } from 'lucide-react';
 import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { PlayerAdminModal } from '../modals/PlayerAdminModal';
 import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
 import { DimensionIcon } from '../common/DimensionIcon';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
+import { formatDimensionName } from '../../utils/format';
 
 interface PlayersTabProps {
   players: PlayerState[];
   onSendCommand: (command: string) => void;
   onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
+  onInspectInventory?: (player: PlayerState) => void;
 }
-
-const DIMENSION_STYLES: Record<string, { key: string }> = {
-  overworld: { key: 'overview.players.dimension.overworld' },
-  the_nether: { key: 'overview.players.dimension.the_nether' },
-  the_end: { key: 'overview.players.dimension.the_end' }
-};
 
 type DimensionFilter = 'all' | 'overworld' | 'the_nether' | 'the_end';
 
 export const PlayersTab: React.FC<PlayersTabProps> = ({
   players,
   onSendCommand,
-  onSendAction
+  onSendAction,
+  onInspectInventory
 }) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
@@ -167,10 +167,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
             {filteredPlayers.map((player) => {
-              const dimStyle = DIMENSION_STYLES[player.dimension] || {
-                key: 'overview.players.dimension.overworld'
-              };
-              const dimLabel = t(dimStyle.key, { defaultValue: player.dimension });
+              const dimLabel = formatDimensionName(player.dimension, t);
 
               return (
                 <div
@@ -185,13 +182,25 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
                         className="w-10 h-10 rounded-[6px] border border-[#ebebeb] dark:border-[#262626] shrink-0 object-contain shadow-2xs"
                       />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.2px] truncate">
                             {player.username}
                           </span>
                           {player.isOp && (
                             <span className="px-1 py-0.2 rounded-[3px] bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[9px] font-bold">
                               {t('overview.players.operator')}
+                            </span>
+                          )}
+                          {player.isFrozen && (
+                            <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#0070f3]/15 border border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] font-mono text-[9px] font-bold">
+                              <Snowflake className="w-2.5 h-2.5" />
+                              {t('players.frozen')}
+                            </span>
+                          )}
+                          {player.isMuted && (
+                            <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#ee0000]/15 border border-[#ee0000]/30 text-[#ee0000] font-mono text-[9px] font-bold">
+                              <VolumeX className="w-2.5 h-2.5" />
+                              {t('players.muted')}
                             </span>
                           )}
                         </div>
@@ -202,14 +211,26 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPlayer(player)}
-                      className="p-1 rounded-[4px] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer"
-                      title={t('players.manage_title')}
-                    >
-                      <Settings2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {onInspectInventory && (
+                        <button
+                          type="button"
+                          onClick={() => onInspectInventory(player)}
+                          className="p-1 rounded-[4px] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#0070f3] dark:text-[#3291ff] transition cursor-pointer"
+                          title={t('players.inspect_inventory')}
+                        >
+                          <PackageSearch className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlayer(player)}
+                        className="p-1 rounded-[4px] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer"
+                        title={t('players.manage_title')}
+                      >
+                        <Settings2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Coordinates Badge */}
@@ -299,6 +320,8 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
           player={selectedPlayer}
           onClose={() => setSelectedPlayer(null)}
           onSendCommand={onSendCommand}
+          onSendAction={onSendAction}
+          onInspectInventory={onInspectInventory}
         />
       )}
 

@@ -18,6 +18,27 @@ export interface BridgePlayerTelemetry {
   ping?: number;
   gamemode?: string;
   isOp?: boolean;
+  isFrozen?: boolean;
+  isMuted?: boolean;
+}
+
+export interface InventorySlotItem {
+  slot: number;
+  id: string; // e.g. "minecraft:netherite_sword", "create:wrench"
+  count: number;
+  damage?: number;
+  maxDamage?: number;
+  customName?: string;
+  enchantments?: Array<{ id: string; level: number }>;
+}
+
+export interface PlayerInventoryData {
+  username: string;
+  uuid?: string;
+  armor: (InventorySlotItem | null)[]; // 4 slots: helmet, chestplate, leggings, boots
+  offhand: InventorySlotItem | null;
+  hotbar: (InventorySlotItem | null)[]; // 9 slots: 0 to 8
+  inventory: (InventorySlotItem | null)[]; // 27 slots: 9 to 35
 }
 
 export type BridgeIncomingMessage =
@@ -35,6 +56,11 @@ export type BridgeIncomingMessage =
       players: BridgePlayerTelemetry[];
     }
   | {
+      type: 'INVENTORY_DATA';
+      instanceId: string;
+      inventory: PlayerInventoryData;
+    }
+  | {
       type: 'ACTION_RESULT';
       instanceId: string;
       actionId?: string;
@@ -46,13 +72,28 @@ export type BridgeIncomingMessage =
 export interface BridgeActionMessage {
   type: 'ACTION';
   actionId?: string;
-  action: 'HEAL' | 'DAMAGE' | 'KILL' | 'KICK' | 'TELEPORT' | 'INVENTORY_VIEW';
+  action:
+    | 'HEAL'
+    | 'DAMAGE'
+    | 'KILL'
+    | 'KICK'
+    | 'TELEPORT'
+    | 'INVENTORY_VIEW'
+    | 'FREEZE'
+    | 'UNFREEZE'
+    | 'SMITE'
+    | 'GIVE_EXP'
+    | 'MUTE'
+    | 'UNMUTE';
   username: string;
   amount?: number;
   feed?: boolean;
   reason?: string;
+  frostEffect?: boolean;
+  levels?: number;
   x?: number;
   y?: number;
   z?: number;
   dimension?: string;
+  targetPlayer?: string;
 }
