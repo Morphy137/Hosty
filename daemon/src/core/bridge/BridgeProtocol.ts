@@ -89,8 +89,9 @@ export interface BridgeActionMessage {
   amount?: number;
   feed?: boolean;
   reason?: string;
-  frostEffect?: boolean;
   levels?: number;
+  expType?: 'levels' | 'points';
+  mode?: 'add' | 'set';
   x?: number;
   y?: number;
   z?: number;

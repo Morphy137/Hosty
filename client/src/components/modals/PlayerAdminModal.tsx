@@ -7,7 +7,7 @@ import {
   Ban,
   Navigation,
   Sparkles,
-  PackageSearch,
+  Package,
   Snowflake,
   VolumeX,
   Zap,
@@ -17,6 +17,7 @@ import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { DimensionIcon } from '../common/DimensionIcon';
 import { formatDimensionName } from '../../utils/format';
 import { SlidingText } from '../common/SlidingText';
+import { PlayerExperienceModal } from './PlayerExperienceModal';
 
 interface PlayerAdminModalProps {
   player: PlayerState | null;
@@ -38,6 +39,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
   const [banReason, setBanReason] = useState('');
   const [tpCoords, setTpCoords] = useState({ x: '0', y: '64', z: '0' });
   const [frostEffect, setFrostEffect] = useState(false);
+  const [isExpModalOpen, setIsExpModalOpen] = useState(false);
 
   if (!player) return null;
 
@@ -124,14 +126,6 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
       onSendAction('ACTION', { action: 'SMITE', username: player.username });
     } else {
       onSendCommand(`execute at ${player.username} run summon lightning_bolt`);
-    }
-  };
-
-  const handleGiveExp = (levels: number) => {
-    if (onSendAction) {
-      onSendAction('ACTION', { action: 'GIVE_EXP', username: player.username, levels });
-    } else {
-      onSendCommand(`experience add ${player.username} ${levels} levels`);
     }
   };
 
@@ -228,10 +222,10 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                   onInspectInventory(player);
                   onClose();
                 }}
-                className="py-1.5 px-2 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[12px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+                className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
               >
-                <PackageSearch className="w-3.5 h-3.5 shrink-0" />
-                <SlidingText>{t('players.inspect_inventory')}</SlidingText>
+                <Package className="w-3.5 h-3.5 text-[#171717] dark:text-[#ededed] shrink-0" />
+                <SlidingText>{t('players.inventory_button')}</SlidingText>
               </button>
             )}
             <button
@@ -286,26 +280,15 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               <SlidingText>{t('players.smite')}</SlidingText>
             </button>
 
-            <div className="flex gap-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => handleGiveExp(5)}
-                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
-                title={t('players.give_exp')}
-              >
-                <Award className="w-3 h-3 text-[#50e3c2] shrink-0" />
-                <SlidingText>{t('players.exp_5')}</SlidingText>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleGiveExp(30)}
-                className="flex-1 py-1.5 px-1 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-0.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
-                title={t('players.give_exp')}
-              >
-                <Award className="w-3 h-3 text-[#50e3c2] shrink-0" />
-                <SlidingText>{t('players.exp_30')}</SlidingText>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsExpModalOpen(true)}
+              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              title={t('players.give_exp')}
+            >
+              <Award className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#50e3c2] shrink-0" />
+              <SlidingText>{t('players.experience')}</SlidingText>
+            </button>
           </div>
 
           {!player.isFrozen && (
@@ -397,6 +380,26 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
           </form>
         </div>
       </div>
+
+      {isExpModalOpen && (
+        <PlayerExperienceModal
+          player={player}
+          onClose={() => setIsExpModalOpen(false)}
+          onGiveExp={(amount, expType, mode) => {
+            if (onSendAction) {
+              onSendAction('ACTION', {
+                action: 'GIVE_EXP',
+                username: player.username,
+                amount,
+                expType,
+                mode
+              });
+            } else {
+              onSendCommand(`experience ${mode} ${player.username} ${amount} ${expType}`);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

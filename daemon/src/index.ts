@@ -683,8 +683,9 @@ wss.on('connection', (ws, req) => {
           amount?: number;
           feed?: boolean;
           reason?: string;
-          frostEffect?: boolean;
           levels?: number;
+          expType?: 'levels' | 'points';
+          mode?: 'add' | 'set';
           x?: number;
           y?: number;
           z?: number;
@@ -712,9 +713,11 @@ wss.on('connection', (ws, req) => {
             sup.sendCommand(`execute at ${actionData.username} run summon lightning_bolt ~ ~ ~`);
             broadcast('CONSOLE', `[Hypervisor] Lightning struck player ${actionData.username}.\r\n`);
           } else if (actionData.action === 'GIVE_EXP') {
-            const lvls = actionData.levels ?? 5;
-            sup.sendCommand(`experience add ${actionData.username} ${lvls} levels`);
-            broadcast('CONSOLE', `[Hypervisor] Granted ${lvls} levels to ${actionData.username}.\r\n`);
+            const amount = actionData.amount ?? actionData.levels ?? 5;
+            const expType = actionData.expType === 'points' ? 'points' : 'levels';
+            const mode = actionData.mode === 'set' ? 'set' : 'add';
+            sup.sendCommand(`experience ${mode} ${actionData.username} ${amount} ${expType}`);
+            broadcast('CONSOLE', `[Hypervisor] ${mode === 'set' ? 'Set' : 'Granted'} ${amount} ${expType} for ${actionData.username}.\r\n`);
           } else if (actionData.action === 'MUTE') {
             sup.sendCommand(`tag ${actionData.username} add muted`);
             broadcast('CONSOLE', `[Hypervisor] Player ${actionData.username} muted.\r\n`);

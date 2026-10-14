@@ -11,7 +11,7 @@ import {
   Wifi,
   Snowflake,
   VolumeX,
-  PackageSearch
+  Package
 } from 'lucide-react';
 import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { PlayerAdminModal } from '../modals/PlayerAdminModal';
@@ -247,10 +247,10 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
                         <button
                           type="button"
                           onClick={() => onInspectInventory(player)}
-                          className="p-1 rounded-[4px] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#0070f3] dark:text-[#3291ff] transition cursor-pointer"
-                          title={t('players.inspect_inventory')}
+                          className="p-1 rounded-[6px] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition-colors cursor-pointer"
+                          title={t('players.inventory_button')}
                         >
-                          <PackageSearch className="w-3.5 h-3.5" />
+                          <Package className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button

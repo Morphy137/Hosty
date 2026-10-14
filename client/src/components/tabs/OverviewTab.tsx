@@ -22,7 +22,7 @@ import {
   Wifi,
   Snowflake,
   VolumeX,
-  PackageSearch
+  Package
 } from 'lucide-react';
 import type { DaemonAction, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { calculateRamPercent, formatDimensionName } from '../../utils/format';
@@ -486,10 +486,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         <button
                           type="button"
                           onClick={() => onInspectInventory(p)}
-                          className="flex-1 h-7 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
-                          title={t('players.inspect_inventory')}
+                          className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                          title={t('players.inventory_button')}
                         >
-                          <PackageSearch className="w-3 h-3 shrink-0" />
+                          <Package className="w-3 h-3 text-[#171717] dark:text-[#ededed] shrink-0" />
                           <SlidingText>{t('players.actions.inventory_short')}</SlidingText>
                         </button>
                       )}
