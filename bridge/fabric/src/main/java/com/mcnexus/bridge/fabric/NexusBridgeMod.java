@@ -107,7 +107,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
                 po.addProperty("health", Math.round(p.getHealth() * 10.0) / 10.0);
                 po.addProperty("maxHealth", (double) p.getMaxHealth());
                 po.addProperty("food", p.getHungerManager().getFoodLevel());
-                po.addProperty("ping", p.pingMilliseconds);
+                po.addProperty("ping", p.networkHandler != null ? p.networkHandler.getLatency() : 0);
                 po.addProperty("gamemode", p.interactionManager.getGameMode().getName());
                 po.addProperty("isOp", server.getPlayerManager().isOperator(p.getGameProfile()));
                 players.add(po);

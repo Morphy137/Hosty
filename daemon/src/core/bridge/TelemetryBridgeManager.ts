@@ -21,12 +21,13 @@ export interface TelemetryBridgeEvents {
 export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> {
   private readonly connections = new Map<string, WebSocket>();
   private readonly connectionInstances = new Map<WebSocket, string>();
+  private readonly baseAssetsDir: string;
   private readonly bridgeJarPath: string;
 
   constructor(assetsDir?: string) {
     super();
-    const baseAssets = assetsDir || path.resolve(__dirname, '../../../assets/bridge');
-    this.bridgeJarPath = path.join(baseAssets, 'mc-nexus-bridge.jar');
+    this.baseAssetsDir = assetsDir || path.resolve(__dirname, '../../../assets/bridge');
+    this.bridgeJarPath = path.join(this.baseAssetsDir, 'mc-nexus-bridge.jar');
   }
 
   public isBridgeConnected(instanceId: string): boolean {
@@ -111,6 +112,14 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     fs.mkdirSync(targetFolder, { recursive: true });
 
     const targetFile = path.join(targetFolder, 'mc-nexus-bridge.jar');
+
+    const specificJarName = isPlugin ? 'mc-nexus-bridge-paper.jar' : 'mc-nexus-bridge-fabric.jar';
+    const specificPath = path.join(this.baseAssetsDir, specificJarName);
+
+    if (fs.existsSync(specificPath)) {
+      fs.copyFileSync(specificPath, targetFile);
+      return true;
+    }
 
     if (fs.existsSync(this.bridgeJarPath)) {
       fs.copyFileSync(this.bridgeJarPath, targetFile);
