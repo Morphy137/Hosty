@@ -6,7 +6,7 @@ import { useModFiles } from './hooks/useModFiles';
 import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
 import { toErrorPayload, installServer, uploadServerJar } from './api/daemonApi';
-import type { DaemonErrorPayload, ServerLoader } from './types/daemon';
+import type { DaemonErrorPayload, ServerLoader, InstanceSettings } from './types/daemon';
 import { Header, type TabId } from './components/layout/Header';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
@@ -16,12 +16,14 @@ import { PropertiesTab } from './components/tabs/PropertiesTab';
 import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerModal } from './components/modals/CreateServerModal';
 import { ImportServerModal } from './components/modals/ImportServerModal';
+import { EditServerModal } from './components/modals/EditServerModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const {
     status,
@@ -61,18 +63,33 @@ export default function App() {
     [sendAction]
   );
 
+  const handleRestartServer = useCallback(async () => {
+    try {
+      await instances.restartServer(instances.activeId);
+    } catch (err) {
+      handleError(err);
+    }
+  }, [handleError, instances]);
+
   const handleCreateServer = useCallback(
     async (params: {
       loader: ServerLoader;
       version: string;
       instanceId: string;
       instanceName: string;
+      settings?: Partial<InstanceSettings>;
     }) => {
       resetProvisionLogs([
         `[Provisioner] Initializing ${params.loader.toUpperCase()} ${params.version} for "${params.instanceName}"...`
       ]);
       try {
-        await installServer(params.loader, params.version, params.instanceId, params.instanceName);
+        await installServer(
+          params.loader,
+          params.version,
+          params.instanceId,
+          params.instanceName,
+          params.settings
+        );
         await instances.refresh();
       } catch (err) {
         handleError(err);
@@ -83,12 +100,20 @@ export default function App() {
   );
 
   const handleUploadServerJar = useCallback(
-    async (params: { file: File; instanceId: string; instanceName: string }) => {
+    async (params: {
+      file: File;
+      instanceId: string;
+      instanceName: string;
+      settings?: Partial<InstanceSettings>;
+    }) => {
       resetProvisionLogs([
         `[Provisioner] Uploading server binary "${params.file.name}" for "${params.instanceName}"...`
       ]);
       try {
         await uploadServerJar(params.file, params.instanceId, params.instanceName);
+        if (params.settings) {
+          await instances.updateSettings(params.instanceId, params.settings);
+        }
         await instances.refresh();
       } catch (err) {
         handleError(err);
@@ -119,6 +144,7 @@ export default function App() {
         status={status}
         mockEnabled={health?.mockEnabled ?? true}
         onSendAction={sendAction}
+        onRestart={handleRestartServer}
         instances={instances.instances}
         activeInstanceId={instances.activeId}
         onSelectInstance={instances.selectInstance}
@@ -135,7 +161,11 @@ export default function App() {
               metrics={metrics}
               players={players}
               logs={logs}
+              instance={instances.activeInstance}
+              status={status}
               onSendCommand={handleSendCommand}
+              onOpenEditModal={() => setIsEditModalOpen(true)}
+              onRestart={handleRestartServer}
             />
           )}
 
@@ -179,7 +209,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* Creation and Import Modals */}
+      {/* Creation, Import, and Edit Modals */}
       <CreateServerModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -192,6 +222,15 @@ export default function App() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImportServer}
+      />
+
+      <EditServerModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        instance={instances.activeInstance}
+        serverStatus={status}
+        onSaveSettings={instances.updateSettings}
+        onRefreshInstances={instances.refresh}
       />
     </div>
   );

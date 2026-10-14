@@ -10,7 +10,7 @@ import {
   FileText,
   ChevronDown
 } from 'lucide-react';
-import type { ServerLoader } from '../../types/daemon';
+import type { ServerLoader, InstanceSettings } from '../../types/daemon';
 import { SERVER_LOADERS, LOADER_METADATA } from '../../types/daemon';
 import { fetchLoaderVersions } from '../../api/daemonApi';
 
@@ -22,11 +22,13 @@ interface CreateServerModalProps {
     version: string;
     instanceId: string;
     instanceName: string;
+    settings?: Partial<InstanceSettings>;
   }) => Promise<void>;
   onUploadJar: (params: {
     file: File;
     instanceId: string;
     instanceName: string;
+    settings?: Partial<InstanceSettings>;
   }) => Promise<void>;
   provisionLogs: string[];
 }
@@ -43,6 +45,12 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
   const [serverName, setServerName] = useState('My Minecraft Server');
   const [instanceId, setInstanceId] = useState('survival-main');
+  const [motd, setMotd] = useState('A Minecraft Server');
+  const [port, setPort] = useState(25565);
+  const [maxPlayers, setMaxPlayers] = useState(20);
+  const [ramValue, setRamValue] = useState(4);
+  const [ramUnit, setRamUnit] = useState<'GB' | 'MB'>('GB');
+
   const [selectedLoader, setSelectedLoader] = useState<ServerLoader>('fabric');
   const [versions, setVersions] = useState<string[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
@@ -117,6 +125,16 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     const safeId = instanceId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
     const safeName = serverName.trim();
 
+    const calculatedMaxRamMb = ramUnit === 'GB' ? ramValue * 1024 : ramValue;
+    const calculatedMinRamMb = Math.min(1024, calculatedMaxRamMb);
+    const settings: Partial<InstanceSettings> = {
+      motd: motd.trim(),
+      port: Number(port) || 25565,
+      maxPlayers: Number(maxPlayers) || 20,
+      minRamMb: calculatedMinRamMb,
+      maxRamMb: calculatedMaxRamMb
+    };
+
     setIsInstalling(true);
     try {
       if (requiresManualJar || (useCustomJar && attachedFile)) {
@@ -124,7 +142,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
         await onUploadJar({
           file: attachedFile,
           instanceId: safeId,
-          instanceName: safeName
+          instanceName: safeName,
+          settings
         });
       } else {
         if (!selectedVersion) return;
@@ -132,7 +151,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
           loader: selectedLoader,
           version: selectedVersion,
           instanceId: safeId,
-          instanceName: safeName
+          instanceName: safeName,
+          settings
         });
       }
       setIsInstalling(false);
@@ -206,6 +226,78 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                 required
                 className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] font-mono text-[12px] text-[#4d4d4d] focus:outline-none focus:border-[#171717]"
               />
+            </div>
+          </div>
+
+          {/* MOTD */}
+          <div className="space-y-1.5">
+            <label className="font-mono text-[11px] uppercase text-[#888888]">
+              {t('edit_server.motd_label')}
+            </label>
+            <input
+              type="text"
+              value={motd}
+              onChange={(e) => setMotd(e.target.value)}
+              disabled={isInstalling}
+              placeholder="A Minecraft Server"
+              className="w-full h-9 px-3 rounded-[4px] border border-[#ebebeb] text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+            />
+          </div>
+
+          {/* Quick Customization Row: Port, Max Players, RAM */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="font-mono text-[11px] uppercase text-[#888888]">
+                {t('edit_server.port_label')}
+              </label>
+              <input
+                type="number"
+                value={port}
+                onChange={(e) => setPort(Number(e.target.value))}
+                disabled={isInstalling}
+                className="w-full h-9 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-mono text-[11px] uppercase text-[#888888]">
+                {t('edit_server.max_players_label')}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={9999}
+                value={maxPlayers}
+                onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                disabled={isInstalling}
+                className="w-full h-9 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-mono text-[11px] uppercase text-[#888888]">
+                {t('edit_server.ram_label')}
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min={1}
+                  max={64}
+                  value={ramValue}
+                  onChange={(e) => setRamValue(Math.max(1, Number(e.target.value)))}
+                  disabled={isInstalling}
+                  className="w-full h-9 px-2.5 rounded-[4px] border border-[#ebebeb] font-mono text-[13px] text-[#171717] focus:outline-none focus:border-[#171717]"
+                />
+                <select
+                  value={ramUnit}
+                  onChange={(e) => setRamUnit(e.target.value as 'GB' | 'MB')}
+                  disabled={isInstalling}
+                  className="h-9 px-1.5 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[12px] text-[#171717] focus:outline-none"
+                >
+                  <option value="GB">GB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
             </div>
           </div>
 

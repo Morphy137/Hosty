@@ -41,7 +41,8 @@ const KNOWN_MESSAGE_TYPES: ReadonlySet<DaemonMessageType> = new Set([
   'PLAYERS',
   'CONSOLE',
   'PROVISION_LOG',
-  'ERROR'
+  'ERROR',
+  'INSTANCE_STATUS'
 ]);
 
 /** Appends a line and drops the oldest entries so the buffer never exceeds `cap`. */
@@ -85,6 +86,8 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
       };
     case 'ERROR':
       return { ...state, lastError: message.payload };
+    case 'INSTANCE_STATUS':
+      return state;
   }
 }
 

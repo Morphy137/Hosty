@@ -109,6 +109,21 @@ export interface HealthResponse {
   activeInstance?: string;
 }
 
+export interface InstanceSettings {
+  name?: string;
+  motd?: string;
+  port?: number;
+  maxPlayers?: number;
+  minRamMb?: number;
+  maxRamMb?: number;
+  jvmArgs?: string[];
+  javaPath?: string;
+  forceSaveOnStop?: boolean;
+  autostart?: boolean;
+  loader?: string;
+  loaderVersion?: string;
+}
+
 export interface InstanceInfo {
   id: string;
   name: string;
@@ -116,8 +131,20 @@ export interface InstanceInfo {
   port: number;
   motd: string;
   hasJar: boolean;
+  hasIcon: boolean;
   isImported: boolean;
   createdAt: string;
+  maxPlayers: number;
+  minRamMb: number;
+  maxRamMb: number;
+  jvmArgs: string[];
+  javaPath: string;
+  forceSaveOnStop: boolean;
+  autostart: boolean;
+  status?: ServerStatus;
+  onlinePlayersCount?: number;
+  loader?: string;
+  loaderVersion?: string;
 }
 
 export interface InstancesResponse {
@@ -141,8 +168,10 @@ export type DaemonMessage =
   | { type: 'PLAYERS'; payload: PlayerState[] }
   | { type: 'CONSOLE'; payload: string }
   | { type: 'PROVISION_LOG'; payload: string }
-  | { type: 'ERROR'; payload: DaemonErrorPayload };
+  | { type: 'ERROR'; payload: DaemonErrorPayload }
+  | { type: 'INSTANCE_STATUS'; payload: { instanceId: string; status: ServerStatus } };
 
 export type DaemonMessageType = DaemonMessage['type'];
 
 export type SocketConnectionState = 'connecting' | 'open' | 'closed';
+

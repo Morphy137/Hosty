@@ -1,7 +1,8 @@
 {
   "common": {
     "cancel": "Cancel",
-    "apply": "Apply"
+    "apply": "Apply",
+    "save": "Save"
   },
   "nav": {
     "overview": "Overview",
@@ -33,6 +34,7 @@
     "controls": {
       "start": "Start Server",
       "stop": "Stop Server",
+      "restart": "Restart Server",
       "kill": "Kill (SIGKILL)",
       "address": "Server Address",
       "status_online": "ONLINE",
@@ -71,6 +73,7 @@
   "players": {
     "search_placeholder": "Filter players by username...",
     "refresh_list": "Refresh List",
+    "filter_all": "All",
     "empty_description": "Connect to the server with a Minecraft client or use Simulate Telemetry to inspect active player sessions.",
     "manage_title": "Manage Player",
     "gamemode_label": "Change Game Mode",
@@ -89,6 +92,31 @@
       "gift_quantity": "Quantity",
       "execute_button": "Apply Action"
     }
+  },
+  "edit_server": {
+    "modal_title": "Edit Server",
+    "modal_subtitle": "You are editing: {{name}}",
+    "tab_general": "General",
+    "tab_advanced": "Advanced",
+    "button": "Edit Server",
+    "name_label": "Server Name",
+    "motd_label": "Description (MOTD)",
+    "folder_path": "Folder Path",
+    "force_save_label": "Force 'save-all' on server stop",
+    "autostart_label": "Autostart when daemon starts",
+    "icon_label": "Server Icon",
+    "upload_icon": "Upload Icon",
+    "remove_icon": "Remove Icon",
+    "icon_hint": "Image must be a .png and 64x64.",
+    "ram_label": "RAM Allocation",
+    "port_label": "Server Port",
+    "max_players_label": "Max Players",
+    "java_path_label": "Local Java Path Override",
+    "java_path_hint": "Overrides the global Java executable path. Leave blank to use system default.",
+    "jvm_args_label": "Custom JVM Arguments",
+    "apply_aikar_preset": "Apply Aikar's Flags",
+    "startup_preview_label": "Startup Line Preview",
+    "running_warning": "Turn the server off to apply port or JVM changes."
   },
   "mod_files": {
     "total_mods": "Total Mods",

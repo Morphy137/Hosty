@@ -10,19 +10,30 @@ import {
   Zap,
   Skull,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Server,
+  Settings,
+  RotateCcw,
+  Copy,
+  Check,
+  Layers
 } from 'lucide-react';
-import type { Metrics, PlayerState } from '../../types/daemon';
+import type { InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { calculateRamPercent } from '../../utils/format';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
 import { DimensionIcon } from '../common/DimensionIcon';
 import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
+import { getInstanceIconUrl } from '../../api/daemonApi';
 
 interface OverviewTabProps {
   metrics: Metrics;
   players: PlayerState[];
   logs: string[];
+  instance: InstanceInfo | null;
+  status: ServerStatus;
   onSendCommand: (command: string) => void;
+  onOpenEditModal: () => void;
+  onRestart: () => void;
 }
 
 const DIMENSION_STYLES: Record<string, { key: string }> = {
@@ -42,10 +53,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   metrics,
   players,
   logs,
-  onSendCommand
+  instance,
+  status,
+  onSendCommand,
+  onOpenEditModal,
+  onRestart
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
+  const [copiedIp, setCopiedIp] = useState(false);
   const [actionTarget, setActionTarget] = useState<{
     player: PlayerState;
     type: DynamicActionType;
@@ -53,6 +69,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   const ramPercent = calculateRamPercent(metrics.ramMb, metrics.maxRamMb);
+  const serverPort = instance?.port || 25565;
+  const serverAddress = `127.0.0.1:${serverPort}`;
+  const maxPlayersCount = instance?.maxPlayers || 20;
 
   useEffect(() => {
     consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,8 +90,122 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     onSendCommand(cmd);
   };
 
+  const handleCopyIp = () => {
+    navigator.clipboard.writeText(serverAddress);
+    setCopiedIp(true);
+    setTimeout(() => setCopiedIp(false), 1500);
+  };
+
   return (
     <>
+      {/* MCSS Inspired Server Hero Banner */}
+      <div className="geist-card p-4 flex items-center justify-between shrink-0 shadow-xs">
+        <div className="flex items-center gap-4 min-w-0">
+          {/* Server Icon with fallback */}
+          <div className="w-14 h-14 rounded-[8px] border border-[#ebebeb] bg-[#fafafa] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+            {instance?.hasIcon ? (
+              <img
+                src={getInstanceIconUrl(instance.id)}
+                alt={instance.name}
+                className="w-full h-full object-contain image-rendering-pixelated"
+              />
+            ) : (
+              <Server className="w-7 h-7 text-[#888888]" />
+            )}
+          </div>
+
+          {/* Server Meta & Live Status */}
+          <div className="min-w-0 space-y-1">
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-[17px] font-semibold tracking-[-0.34px] text-[#171717] truncate">
+                {instance?.name || 'Local Minecraft Server'}
+              </h1>
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#fafafa] border border-[#ebebeb] font-mono text-[11px] font-medium uppercase tracking-wider text-[#171717]">
+                <span
+                  className={`w-2 h-2 rounded-[2px] shrink-0 ${
+                    status === 'ONLINE'
+                      ? 'bg-[#50e3c2] shadow-[0_0_6px_rgba(80,227,194,0.35)]'
+                      : status === 'STARTING'
+                      ? 'bg-[#f5a623] animate-pulse'
+                      : 'bg-[#888888]'
+                  }`}
+                />
+                {status}
+              </span>
+            </div>
+
+            {/* Sub-meta Strip: IP, Loader, Player Count, MOTD */}
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#666666]">
+              {/* Network Address with Copy */}
+              <button
+                type="button"
+                onClick={handleCopyIp}
+                className="inline-flex items-center gap-1 font-mono text-[#171717] hover:text-[#0070f3] transition cursor-pointer"
+                title="Click to copy IP"
+              >
+                <span>{serverAddress}</span>
+                {copiedIp ? (
+                  <Check className="w-3 h-3 text-[#50e3c2]" />
+                ) : (
+                  <Copy className="w-3 h-3 text-[#888888]" />
+                )}
+              </button>
+
+              <span className="text-[#ebebeb]">|</span>
+
+              {/* Loader */}
+              <span className="inline-flex items-center gap-1 text-[#4d4d4d]">
+                <Layers className="w-3.5 h-3.5 text-[#888888]" />
+                <span>
+                  {instance?.loader ? `${instance.loader.toUpperCase()} ${instance.loaderVersion || ''}` : 'Vanilla'}
+                </span>
+              </span>
+
+              <span className="text-[#ebebeb]">|</span>
+
+              {/* Player Count */}
+              <span className="inline-flex items-center gap-1 text-[#4d4d4d]">
+                <Users className="w-3.5 h-3.5 text-[#888888]" />
+                <span>
+                  {players.length}/{maxPlayersCount} {t('overview.metrics.players_online')}
+                </span>
+              </span>
+
+              <span className="text-[#ebebeb]">|</span>
+
+              {/* MOTD */}
+              <span className="italic text-[#888888] truncate max-w-sm">
+                &ldquo;{instance?.motd || 'No description for this server'}&rdquo;
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Actions: Edit Server & Restart */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onRestart}
+            disabled={status === 'OFFLINE'}
+            className="h-8 px-3 rounded-[6px] bg-white hover:bg-[#fafafa] disabled:opacity-40 text-[#171717] border border-[#ebebeb] text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            title={t('overview.controls.restart')}
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-[#888888]" />
+            <span>{t('overview.controls.restart')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenEditModal}
+            className="h-8 px-3 rounded-[6px] bg-white hover:bg-[#fafafa] text-[#171717] border border-[#ebebeb] text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            title={t('edit_server.modal_title')}
+          >
+            <Settings className="w-3.5 h-3.5 text-[#888888]" />
+            <span>{t('edit_server.button')}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top 3-Up Metric Strip */}
       <div className="grid grid-cols-3 gap-4 shrink-0">
         <div className="geist-card p-4 flex flex-col justify-between">
@@ -136,7 +269,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4d4d4d]">
             <span>{t('overview.controls.address')}:</span>
-            <span className="font-mono text-[#171717]">localhost:25565</span>
+            <span className="font-mono text-[#171717]">localhost:{serverPort}</span>
           </div>
         </div>
       </div>
@@ -169,8 +302,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             ) : (
               players.map((p) => {
                 const dimStyle = DIMENSION_STYLES[p.dimension] || {
-                  key: 'overview.players.dimension.overworld',
-                  dot: 'bg-[#888888]'
+                  key: 'overview.players.dimension.overworld'
                 };
                 const dimLabel = t(dimStyle.key, { defaultValue: p.dimension });
 

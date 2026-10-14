@@ -27,6 +27,7 @@ interface HeaderProps {
   status: ServerStatus;
   mockEnabled: boolean;
   onSendAction: (action: DaemonAction, data?: string) => boolean;
+  onRestart: () => void;
   instances: InstanceInfo[];
   activeInstanceId: string;
   onSelectInstance: (id: string) => Promise<void>;
@@ -40,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   status,
   mockEnabled,
   onSendAction,
+  onRestart,
   instances,
   activeInstanceId,
   onSelectInstance,
@@ -76,15 +78,17 @@ export const Header: React.FC<HeaderProps> = ({
             <select
               value={activeInstanceId}
               onChange={(e) => onSelectInstance(e.target.value)}
-              disabled={status !== 'OFFLINE'}
-              className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] hover:bg-[#f5f5f5] border border-[#ebebeb] hover:border-[#d4d4d4] text-[13px] font-medium text-[#171717] focus:outline-none focus:border-[#171717] cursor-pointer disabled:opacity-50 appearance-none min-w-[180px] transition"
+              className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] hover:bg-[#f5f5f5] border border-[#ebebeb] hover:border-[#d4d4d4] text-[13px] font-medium text-[#171717] focus:outline-none focus:border-[#171717] cursor-pointer appearance-none min-w-[200px] transition"
               title={t('header.instance_tooltip')}
             >
-              {instances.map((inst) => (
-                <option key={inst.id} value={inst.id}>
-                  {inst.name} ({inst.port})
-                </option>
-              ))}
+              {instances.map((inst) => {
+                const statusDot = inst.status === 'ONLINE' ? '●' : inst.status === 'STARTING' ? '◒' : '○';
+                return (
+                  <option key={inst.id} value={inst.id}>
+                    {statusDot} {inst.name} (:{inst.port})
+                  </option>
+                );
+              })}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#888888] absolute right-2.5 pointer-events-none" />
           </div>
@@ -93,8 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenCreateModal}
-            disabled={status !== 'OFFLINE'}
-            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
+            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#171717] flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
             title={t('header.new_server')}
           >
             <Plus className="w-3.5 h-3.5 text-[#0070f3]" />
@@ -104,8 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onOpenImportModal}
-            disabled={status !== 'OFFLINE'}
-            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center gap-1 transition cursor-pointer disabled:opacity-40 shrink-0"
+            className="h-8 px-2.5 rounded-[4px] bg-white hover:bg-[#fafafa] border border-[#ebebeb] text-[12px] font-medium text-[#4d4d4d] flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
             title={t('header.import_server')}
           >
             <FolderInput className="w-3.5 h-3.5 text-[#888888]" />
@@ -175,6 +177,18 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Square className="w-3 h-3 fill-current shrink-0" />
             <span>{t('overview.controls.stop')}</span>
+          </button>
+
+          {/* Restart Server */}
+          <button
+            type="button"
+            onClick={onRestart}
+            disabled={status === 'OFFLINE'}
+            className="h-8 px-3 rounded-[6px] bg-white hover:bg-[#f5f5f5] disabled:opacity-40 text-[#171717] border border-[#ebebeb] text-[13px] font-medium tracking-[-0.28px] flex items-center justify-center gap-1.5 transition cursor-pointer min-w-[115px] shrink-0"
+            title={t('overview.controls.restart')}
+          >
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('overview.controls.restart')}</span>
           </button>
 
           {/* Kill Server */}

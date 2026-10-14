@@ -22,6 +22,8 @@ export interface ServerConfig {
   stopTimeoutMs: number;
   metricsIntervalMs: number;
   positionPollIntervalMs: number;
+  jvmArgs?: string[];
+  forceSaveOnStop?: boolean;
 }
 
 export interface PlayerState {
@@ -79,6 +81,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private readonly players = new Map<string, PlayerState>();
   /** Outstanding `/data get` queries issued by the poller; their output is hidden from the console. */
   private readonly pendingQueries = new Set<string>();
+  private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
 
   constructor(
@@ -94,6 +97,18 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   public getPlayers(): PlayerState[] {
     return Array.from(this.players.values());
+  }
+
+  public getConsoleBuffer(): string[] {
+    return [...this.consoleBuffer];
+  }
+
+  public getConfig(): ServerConfig {
+    return { ...this.config };
+  }
+
+  public updateConfig(patch: Partial<ServerConfig>): void {
+    Object.assign(this.config, patch);
   }
 
   public isRunning(): boolean {
@@ -147,6 +162,14 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   public stop(): void {
     if (!this.process || this.status === 'STOPPING') return;
 
+    if (this.config.forceSaveOnStop !== false) {
+      try {
+        this.process.stdin.write('save-all\n');
+      } catch {
+        // Stream might be closed
+      }
+    }
+
     this.setStatus('STOPPING');
     this.stopPositionPolling();
     this.process.stdin.write('stop\n');
@@ -156,16 +179,33 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     }, this.config.stopTimeoutMs);
   }
 
+  public restart(): void {
+    if (!this.process || this.status === 'OFFLINE') {
+      this.start();
+      return;
+    }
+    const onStatus = (status: ServerStatus) => {
+      if (status === 'OFFLINE') {
+        this.removeListener('status', onStatus);
+        setTimeout(() => this.start(), 800);
+      }
+    };
+    this.on('status', onStatus);
+    this.stop();
+  }
+
   public kill(): void {
     if (!this.process) return;
     this.process.kill('SIGKILL');
   }
 
   private buildJvmArgs(): string[] {
+    const customFlags = this.config.jvmArgs ?? [];
     return [
       `-Xms${this.config.minRamMb}M`,
       `-Xmx${this.config.maxRamMb}M`,
       ...JVM_FLAGS,
+      ...customFlags,
       '-jar',
       this.config.jarFile,
       'nogui'
@@ -341,7 +381,12 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   private emitConsole(line: string): void {
-    this.emit('console', `${line}${CONSOLE_LINE_ENDING}`);
+    const formatted = `${line}${CONSOLE_LINE_ENDING}`;
+    this.consoleBuffer.push(formatted);
+    if (this.consoleBuffer.length > 500) {
+      this.consoleBuffer.shift();
+    }
+    this.emit('console', formatted);
   }
 
   private fail(code: SupervisorErrorCode, message: string): void {
