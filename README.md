@@ -1,10 +1,10 @@
-# MC-Nexus
+# Hosty
 
-High-performance, local multi-game server management dashboard and desktop application powered by **Tauri v2**, **React 19**, and a **Node.js process supervisor daemon**.
+High-performance, friendly local multi-game server management dashboard and desktop application powered by **Tauri v2**, **React 19**, and a **Node.js process supervisor daemon**.
 
 ## Versioning Scheme
 
-MC-Nexus strictly adheres to a semantic versioning convention structured as `a.b.c`:
+Hosty strictly adheres to a semantic versioning convention structured as `a.b.c`:
 
 * **`a` (Major)**: Significant milestones and production releases. Incremented **only after explicit manual approval and validation**.
 * **`b` (Minor)**: New functional improvements, loaders, game drivers, or UI features.
@@ -22,7 +22,7 @@ MC-Nexus strictly adheres to a semantic versioning convention structured as `a.b
 ## Architecture
 
 ```
-mc-nexus/
+hosty/
 ├── client/           # React 19 + Vite + Tailwind CSS + Tauri v2 frontend
 ├── daemon/           # Express + WebSocket process supervisor & game drivers
 └── bridge/           # In-game telemetry plugins (Fabric mod & Paper plugin)

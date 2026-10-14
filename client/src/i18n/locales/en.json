@@ -13,7 +13,7 @@
     "status": "STATUS"
   },
   "header": {
-    "title": "MC-Nexus",
+    "title": "Hosty",
     "instance": "Local Instance",
     "instance_tooltip": "Switch active server instance",
     "new_server": "New Server",
@@ -178,7 +178,7 @@
     "startup_preview_label": "Startup Line Preview",
     "running_warning": "Turn the server off to apply port or JVM changes.",
     "tab_bridge": "Telemetry Bridge",
-    "bridge_title": "MC-Nexus Telemetry Bridge",
+    "bridge_title": "Hosty Telemetry Bridge",
     "bridge_description": "Deploy the native high-frequency bridge (Paper plugin or Fabric mod) to enable silent real-time TPS, MSPT, loaded chunks, and per-player health & coordinates directly over WebSocket without console polling.",
     "bridge_install_button": "Install Bridge Plugin/Mod",
     "bridge_installing": "Installing Bridge...",
@@ -340,7 +340,7 @@
     "INVALID_VERSION": "Invalid Minecraft version.",
     "INVALID_PAYLOAD": "Invalid payload received.",
     "UPSTREAM_ERROR": "Failed to contact download servers. Check your internet connection.",
-    "NETWORK_ERROR": "Cannot reach the MC-Nexus daemon. Ensure the daemon is running on port 4000.",
+    "NETWORK_ERROR": "Cannot reach the Hosty daemon. Ensure the daemon is running on port 4000.",
     "UNKNOWN": "An unexpected error occurred.",
     "dismiss": "Dismiss"
   },

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MC-Nexus",
+  "productName": "Hosty",
   "version": "0.1.0",
-  "identifier": "com.mcnexus.app",
+  "identifier": "com.hosty.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MC-Nexus",
+        "title": "Hosty",
         "width": 1320,
         "height": 840,
         "minWidth": 980,

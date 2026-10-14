@@ -1,7 +1,7 @@
 {
-  "name": "mc-nexus",
+  "name": "hosty",
   "version": "0.1.0",
-  "description": "MC-Nexus: Local Game Server Manager",
+  "description": "Hosty: Friendly Local Game Server Manager",
   "private": true,
   "scripts": {
     "dev:daemon": "npm --prefix daemon run dev",
