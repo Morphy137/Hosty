@@ -130,8 +130,11 @@
       "hearts_label": "Hearts",
       "heart_single": "1 Heart",
       "hearts_full": "10 (Full)",
-      "hearts_boost": "20 (Boost)",
-      "custom_item_placeholder": "e.g. minecraft:nether_star"
+      "custom_item_placeholder": "e.g. minecraft:nether_star",
+      "gift": "Gift",
+      "hurt": "Hurt",
+      "kill": "Kill",
+      "inventory_short": "Inv"
     }
   },
   "edit_server": {

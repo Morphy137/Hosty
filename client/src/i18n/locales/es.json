@@ -130,8 +130,11 @@
       "hearts_label": "Corazones",
       "heart_single": "1 Corazón",
       "hearts_full": "10 (Lleno)",
-      "hearts_boost": "20 (Aumento)",
-      "custom_item_placeholder": "ej: minecraft:nether_star"
+      "custom_item_placeholder": "ej: minecraft:nether_star",
+      "gift": "Regalar",
+      "hurt": "Dañar",
+      "kill": "Eliminar",
+      "inventory_short": "Inv"
     }
   },
   "edit_server": {

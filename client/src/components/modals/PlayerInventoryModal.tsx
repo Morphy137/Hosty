@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   X,
@@ -128,7 +129,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-hidden">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed] max-w-2xl w-full p-6 shadow-2xl space-y-5">
+      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed] max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
           <div className="flex items-center gap-3">
@@ -182,7 +183,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
             <p className="text-[13px] text-[#888888] dark:text-[#a1a1a1]">{t('inventory.loading')}</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="flex flex-col gap-5">
             <div className="flex gap-6 items-start justify-center">
               {/* Left Column: Equipment (Armor & Offhand) */}
               <div className="space-y-2">
@@ -249,63 +250,64 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Hover Tooltip Portal with Safe Coordinates and Theme Adaptation */}
-        {hoveredItem && (
-          <div
-            className="fixed z-50 pointer-events-none p-3 rounded-[6px] bg-white dark:bg-[#171717] border border-[#ebebeb] dark:border-[#333333] shadow-2xl max-w-xs space-y-1 font-mono text-[11px] text-[#171717] dark:text-[#ededed]"
-            style={{
-              left: `${hoveredItem.x}px`,
-              top: `${hoveredItem.y}px`
-            }}
-          >
-            <div className="text-[13px] font-bold text-[#171717] dark:text-[#ededed] flex items-center gap-1.5">
-              {hoveredItem.item.customName ? (
-                <span className="italic text-[#f5a623]">{hoveredItem.item.customName}</span>
-              ) : (
-                <span>
-                  {hoveredItem.item.id
-                    .replace(/^.*:/, '')
-                    .split('_')
-                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                    .join(' ')}
-                </span>
-              )}
-            </div>
-
-            <div className="text-[#888888] dark:text-[#777777] text-[10px] break-all">
-              {hoveredItem.item.id}
-            </div>
-
-            <div className="text-[#666666] dark:text-[#a1a1a1]">
-              {t('inventory.count')}: <span className="text-[#171717] dark:text-white font-bold">{hoveredItem.item.count}</span>
-            </div>
-
-            {hoveredItem.item.damage !== undefined && hoveredItem.item.maxDamage && (
-              <div className="text-[#666666] dark:text-[#a1a1a1]">
-                {t('inventory.durability')}:{' '}
-                <span className="text-[#0070f3] dark:text-[#50e3c2] font-semibold">
-                  {hoveredItem.item.maxDamage - hoveredItem.item.damage} / {hoveredItem.item.maxDamage}
-                </span>
-              </div>
-            )}
-
-            {hoveredItem.item.enchantments && hoveredItem.item.enchantments.length > 0 && (
-              <div className="pt-1 border-t border-[#ebebeb] dark:border-[#2e2e2e] space-y-0.5">
-                <span className="text-[10px] text-[#888888] dark:text-[#707070] uppercase flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-[#0070f3] dark:text-[#50e3c2]" />
-                  {t('inventory.enchantments')}
-                </span>
-                {hoveredItem.item.enchantments.map((ench, i) => (
-                  <div key={i} className="text-[#0070f3] dark:text-[#50e3c2] text-[11px]">
-                    {ench.id} {ench.level}
-                  </div>
-                ))}
-              </div>
+      {/* Hover Tooltip Portaled directly to document.body to prevent parent container layout shifts */}
+      {hoveredItem && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed z-9999 pointer-events-none p-3 rounded-[6px] bg-white dark:bg-[#171717] border border-[#ebebeb] dark:border-[#333333] shadow-2xl max-w-xs space-y-1 font-mono text-[11px] text-[#171717] dark:text-[#ededed]"
+          style={{
+            left: `${hoveredItem.x}px`,
+            top: `${hoveredItem.y}px`
+          }}
+        >
+          <div className="text-[13px] font-bold text-[#171717] dark:text-[#ededed] flex items-center gap-1.5">
+            {hoveredItem.item.customName ? (
+              <span className="italic text-[#f5a623]">{hoveredItem.item.customName}</span>
+            ) : (
+              <span>
+                {hoveredItem.item.id
+                  .replace(/^.*:/, '')
+                  .split('_')
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(' ')}
+              </span>
             )}
           </div>
-        )}
-      </div>
+
+          <div className="text-[#888888] dark:text-[#777777] text-[10px] break-all">
+            {hoveredItem.item.id}
+          </div>
+
+          <div className="text-[#666666] dark:text-[#a1a1a1]">
+            {t('inventory.count')}: <span className="text-[#171717] dark:text-white font-bold">{hoveredItem.item.count}</span>
+          </div>
+
+          {hoveredItem.item.damage !== undefined && hoveredItem.item.maxDamage && (
+            <div className="text-[#666666] dark:text-[#a1a1a1]">
+              {t('inventory.durability')}:{' '}
+              <span className="text-[#0070f3] dark:text-[#50e3c2] font-semibold">
+                {hoveredItem.item.maxDamage - hoveredItem.item.damage} / {hoveredItem.item.maxDamage}
+              </span>
+            </div>
+          )}
+
+          {hoveredItem.item.enchantments && hoveredItem.item.enchantments.length > 0 && (
+            <div className="pt-1 border-t border-[#ebebeb] dark:border-[#2e2e2e] space-y-0.5">
+              <span className="text-[10px] text-[#888888] dark:text-[#707070] uppercase flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5 text-[#0070f3] dark:text-[#50e3c2]" />
+                {t('inventory.enchantments')}
+              </span>
+              {hoveredItem.item.enchantments.map((ench, i) => (
+                <div key={i} className="text-[#0070f3] dark:text-[#50e3c2] text-[11px]">
+                  {ench.id} {ench.level}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

@@ -486,49 +486,54 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         <button
                           type="button"
                           onClick={() => onInspectInventory(p)}
-                          className="flex-1 h-7 rounded-[4px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                          className="flex-1 h-7 rounded-[6px] bg-[#0070f3]/10 dark:bg-[#0070f3]/15 hover:bg-[#0070f3]/20 border border-[#0070f3]/30 text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
                           title={t('players.inspect_inventory')}
                         >
                           <PackageSearch className="w-3 h-3 shrink-0" />
-                          <SlidingText>Inv</SlidingText>
+                          <SlidingText>{t('players.actions.inventory_short')}</SlidingText>
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'HEAL' })}
-                        className="flex-1 h-7 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                        title={t('overview.players.feed')}
                       >
-                        <Heart className="w-3 h-3 text-[#ee0000] shrink-0" />
+                        <Heart className="w-3 h-3 text-[#0070f3] dark:text-[#50e3c2] shrink-0" />
                         <SlidingText>{t('overview.players.feed')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'GIFT' })}
-                        className="flex-1 h-7 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                        title={t('players.actions.gift')}
                       >
                         <Gift className="w-3 h-3 text-[#0070f3] shrink-0" />
-                        <SlidingText>Gift</SlidingText>
+                        <SlidingText>{t('players.actions.gift')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'DAMAGE' })}
-                        className="flex-1 h-7 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                        title={t('players.actions.hurt')}
                       >
-                        <Zap className="w-3 h-3 text-[#f5a623] shrink-0" />
-                        <SlidingText>Hurt</SlidingText>
+                        <Zap className="w-3 h-3 text-[#ee0000] dark:text-[#ff6b6b] shrink-0" />
+                        <SlidingText>{t('players.actions.hurt')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KILL')}
-                        className="flex-1 h-7 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#f7d4d6]/40 dark:hover:bg-[#381215] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#ee0000] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fff0f0] dark:hover:bg-[#381215] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#ee0000] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                        title={t('players.actions.kill')}
                       >
                         <Skull className="w-3 h-3 shrink-0" />
-                        <SlidingText>Kill</SlidingText>
+                        <SlidingText>{t('players.actions.kill')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KICK')}
-                        className="flex-1 h-7 rounded-[4px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center justify-center gap-1 transition cursor-pointer px-1 whitespace-nowrap overflow-hidden"
+                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#888888]/40 text-[11px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center justify-center gap-1 transition-colors cursor-pointer px-1 whitespace-nowrap overflow-hidden shadow-2xs"
+                        title={t('overview.players.kick')}
                       >
                         <LogOut className="w-3 h-3 shrink-0" />
                         <SlidingText>{t('overview.players.kick')}</SlidingText>
