@@ -32,7 +32,15 @@
       "cpu": "Uso de CPU",
       "ram": "Asignación de RAM",
       "uptime": "Tiempo Activo",
-      "players_online": "Jugadores en Línea"
+      "players_online": "Jugadores en Línea",
+      "tps": "Rendimiento del Servidor (TPS)",
+      "mspt": "Tiempo de Tick (MSPT)",
+      "bridge": "Bridge de Telemetría",
+      "bridge_connected": "Bridge Activo",
+      "bridge_disconnected": "Sondeo Estándar",
+      "tick_optimal": "Tick Óptimo",
+      "tick_warning": "Lag de Tick Leve",
+      "tick_critical": "Lag Crítico de Servidor"
     },
     "controls": {
       "start": "Iniciar Servidor",
@@ -64,6 +72,10 @@
       "gamemode_survival": "Supervivencia",
       "feed": "Curar / Alimentar",
       "clear_inventory": "Vaciar Inv",
+      "health": "Vida",
+      "food": "Comida",
+      "ping": "Ping",
+      "operator": "OP",
       "dimension": {
         "overworld": "Overworld",
         "the_nether": "El Nether",
@@ -132,7 +144,16 @@
     "jvm_args_label": "Argumentos JVM Personalizados",
     "apply_aikar_preset": "Aplicar Banderas de Aikar",
     "startup_preview_label": "Vista Previa de Inicio",
-    "running_warning": "Apaga el servidor para aplicar cambios en el puerto o argumentos JVM."
+    "running_warning": "Apaga el servidor para aplicar cambios en el puerto o argumentos JVM.",
+    "tab_bridge": "Bridge de Telemetría",
+    "bridge_title": "Bridge de Telemetría MC-Nexus",
+    "bridge_description": "Instala el bridge nativo de alta frecuencia (plugin de Paper o mod de Fabric) para habilitar monitoreo de TPS, MSPT, chunks cargados y telemetría de jugadores directamente por WebSocket sin saturar la consola.",
+    "bridge_install_button": "Instalar Plugin/Mod del Bridge",
+    "bridge_installing": "Instalando Bridge...",
+    "bridge_installed_success": "¡Bridge instalado correctamente en el servidor! Reinicia el servidor para activarlo.",
+    "bridge_status_active": "Bridge Conectado y Transmitiendo",
+    "bridge_status_ready": "Bridge Instalado (Esperando Reinicio del Servidor)",
+    "bridge_status_missing": "No Instalado"
   },
   "mod_files": {
     "total_mods": "Total de Mods",

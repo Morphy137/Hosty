@@ -27,6 +27,13 @@ export interface PlayerState {
   x: number;
   y: number;
   z: number;
+  uuid?: string;
+  health?: number;
+  maxHealth?: number;
+  food?: number;
+  ping?: number;
+  gamemode?: string;
+  isOp?: boolean;
 }
 
 export interface ServerMetrics {
@@ -34,6 +41,11 @@ export interface ServerMetrics {
   ramMb: number;
   maxRamMb: number;
   uptime: number;
+  tps?: number;
+  mspt?: number;
+  loadedChunks?: number;
+  entitiesCount?: number;
+  bridgeConnected?: boolean;
 }
 
 export type ServerStatus = 'OFFLINE' | 'STARTING' | 'ONLINE' | 'STOPPING';
@@ -78,6 +90,13 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
   private driver: IGameDriver;
+  private isBridgeConnected = false;
+  private lastBridgeMetrics?: {
+    tps: number;
+    mspt: number;
+    loadedChunks: number;
+    entitiesCount: number;
+  };
 
   constructor(
     private readonly config: ServerConfig,
@@ -94,6 +113,34 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   public getDriver(): IGameDriver {
     return this.driver;
+  }
+
+  public isBridgeActive(): boolean {
+    return this.isBridgeConnected;
+  }
+
+  public setBridgeActive(active: boolean): void {
+    this.isBridgeConnected = active;
+    if (active) {
+      this.stopPositionPolling();
+    } else if (this.status === 'ONLINE') {
+      this.startPositionPolling();
+    }
+  }
+
+  public setBridgeTelemetry(
+    server: { tps: number; mspt: number; loadedChunks: number; entitiesCount: number },
+    incomingPlayers: PlayerState[]
+  ): void {
+    this.isBridgeConnected = true;
+    this.stopPositionPolling();
+    this.lastBridgeMetrics = server;
+
+    this.players.clear();
+    for (const p of incomingPlayers) {
+      this.players.set(p.username, p);
+    }
+    this.emitPlayers();
   }
 
   public getPlayers(): PlayerState[] {
@@ -249,6 +296,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;
     }
+    this.isBridgeConnected = false;
+    this.lastBridgeMetrics = undefined;
     this.players.clear();
     this.emit('players', []);
     this.setStatus('OFFLINE');
@@ -310,7 +359,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   private pollPlayerPositions(): void {
-    if (!this.process || this.status !== 'ONLINE') return;
+    if (!this.process || this.status !== 'ONLINE' || this.isBridgeConnected) return;
     if (this.driver.pollPlayerPositions) {
       this.driver.pollPlayerPositions(
         this.process.stdin,
@@ -321,6 +370,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   private startPositionPolling(): void {
+    if (this.isBridgeConnected) return;
     this.stopPositionPolling();
     this.positionTimer = setInterval(() => this.pollPlayerPositions(), this.config.positionPollIntervalMs);
   }
@@ -344,7 +394,12 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
           cpu: Number(stats.cpu.toFixed(1)),
           ramMb: Math.round(stats.memory / BYTES_PER_MEGABYTE),
           maxRamMb: this.config.maxRamMb,
-          uptime: stats.elapsed
+          uptime: stats.elapsed,
+          tps: this.lastBridgeMetrics?.tps,
+          mspt: this.lastBridgeMetrics?.mspt,
+          loadedChunks: this.lastBridgeMetrics?.loadedChunks,
+          entitiesCount: this.lastBridgeMetrics?.entitiesCount,
+          bridgeConnected: this.isBridgeConnected
         });
       } catch {
         // The process may have exited between the pid check and sampling.

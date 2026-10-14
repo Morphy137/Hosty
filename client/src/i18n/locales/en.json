@@ -32,7 +32,15 @@
       "cpu": "CPU Usage",
       "ram": "RAM Allocation",
       "uptime": "Uptime",
-      "players_online": "Players Online"
+      "players_online": "Players Online",
+      "tps": "Server Performance (TPS)",
+      "mspt": "Tick Time (MSPT)",
+      "bridge": "Telemetry Bridge",
+      "bridge_connected": "Bridge Active",
+      "bridge_disconnected": "Standard Polling",
+      "tick_optimal": "Optimal Tick",
+      "tick_warning": "Minor Tick Lag",
+      "tick_critical": "Heavy Tick Lag"
     },
     "controls": {
       "start": "Start Server",
@@ -64,6 +72,10 @@
       "gamemode_survival": "Survival",
       "feed": "Feed / Heal",
       "clear_inventory": "Clear Inv",
+      "health": "Health",
+      "food": "Food",
+      "ping": "Ping",
+      "operator": "OP",
       "dimension": {
         "overworld": "Overworld",
         "the_nether": "The Nether",
@@ -132,7 +144,16 @@
     "jvm_args_label": "Custom JVM Arguments",
     "apply_aikar_preset": "Apply Aikar's Flags",
     "startup_preview_label": "Startup Line Preview",
-    "running_warning": "Turn the server off to apply port or JVM changes."
+    "running_warning": "Turn the server off to apply port or JVM changes.",
+    "tab_bridge": "Telemetry Bridge",
+    "bridge_title": "MC-Nexus Telemetry Bridge",
+    "bridge_description": "Deploy the native high-frequency bridge (Paper plugin or Fabric mod) to enable silent real-time TPS, MSPT, loaded chunks, and per-player health & coordinates directly over WebSocket without console polling.",
+    "bridge_install_button": "Install Bridge Plugin/Mod",
+    "bridge_installing": "Installing Bridge...",
+    "bridge_installed_success": "Bridge successfully installed into server! Restart the server to activate.",
+    "bridge_status_active": "Bridge Active & Streaming",
+    "bridge_status_ready": "Bridge Installed (Awaiting Server Restart)",
+    "bridge_status_missing": "Not Installed"
   },
   "mod_files": {
     "total_mods": "Total Mods",

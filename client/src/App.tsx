@@ -168,13 +168,18 @@ export default function App() {
               instance={instances.activeInstance}
               status={status}
               onSendCommand={handleSendCommand}
+              onSendAction={sendAction}
               onOpenEditModal={() => setIsEditModalOpen(true)}
               onRestart={handleRestartServer}
             />
           )}
 
           {activeTab === 'players' && (
-            <PlayersTab players={players} onSendCommand={handleSendCommand} />
+            <PlayersTab
+              players={players}
+              onSendCommand={handleSendCommand}
+              onSendAction={sendAction}
+            />
           )}
 
           {activeTab === 'mod_files' && (

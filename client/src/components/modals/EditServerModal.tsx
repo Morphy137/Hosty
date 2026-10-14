@@ -10,10 +10,16 @@ import {
   AlertTriangle,
   Loader2,
   Copy,
-  Check
+  Check,
+  Activity
 } from 'lucide-react';
 import type { InstanceInfo, InstanceSettings, ServerStatus } from '../../types/daemon';
-import { getInstanceIconUrl, uploadInstanceIcon, deleteInstanceIcon } from '../../api/daemonApi';
+import {
+  getInstanceIconUrl,
+  uploadInstanceIcon,
+  deleteInstanceIcon,
+  installInstanceBridge
+} from '../../api/daemonApi';
 
 interface EditServerModalProps {
   isOpen: boolean;
@@ -24,7 +30,7 @@ interface EditServerModalProps {
   onRefreshInstances: () => Promise<void>;
 }
 
-type TabKey = 'general' | 'advanced';
+type TabKey = 'general' | 'advanced' | 'bridge';
 
 const AIKAR_FLAGS = [
   '-XX:+UseG1GC',
@@ -90,6 +96,26 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   );
   const [pendingIconBase64, setPendingIconBase64] = useState<string | null>(null);
   const [removeIconPending, setRemoveIconPending] = useState(false);
+
+  // Bridge installation state
+  const [isInstallingBridge, setIsInstallingBridge] = useState(false);
+  const [bridgeFeedback, setBridgeFeedback] = useState<string | null>(null);
+  const [bridgeInstalled, setBridgeInstalled] = useState(false);
+
+  const handleInstallBridge = async () => {
+    setIsInstallingBridge(true);
+    setBridgeFeedback(null);
+    try {
+      await installInstanceBridge(instance.id);
+      setBridgeInstalled(true);
+      setBridgeFeedback(t('edit_server.bridge_installed_success'));
+      await onRefreshInstances();
+    } catch {
+      // Error handled via parent or API
+    } finally {
+      setIsInstallingBridge(false);
+    }
+  };
 
   const handleCopyPath = () => {
     navigator.clipboard.writeText(instance.dir);
@@ -226,6 +252,19 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
           >
             <Layers className="w-4 h-4" />
             {t('edit_server.tab_advanced')}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('bridge')}
+            className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'bridge'
+                ? 'border-[#171717] dark:border-[#ededed] text-[#171717] dark:text-[#ededed]'
+                : 'border-transparent text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed]'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            {t('edit_server.tab_bridge')}
           </button>
         </div>
 
@@ -480,6 +519,71 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   {startupPreview}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'bridge' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-[6px] border border-[#ebebeb] dark:border-[#262626] bg-[#fafafa] dark:bg-[#141414] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-[#0070f3]" />
+                    <h3 className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed]">
+                      {t('edit_server.bridge_title')}
+                    </h3>
+                  </div>
+                  {instance.bridgeConnected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#50e3c2]/10 dark:bg-[#50e3c2]/15 border border-[#50e3c2]/30 text-[#0f8c70] dark:text-[#50e3c2] font-mono text-[11px] font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#50e3c2] animate-pulse" />
+                      {t('edit_server.bridge_status_active')}
+                    </span>
+                  ) : bridgeInstalled ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#f5a623]/10 dark:bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[11px] font-medium">
+                      {t('edit_server.bridge_status_ready')}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#ebebeb] dark:bg-[#262626] text-[#888888] font-mono text-[11px] font-medium">
+                      {t('edit_server.bridge_status_missing')}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[12px] leading-relaxed text-[#666666] dark:text-[#a1a1a1]">
+                  {t('edit_server.bridge_description')}
+                </p>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <div className="text-[11px] font-mono text-[#888888]">
+                    Engine: <span className="font-semibold text-[#171717] dark:text-[#ededed] uppercase">{instance.loader || 'vanilla'}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleInstallBridge}
+                    disabled={isInstallingBridge}
+                    className="h-8 px-3.5 rounded-[4px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] disabled:opacity-40 text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  >
+                    {isInstallingBridge ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{t('edit_server.bridge_installing')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-[#50e3c2]" />
+                        <span>{t('edit_server.bridge_install_button')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {bridgeFeedback && (
+                <div className="p-3 rounded-[4px] bg-[#50e3c2]/10 dark:bg-[#50e3c2]/15 border border-[#50e3c2]/30 text-[#0f8c70] dark:text-[#50e3c2] text-[12px] flex items-center gap-2">
+                  <Check className="w-4 h-4 shrink-0 text-[#50e3c2]" />
+                  <span>{bridgeFeedback}</span>
+                </div>
+              )}
             </div>
           )}
 

@@ -80,4 +80,25 @@ describe('daemonApi utilities', () => {
 
     globalThis.fetch = origFetch;
   });
+
+  it('calls installInstanceBridge endpoint correctly', async () => {
+    const origFetch = globalThis.fetch;
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    );
+    globalThis.fetch = fetchMock;
+
+    const { installInstanceBridge } = await import('../src/api/daemonApi');
+    const result = await installInstanceBridge('test-instance');
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/instances/test-instance/bridge/install'),
+      expect.objectContaining({ method: 'POST' })
+    );
+
+    globalThis.fetch = origFetch;
+  });
 });

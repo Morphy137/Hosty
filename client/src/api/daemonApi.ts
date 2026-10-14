@@ -146,6 +146,10 @@ export function deleteInstanceIcon(id: string): Promise<{ ok: boolean }> {
   return deleteRequest<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`);
 }
 
+export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
+}
+
 export function getInstanceIconUrl(id: string): string {
   return `${DAEMON_HTTP_URL}/api/instances/${encodeURIComponent(id)}/icon`;
 }

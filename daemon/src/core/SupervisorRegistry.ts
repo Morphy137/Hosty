@@ -8,6 +8,8 @@ import {
   type SupervisorFailure
 } from './ProcessSupervisor';
 import type { InstanceInfo } from './InstanceManager';
+import { telemetryBridge } from './bridge/TelemetryBridgeManager';
+import type { BridgeActionMessage } from './bridge/BridgeProtocol';
 
 export interface SupervisorRegistryEvents {
   status: [instanceId: string, status: ServerStatus];
@@ -32,6 +34,25 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
   constructor(defaults: RegistryDefaults) {
     super();
     this.defaults = defaults;
+
+    telemetryBridge.on('bridge_connected', (instanceId, loader, version) => {
+      const sup = this.supervisors.get(instanceId);
+      if (sup) sup.setBridgeActive(true);
+      this.emit('console', instanceId, `[Hypervisor] MC-Nexus Bridge connected (${loader || 'plugin'} ${version || ''}). Real-time telemetry active.\r\n`);
+    });
+
+    telemetryBridge.on('bridge_disconnected', (instanceId) => {
+      const sup = this.supervisors.get(instanceId);
+      if (sup) sup.setBridgeActive(false);
+      this.emit('console', instanceId, `[Hypervisor] MC-Nexus Bridge disconnected. Fallback stdout active.\r\n`);
+    });
+
+    telemetryBridge.on('telemetry', (instanceId, server, players) => {
+      const sup = this.supervisors.get(instanceId);
+      if (sup) {
+        sup.setBridgeTelemetry(server, players);
+      }
+    });
   }
 
   public getSupervisor(instanceId: string): ProcessSupervisor | undefined {
@@ -110,5 +131,16 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
         sup.stop();
       }
     }
+  }
+
+  public isBridgeConnected(instanceId: string): boolean {
+    return telemetryBridge.isBridgeConnected(instanceId);
+  }
+
+  public sendBridgeAction(
+    instanceId: string,
+    action: Omit<BridgeActionMessage, 'type'>
+  ): boolean {
+    return telemetryBridge.sendAction(instanceId, action);
   }
 }

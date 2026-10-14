@@ -11,6 +11,7 @@ import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
+import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { PropertiesParser } from './parsers/PropertiesParser';
 import { ModConfigParser } from './parsers/ModConfigParser';
 import { ServerInstaller, LoaderType } from './provisioning/ServerInstaller';
@@ -159,7 +160,8 @@ app.get('/api/instances', (_req, res, next) => {
     const list = instanceManager.listInstances().map((inst) => ({
       ...inst,
       status: registry.getStatus(inst.id),
-      onlinePlayersCount: registry.getPlayers(inst.id).length
+      onlinePlayersCount: registry.getPlayers(inst.id).length,
+      bridgeConnected: registry.isBridgeConnected(inst.id)
     }));
     res.json({
       instances: list,
@@ -187,7 +189,8 @@ app.post('/api/instances/select', (req, res, next) => {
       activeInstance: {
         ...selected,
         status: sup.getStatus(),
-        onlinePlayersCount: sup.getPlayers().length
+        onlinePlayersCount: sup.getPlayers().length,
+        bridgeConnected: registry.isBridgeConnected(selected.id)
       }
     });
   } catch (err) {
@@ -204,8 +207,23 @@ app.get('/api/instances/:id/settings', (req, res, next) => {
     res.json({
       ...instance,
       status: registry.getStatus(instance.id),
-      onlinePlayersCount: registry.getPlayers(instance.id).length
+      onlinePlayersCount: registry.getPlayers(instance.id).length,
+      bridgeConnected: registry.isBridgeConnected(instance.id)
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/bridge/install', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    }
+    const ok = telemetryBridge.installBridge(instance.dir, instance.loader);
+    broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".\r\n`);
+    res.json({ ok });
   } catch (err) {
     next(err);
   }
@@ -538,32 +556,38 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json(body);
 });
 
-// 20 Simulated players for the MOCK action
+// 20 Simulated players for the MOCK action with rich telemetry
 const MOCK_PLAYERS: PlayerState[] = [
-  { username: 'MorphyCD', dimension: 'overworld', x: -245, y: 68, z: 1120 },
-  { username: 'Notch', dimension: 'the_nether', x: 42, y: 81, z: -19 },
-  { username: 'Jeb_', dimension: 'the_end', x: 0, y: 64, z: 0 },
-  { username: 'Dinnerbone', dimension: 'overworld', x: 1024, y: 72, z: -550 },
-  { username: 'Grian', dimension: 'overworld', x: 120, y: 85, z: 340 },
-  { username: 'MumboJumbo', dimension: 'overworld', x: -80, y: 64, z: 520 },
-  { username: 'DanTDM', dimension: 'overworld', x: 310, y: 63, z: -105 },
-  { username: 'CaptainSparklez', dimension: 'the_nether', x: 15, y: 70, z: 128 },
-  { username: 'Technoblade', dimension: 'the_nether', x: -666, y: 108, z: 420 },
-  { username: 'Dream', dimension: 'overworld', x: 890, y: 70, z: -320 },
-  { username: 'GeorgeNotFound', dimension: 'overworld', x: 910, y: 71, z: -305 },
-  { username: 'Sapnap', dimension: 'the_nether', x: 210, y: 64, z: -88 },
-  { username: 'TommyInnit', dimension: 'overworld', x: 50, y: 65, z: 15 },
-  { username: 'Philza', dimension: 'the_end', x: 100, y: 49, z: -80 },
-  { username: 'WilburSoot', dimension: 'overworld', x: -140, y: 63, z: 230 },
-  { username: 'Quackity', dimension: 'overworld', x: 730, y: 68, z: 95 },
-  { username: 'Tubbo', dimension: 'overworld', x: 60, y: 66, z: 40 },
-  { username: 'Ranboo', dimension: 'the_end', x: 250, y: 55, z: 14 },
-  { username: 'Skeppy', dimension: 'overworld', x: -450, y: 64, z: -120 },
-  { username: 'BadBoyHalo', dimension: 'the_nether', x: -300, y: 80, z: 75 }
+  { username: 'MorphyCD', dimension: 'overworld', x: -245, y: 68, z: 1120, health: 20, maxHealth: 20, food: 20, ping: 12, isOp: true },
+  { username: 'Notch', dimension: 'the_nether', x: 42, y: 81, z: -19, health: 18, maxHealth: 20, food: 17, ping: 45, isOp: true },
+  { username: 'Jeb_', dimension: 'the_end', x: 0, y: 64, z: 0, health: 15, maxHealth: 20, food: 14, ping: 28, isOp: true },
+  { username: 'Dinnerbone', dimension: 'overworld', x: 1024, y: 72, z: -550, health: 20, maxHealth: 20, food: 20, ping: 64, isOp: false },
+  { username: 'Grian', dimension: 'overworld', x: 120, y: 85, z: 340, health: 14, maxHealth: 20, food: 18, ping: 32, isOp: false },
+  { username: 'MumboJumbo', dimension: 'overworld', x: -80, y: 64, z: 520, health: 19, maxHealth: 20, food: 19, ping: 19, isOp: false },
+  { username: 'DanTDM', dimension: 'overworld', x: 310, y: 63, z: -105, health: 20, maxHealth: 20, food: 16, ping: 51, isOp: false },
+  { username: 'CaptainSparklez', dimension: 'the_nether', x: 15, y: 70, z: 128, health: 12, maxHealth: 20, food: 10, ping: 38, isOp: false },
+  { username: 'Technoblade', dimension: 'the_nether', x: -666, y: 108, z: 420, health: 20, maxHealth: 20, food: 20, ping: 22, isOp: true },
+  { username: 'Dream', dimension: 'overworld', x: 890, y: 70, z: -320, health: 16, maxHealth: 20, food: 15, ping: 15, isOp: false },
+  { username: 'GeorgeNotFound', dimension: 'overworld', x: 910, y: 71, z: -305, health: 17, maxHealth: 20, food: 13, ping: 82, isOp: false },
+  { username: 'Sapnap', dimension: 'the_nether', x: 210, y: 64, z: -88, health: 20, maxHealth: 20, food: 18, ping: 26, isOp: false },
+  { username: 'TommyInnit', dimension: 'overworld', x: 50, y: 65, z: 15, health: 8, maxHealth: 20, food: 8, ping: 41, isOp: false },
+  { username: 'Philza', dimension: 'the_end', x: 100, y: 49, z: -80, health: 20, maxHealth: 20, food: 20, ping: 30, isOp: true },
+  { username: 'WilburSoot', dimension: 'overworld', x: -140, y: 63, z: 230, health: 11, maxHealth: 20, food: 12, ping: 95, isOp: false },
+  { username: 'Quackity', dimension: 'overworld', x: 730, y: 68, z: 95, health: 13, maxHealth: 20, food: 15, ping: 110, isOp: false },
+  { username: 'Tubbo', dimension: 'overworld', x: 60, y: 66, z: 40, health: 18, maxHealth: 20, food: 16, ping: 36, isOp: false },
+  { username: 'Ranboo', dimension: 'the_end', x: 250, y: 55, z: 14, health: 20, maxHealth: 20, food: 19, ping: 44, isOp: false },
+  { username: 'Skeppy', dimension: 'overworld', x: -450, y: 64, z: -120, health: 15, maxHealth: 20, food: 14, ping: 58, isOp: false },
+  { username: 'BadBoyHalo', dimension: 'the_nether', x: -300, y: 80, z: 75, health: 20, maxHealth: 20, food: 20, ping: 52, isOp: false }
 ];
 
 // WebSocket Handling
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  const url = req?.url || '/';
+  if (url.startsWith('/telemetry/bridge') || url.startsWith('/bridge')) {
+    telemetryBridge.handleConnection(ws);
+    return;
+  }
+
   const activeSup = getActiveSupervisor();
   ws.send(JSON.stringify({ type: 'STATUS', payload: activeSup.getStatus() }));
   ws.send(JSON.stringify({ type: 'PLAYERS', payload: activeSup.getPlayers() }));
@@ -574,7 +598,8 @@ wss.on('connection', (ws) => {
         cpu: 0,
         ramMb: 0,
         maxRamMb: activeSup.getConfig().maxRamMb,
-        uptime: 0
+        uptime: 0,
+        bridgeConnected: registry.isBridgeConnected(instanceManager.getActiveInstanceId())
       }
     })
   );
@@ -591,17 +616,54 @@ wss.on('connection', (ws) => {
         const sent = sup.sendCommand(data);
         if (sent) broadcast('CONSOLE', `> ${data}\r\n`);
       }
+      if (action === 'ACTION' && data && typeof data === 'object') {
+        const activeId = instanceManager.getActiveInstanceId();
+        const actionData = data as {
+          action: 'HEAL' | 'DAMAGE' | 'KILL' | 'KICK' | 'TELEPORT' | 'INVENTORY_VIEW';
+          username: string;
+          amount?: number;
+          feed?: boolean;
+          reason?: string;
+          x?: number;
+          y?: number;
+          z?: number;
+        };
+
+        const sent = registry.sendBridgeAction(activeId, actionData);
+        if (sent) {
+          broadcast('CONSOLE', `[Hypervisor] Action ${actionData.action} applied to player ${actionData.username} via Bridge.\r\n`);
+        } else {
+          // Fallback to vanilla commands
+          if (actionData.action === 'HEAL') {
+            sup.sendCommand(`effect give ${actionData.username} instant_health 1 ${Math.min(255, actionData.amount || 20)}`);
+            if (actionData.feed) sup.sendCommand(`effect give ${actionData.username} saturation 1 20`);
+          } else if (actionData.action === 'DAMAGE') {
+            sup.sendCommand(`damage ${actionData.username} ${actionData.amount || 4}`);
+          } else if (actionData.action === 'KILL') {
+            sup.sendCommand(`kill ${actionData.username}`);
+          } else if (actionData.action === 'KICK') {
+            sup.sendCommand(`kick ${actionData.username} ${actionData.reason || 'Kicked by administrator'}`);
+          } else if (actionData.action === 'TELEPORT') {
+            sup.sendCommand(`tp ${actionData.username} ${actionData.x ?? 0} ${actionData.y ?? 70} ${actionData.z ?? 0}`);
+          }
+        }
+      }
       if (action === 'MOCK' && config.mockEnabled) {
         const mockMetrics: ServerMetrics = {
           cpu: 38.4,
           ramMb: 3120,
           maxRamMb: sup.getConfig().maxRamMb,
-          uptime: 7200000
+          uptime: 7200000,
+          tps: 20.0,
+          mspt: 12.4,
+          loadedChunks: 1048,
+          entitiesCount: 342,
+          bridgeConnected: true
         };
         broadcast('STATUS', 'ONLINE');
         broadcast('METRICS', mockMetrics);
         broadcast('PLAYERS', MOCK_PLAYERS);
-        broadcast('CONSOLE', '[Server thread/INFO]: Done (3.850s)! Simulated 20-Player Telemetry Active.\r\n');
+        broadcast('CONSOLE', '[Server thread/INFO]: Done (3.850s)! Simulated 20-Player Telemetry Active (Bridge: Connected, TPS: 20.0, MSPT: 12.4ms).\r\n');
       }
     } catch (err) {
       console.error('Invalid WS payload:', err);

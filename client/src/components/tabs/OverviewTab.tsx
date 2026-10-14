@@ -17,9 +17,11 @@ import {
   Copy,
   Check,
   Layers,
-  Search
+  Search,
+  Activity,
+  Wifi
 } from 'lucide-react';
-import type { InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
+import type { DaemonAction, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { calculateRamPercent } from '../../utils/format';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
 import { DimensionIcon } from '../common/DimensionIcon';
@@ -33,6 +35,7 @@ interface OverviewTabProps {
   instance: InstanceInfo | null;
   status: ServerStatus;
   onSendCommand: (command: string) => void;
+  onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
   onOpenEditModal: () => void;
   onRestart: () => void;
 }
@@ -57,6 +60,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   instance,
   status,
   onSendCommand,
+  onSendAction,
   onOpenEditModal,
   onRestart
 }) => {
@@ -92,6 +96,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   };
 
   const handlePlayerAction = (username: string, action: PlayerAction) => {
+    if (onSendAction && (action === 'KILL' || action === 'KICK')) {
+      onSendAction('ACTION', {
+        action,
+        username,
+        reason: 'Kicked by administrator'
+      });
+      return;
+    }
     const cmd = buildPlayerCommand(action, username, 'Kicked by administrator');
     onSendCommand(cmd);
   };
@@ -145,6 +157,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   ? 'Hytale'
                   : 'Minecraft'}
               </span>
+              {metrics.bridgeConnected && (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#50e3c2]/10 dark:bg-[#50e3c2]/15 border border-[#50e3c2]/30 text-[#0f8c70] dark:text-[#50e3c2] font-mono text-[10px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#50e3c2] animate-pulse" />
+                  {t('overview.metrics.bridge_connected')}
+                </span>
+              )}
             </div>
 
             {/* Sub-meta Strip: IP, Loader, Player Count, MOTD */}
@@ -219,8 +237,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
       </div>
 
-      {/* Top 3-Up Metric Strip */}
-      <div className="grid grid-cols-3 gap-4 shrink-0">
+      {/* Top 4-Up Metric Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[12px] uppercase text-[#888888]">
@@ -265,6 +283,62 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
         </div>
 
+        {/* TPS / MSPT Performance Card */}
+        <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[12px] uppercase text-[#888888]">
+              {t('overview.metrics.tps')}
+            </span>
+            <Activity className="w-4 h-4 text-[#888888]" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span
+              className={`text-[24px] font-semibold tracking-[-0.96px] ${
+                status !== 'ONLINE'
+                  ? 'text-[#888888]'
+                  : (metrics.tps ?? 20) >= 19.5
+                  ? 'text-[#50e3c2]'
+                  : (metrics.tps ?? 20) >= 15
+                  ? 'text-[#f5a623]'
+                  : 'text-[#ee0000]'
+              }`}
+            >
+              {status === 'ONLINE'
+                ? metrics.tps !== undefined
+                  ? metrics.tps.toFixed(1)
+                  : '20.0'
+                : '--'}{' '}
+              <span className="text-[14px] font-normal text-[#888888]">TPS</span>
+            </span>
+            <span className="font-mono text-[12px] text-[#888888]">
+              {status === 'ONLINE' && metrics.mspt !== undefined
+                ? `${metrics.mspt.toFixed(1)} ms`
+                : t('overview.metrics.mspt')}
+            </span>
+          </div>
+          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] dark:bg-[#1f1f1f] rounded-[2px] overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 ${
+                status !== 'ONLINE'
+                  ? 'bg-transparent'
+                  : (metrics.tps ?? 20) >= 19.5
+                  ? 'bg-[#50e3c2]'
+                  : (metrics.tps ?? 20) >= 15
+                  ? 'bg-[#f5a623]'
+                  : 'bg-[#ee0000]'
+              }`}
+              style={{
+                width: `${
+                  status === 'ONLINE'
+                    ? Math.min(100, ((metrics.tps ?? 20) / 20) * 100)
+                    : 0
+                }%`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Connected Players & Port Card */}
         <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[12px] uppercase text-[#888888]">
@@ -276,8 +350,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <span className="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ededed]">
               {players.length}
             </span>
-            <span className="font-mono text-[12px] text-[#0070f3]">
-              Active Sessions
+            <span className="font-mono text-[12px] text-[#888888]">
+              / {maxPlayersCount} Max
             </span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
@@ -358,11 +432,36 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                           className="w-9 h-9 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
                         />
                         <div>
-                          <div className="text-[14px] font-medium tracking-[-0.28px] text-[#171717] dark:text-[#ededed]">
-                            {p.username}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[14px] font-medium tracking-[-0.28px] text-[#171717] dark:text-[#ededed]">
+                              {p.username}
+                            </span>
+                            {p.isOp && (
+                              <span className="px-1 py-0.2 rounded-[3px] bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[9px] font-bold">
+                                {t('overview.players.operator')}
+                              </span>
+                            )}
                           </div>
-                          <div className="font-mono text-[12px] text-[#888888]">
-                            XYZ: {p.x}, {p.y}, {p.z}
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#888888] flex-wrap">
+                            <span>XYZ: {p.x}, {p.y}, {p.z}</span>
+                            {p.ping !== undefined && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="inline-flex items-center gap-0.5 text-[#50e3c2]">
+                                  <Wifi className="w-2.5 h-2.5" />
+                                  {p.ping}ms
+                                </span>
+                              </>
+                            )}
+                            {p.health !== undefined && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="inline-flex items-center gap-0.5 text-[#ee0000]">
+                                  <Heart className="w-2.5 h-2.5 fill-[#ee0000]" />
+                                  {p.health} HP
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

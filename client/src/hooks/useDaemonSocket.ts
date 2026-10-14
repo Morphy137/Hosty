@@ -12,7 +12,7 @@ import { computeBackoffDelay } from '../utils/backoff';
 export interface DaemonSocket extends DaemonSocketState {
   connectionState: SocketConnectionState;
   /** Sends an action to the daemon. Returns false when the socket is not open. */
-  sendAction: (action: DaemonAction, data?: string) => boolean;
+  sendAction: (action: DaemonAction, data?: unknown) => boolean;
   clearError: () => void;
   resetProvisionLogs: (lines: string[]) => void;
 }
@@ -72,7 +72,7 @@ export function useDaemonSocket(url: string = DAEMON_WS_URL): DaemonSocket {
     };
   }, [url]);
 
-  const sendAction = useCallback((action: DaemonAction, data?: string) => {
+  const sendAction = useCallback((action: DaemonAction, data?: unknown) => {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
     socket.send(JSON.stringify({ action, data }));

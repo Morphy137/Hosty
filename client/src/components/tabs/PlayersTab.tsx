@@ -7,9 +7,10 @@ import {
   Heart,
   Gift,
   Zap,
-  Skull
+  Skull,
+  Wifi
 } from 'lucide-react';
-import type { PlayerState } from '../../types/daemon';
+import type { DaemonAction, PlayerState } from '../../types/daemon';
 import { PlayerAdminModal } from '../modals/PlayerAdminModal';
 import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
 import { DimensionIcon } from '../common/DimensionIcon';
@@ -18,6 +19,7 @@ import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommand
 interface PlayersTabProps {
   players: PlayerState[];
   onSendCommand: (command: string) => void;
+  onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
 }
 
 const DIMENSION_STYLES: Record<string, { key: string }> = {
@@ -28,7 +30,11 @@ const DIMENSION_STYLES: Record<string, { key: string }> = {
 
 type DimensionFilter = 'all' | 'overworld' | 'the_nether' | 'the_end';
 
-export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }) => {
+export const PlayersTab: React.FC<PlayersTabProps> = ({
+  players,
+  onSendCommand,
+  onSendAction
+}) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [selectedDimension, setSelectedDimension] = useState<DimensionFilter>('all');
@@ -49,6 +55,14 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
   });
 
   const handlePlayerAction = (username: string, action: PlayerAction) => {
+    if (onSendAction && (action === 'KILL' || action === 'KICK')) {
+      onSendAction('ACTION', {
+        action,
+        username,
+        reason: 'Kicked by administrator'
+      });
+      return;
+    }
     const cmd = buildPlayerCommand(action, username, 'Kicked by administrator');
     onSendCommand(cmd);
   };
@@ -171,8 +185,15 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                         className="w-10 h-10 rounded-[6px] border border-[#ebebeb] dark:border-[#262626] shrink-0 object-contain shadow-2xs"
                       />
                       <div className="min-w-0">
-                        <div className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.2px] truncate">
-                          {player.username}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.2px] truncate">
+                            {player.username}
+                          </span>
+                          {player.isOp && (
+                            <span className="px-1 py-0.2 rounded-[3px] bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[9px] font-bold">
+                              {t('overview.players.operator')}
+                            </span>
+                          )}
                         </div>
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[10px] text-[#4d4d4d] dark:text-[#a1a1a1] mt-0.5">
                           <DimensionIcon dimension={player.dimension} className="w-3 h-3" />
@@ -199,6 +220,29 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({ players, onSendCommand }
                     <span className="text-[#ebebeb] dark:text-[#333333]">|</span>
                     <span>Z: {player.z}</span>
                   </div>
+
+                  {/* High-frequency Telemetry (Health, Food, Ping) */}
+                  {(player.health !== undefined || player.ping !== undefined) && (
+                    <div className="px-2 py-1 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[11px] flex items-center justify-between text-[#4d4d4d] dark:text-[#a1a1a1]">
+                      {player.health !== undefined && (
+                        <span className="inline-flex items-center gap-1 text-[#ee0000]">
+                          <Heart className="w-3 h-3 fill-[#ee0000]" />
+                          <span>{player.health}/{player.maxHealth || 20} HP</span>
+                        </span>
+                      )}
+                      {player.food !== undefined && (
+                        <span className="text-[#888888]">
+                          {t('overview.players.food')}: {player.food}/20
+                        </span>
+                      )}
+                      {player.ping !== undefined && (
+                        <span className="inline-flex items-center gap-1 text-[#50e3c2]">
+                          <Wifi className="w-3 h-3" />
+                          <span>{player.ping}ms</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Quick Player Actions */}
                   <div className="grid grid-cols-4 gap-1 pt-0.5">

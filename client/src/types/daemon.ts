@@ -68,7 +68,7 @@ export const LOADER_METADATA: Record<ServerLoader, LoaderInfo> = {
   }
 };
 
-export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK';
+export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK' | 'ACTION';
 
 export interface PlayerState {
   username: string;
@@ -76,6 +76,13 @@ export interface PlayerState {
   x: number;
   y: number;
   z: number;
+  uuid?: string;
+  health?: number;
+  maxHealth?: number;
+  food?: number;
+  ping?: number;
+  gamemode?: string;
+  isOp?: boolean;
 }
 
 export interface Metrics {
@@ -83,6 +90,11 @@ export interface Metrics {
   ramMb: number;
   maxRamMb: number;
   uptime: number;
+  tps?: number;
+  mspt?: number;
+  loadedChunks?: number;
+  entitiesCount?: number;
+  bridgeConnected?: boolean;
 }
 
 export type ConfigValue = string | number | boolean;
@@ -162,6 +174,7 @@ export interface InstanceInfo {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
+  bridgeConnected?: boolean;
 }
 
 export interface InstancesResponse {
