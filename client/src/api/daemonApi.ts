@@ -7,7 +7,9 @@ import type {
   InstanceInfo,
   InstancesResponse,
   ModFileInfo,
-  ServerLoader
+  ServerLoader,
+  InstanceSettings,
+  GameDriverSummary
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
 
@@ -102,12 +104,54 @@ export async function selectInstance(id: string): Promise<void> {
   await postJson<unknown>('/api/instances/select', { id });
 }
 
-export function createInstance(id: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
-  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/create', { id, name });
+export function createInstance(
+  id: string,
+  name?: string,
+  settings?: Partial<InstanceSettings>
+): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/create', { id, name, settings });
+}
+
+export function fetchSupportedGames(): Promise<{ games: GameDriverSummary[] }> {
+  return request<{ games: GameDriverSummary[] }>('/api/games');
 }
 
 export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
   return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', { path: folderPath, name });
+}
+
+export function fetchInstanceSettings(id: string): Promise<InstanceInfo> {
+  return request<InstanceInfo>(`/api/instances/${encodeURIComponent(id)}/settings`);
+}
+
+export function updateInstanceSettings(
+  id: string,
+  settings: Partial<InstanceSettings>
+): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>(
+    `/api/instances/${encodeURIComponent(id)}/settings`,
+    settings
+  );
+}
+
+export function restartInstance(id: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/restart`, {});
+}
+
+export function uploadInstanceIcon(id: string, imageBase64: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`, { imageBase64 });
+}
+
+export function deleteInstanceIcon(id: string): Promise<{ ok: boolean }> {
+  return deleteRequest<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`);
+}
+
+export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
+}
+
+export function getInstanceIconUrl(id: string): string {
+  return `${DAEMON_HTTP_URL}/api/instances/${encodeURIComponent(id)}/icon`;
 }
 
 // Properties
@@ -155,13 +199,15 @@ export async function installServer(
   loader: ServerLoader,
   version: string,
   instanceId?: string,
-  instanceName?: string
+  instanceName?: string,
+  settings?: Partial<InstanceSettings>
 ): Promise<void> {
   await postJson<unknown>('/api/provisioning/install', {
     loader,
     version,
     instanceId,
-    instanceName
+    instanceName,
+    settings
   });
 }
 

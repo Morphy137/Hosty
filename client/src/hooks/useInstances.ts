@@ -3,9 +3,11 @@ import {
   fetchInstances,
   selectInstance as apiSelectInstance,
   createInstance as apiCreateInstance,
-  importInstance as apiImportInstance
+  importInstance as apiImportInstance,
+  updateInstanceSettings as apiUpdateInstanceSettings,
+  restartInstance as apiRestartInstance
 } from '../api/daemonApi';
-import type { InstanceInfo, SocketConnectionState } from '../types/daemon';
+import type { InstanceInfo, InstanceSettings, SocketConnectionState } from '../types/daemon';
 
 export interface InstancesState {
   instances: InstanceInfo[];
@@ -13,7 +15,9 @@ export interface InstancesState {
   activeInstance: InstanceInfo | null;
   isLoading: boolean;
   selectInstance: (id: string) => Promise<void>;
-  createInstance: (id: string, name?: string) => Promise<InstanceInfo>;
+  createInstance: (id: string, name?: string, settings?: Partial<InstanceSettings>) => Promise<InstanceInfo>;
+  updateSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
+  restartServer: (id: string) => Promise<void>;
   importInstance: (folderPath: string, name?: string) => Promise<InstanceInfo>;
   refresh: () => Promise<void>;
 }
@@ -72,11 +76,38 @@ export function useInstances(
   );
 
   const createInstance = useCallback(
-    async (id: string, name?: string): Promise<InstanceInfo> => {
+    async (id: string, name?: string, settings?: Partial<InstanceSettings>): Promise<InstanceInfo> => {
       try {
-        const res = await apiCreateInstance(id, name);
+        const res = await apiCreateInstance(id, name, settings);
         await refresh();
         return res.instance;
+      } catch (err) {
+        onError(err);
+        throw err;
+      }
+    },
+    [onError, refresh]
+  );
+
+  const updateSettings = useCallback(
+    async (id: string, patch: Partial<InstanceSettings>): Promise<InstanceInfo> => {
+      try {
+        const res = await apiUpdateInstanceSettings(id, patch);
+        await refresh();
+        return res.instance;
+      } catch (err) {
+        onError(err);
+        throw err;
+      }
+    },
+    [onError, refresh]
+  );
+
+  const restartServer = useCallback(
+    async (id: string): Promise<void> => {
+      try {
+        await apiRestartInstance(id);
+        await refresh();
       } catch (err) {
         onError(err);
         throw err;
@@ -108,6 +139,8 @@ export function useInstances(
     isLoading,
     selectInstance,
     createInstance,
+    updateSettings,
+    restartServer,
     importInstance,
     refresh
   };

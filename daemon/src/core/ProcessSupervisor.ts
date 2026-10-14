@@ -1,16 +1,10 @@
 import { spawn as nodeSpawn, ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'child_process';
 import { EventEmitter } from 'events';
-import fs from 'fs';
 import path from 'path';
 import pidusage from 'pidusage';
 import { LineBuffer } from './LineBuffer';
-import {
-  isServerReadyLine,
-  parseDimensionResponse,
-  parsePlayerJoin,
-  parsePlayerLeave,
-  parsePositionResponse
-} from './LogLineParser';
+import type { IGameDriver } from './drivers/IGameDriver';
+import { driverRegistry } from './drivers/GameDriverRegistry';
 
 export interface ServerConfig {
   id: string;
@@ -22,6 +16,9 @@ export interface ServerConfig {
   stopTimeoutMs: number;
   metricsIntervalMs: number;
   positionPollIntervalMs: number;
+  jvmArgs?: string[];
+  forceSaveOnStop?: boolean;
+  gameId?: string;
 }
 
 export interface PlayerState {
@@ -30,6 +27,15 @@ export interface PlayerState {
   x: number;
   y: number;
   z: number;
+  uuid?: string;
+  health?: number;
+  maxHealth?: number;
+  food?: number;
+  ping?: number;
+  gamemode?: string;
+  isOp?: boolean;
+  isFrozen?: boolean;
+  isMuted?: boolean;
 }
 
 export interface ServerMetrics {
@@ -37,6 +43,11 @@ export interface ServerMetrics {
   ramMb: number;
   maxRamMb: number;
   uptime: number;
+  tps?: number;
+  mspt?: number;
+  loadedChunks?: number;
+  entitiesCount?: number;
+  bridgeConnected?: boolean;
 }
 
 export type ServerStatus = 'OFFLINE' | 'STARTING' | 'ONLINE' | 'STOPPING';
@@ -69,7 +80,6 @@ export type SpawnFunction = (
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 const CONSOLE_LINE_ENDING = '\r\n';
-const JVM_FLAGS = ['-XX:+UseG1GC'];
 
 export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private process: ChildProcessWithoutNullStreams | null = null;
@@ -77,23 +87,81 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private positionTimer: NodeJS.Timeout | null = null;
   private stopTimer: NodeJS.Timeout | null = null;
   private readonly players = new Map<string, PlayerState>();
-  /** Outstanding `/data get` queries issued by the poller; their output is hidden from the console. */
+  /** Outstanding queries issued by the poller; their output is hidden from the console. */
   private readonly pendingQueries = new Set<string>();
+  private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
+  private driver: IGameDriver;
+  private isBridgeConnected = false;
+  private lastBridgeMetrics?: {
+    tps: number;
+    mspt: number;
+    loadedChunks: number;
+    entitiesCount: number;
+  };
 
   constructor(
     private readonly config: ServerConfig,
-    private readonly spawnProcess: SpawnFunction = nodeSpawn
+    private readonly spawnProcess: SpawnFunction = nodeSpawn,
+    driver?: IGameDriver
   ) {
     super();
+    this.driver = driver ?? driverRegistry.getDriver(config.gameId);
   }
 
   public getStatus(): ServerStatus {
     return this.status;
   }
 
+  public getDriver(): IGameDriver {
+    return this.driver;
+  }
+
+  public isBridgeActive(): boolean {
+    return this.isBridgeConnected;
+  }
+
+  public setBridgeActive(active: boolean): void {
+    this.isBridgeConnected = active;
+    if (active) {
+      this.stopPositionPolling();
+    } else if (this.status === 'ONLINE') {
+      this.startPositionPolling();
+    }
+  }
+
+  public setBridgeTelemetry(
+    server: { tps: number; mspt: number; loadedChunks: number; entitiesCount: number },
+    incomingPlayers: PlayerState[]
+  ): void {
+    this.isBridgeConnected = true;
+    this.stopPositionPolling();
+    this.lastBridgeMetrics = server;
+
+    this.players.clear();
+    for (const p of incomingPlayers) {
+      this.players.set(p.username, p);
+    }
+    this.emitPlayers();
+  }
+
   public getPlayers(): PlayerState[] {
     return Array.from(this.players.values());
+  }
+
+  public getConsoleBuffer(): string[] {
+    return [...this.consoleBuffer];
+  }
+
+  public getConfig(): ServerConfig {
+    return { ...this.config };
+  }
+
+  public updateConfig(patch: Partial<ServerConfig>): void {
+    Object.assign(this.config, patch);
+    if (patch.gameId) {
+      this.driver = driverRegistry.getDriver(patch.gameId);
+    }
   }
 
   public isRunning(): boolean {
@@ -115,15 +183,15 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     }
 
     const workingDir = path.resolve(this.config.workingDir);
-    const jarPath = path.join(workingDir, this.config.jarFile);
-    if (!fs.existsSync(jarPath)) {
-      this.fail('JAR_MISSING', `Server jar not found at ${jarPath}. Provision a server first.`);
+    if (!this.driver.validateInstallation(workingDir)) {
+      this.fail('JAR_MISSING', `Server executable or valid installation not found at ${workingDir}.`);
       return;
     }
 
     this.setStatus('STARTING');
-    const child = this.spawnProcess(this.config.javaPath, this.buildJvmArgs(), {
-      cwd: workingDir,
+    const launchPlan = this.driver.buildLaunchPlan(this.config);
+    const child = this.spawnProcess(launchPlan.executable, launchPlan.args, {
+      cwd: launchPlan.cwd,
       stdio: ['pipe', 'pipe', 'pipe']
     });
     this.process = child;
@@ -147,29 +215,42 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   public stop(): void {
     if (!this.process || this.status === 'STOPPING') return;
 
+    if (this.config.forceSaveOnStop !== false) {
+      try {
+        const saveCmd = this.driver.buildSaveCommand();
+        if (saveCmd) this.process.stdin.write(saveCmd);
+      } catch {
+        // Stream might be closed
+      }
+    }
+
     this.setStatus('STOPPING');
     this.stopPositionPolling();
-    this.process.stdin.write('stop\n');
+    this.process.stdin.write(this.driver.buildStopCommand());
     this.stopTimer = setTimeout(() => {
       this.emitConsole(`[Hypervisor] Graceful stop timed out after ${this.config.stopTimeoutMs} ms, killing process.`);
       this.kill();
     }, this.config.stopTimeoutMs);
   }
 
+  public restart(): void {
+    if (!this.process || this.status === 'OFFLINE') {
+      this.start();
+      return;
+    }
+    const onStatus = (status: ServerStatus) => {
+      if (status === 'OFFLINE') {
+        this.removeListener('status', onStatus);
+        setTimeout(() => this.start(), 800);
+      }
+    };
+    this.on('status', onStatus);
+    this.stop();
+  }
+
   public kill(): void {
     if (!this.process) return;
     this.process.kill('SIGKILL');
-  }
-
-  private buildJvmArgs(): string[] {
-    return [
-      `-Xms${this.config.minRamMb}M`,
-      `-Xmx${this.config.maxRamMb}M`,
-      ...JVM_FLAGS,
-      '-jar',
-      this.config.jarFile,
-      'nogui'
-    ];
   }
 
   private attachProcessListeners(child: ChildProcessWithoutNullStreams): void {
@@ -190,7 +271,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     child.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') {
-        this.fail('JAVA_NOT_FOUND', `Java executable "${this.config.javaPath}" was not found. Install Java or set MC_NEXUS_JAVA_PATH.`);
+        this.fail('JAVA_NOT_FOUND', `Executable "${this.config.javaPath}" was not found. Install runtime or set correct path.`);
       } else {
         this.fail('PROCESS_ERROR', err.message);
       }
@@ -217,6 +298,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;
     }
+    this.isBridgeConnected = false;
+    this.lastBridgeMetrics = undefined;
     this.players.clear();
     this.emit('players', []);
     this.setStatus('OFFLINE');
@@ -227,39 +310,43 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     this.emitConsole(line);
 
-    if (this.status === 'STARTING' && isServerReadyLine(line)) {
+    const parsed = this.driver.parseLogLine(line);
+    if (!parsed) return;
+
+    if (this.status === 'STARTING' && parsed.isReady) {
       this.setStatus('ONLINE');
       this.startPositionPolling();
       return;
     }
 
-    const joined = parsePlayerJoin(line);
-    if (joined) {
-      this.players.set(joined.username, joined);
+    if (parsed.playerJoin) {
+      this.players.set(parsed.playerJoin.username, {
+        username: parsed.playerJoin.username,
+        dimension: parsed.playerJoin.dimension ?? 'overworld',
+        x: parsed.playerJoin.x ?? 0,
+        y: parsed.playerJoin.y ?? 64,
+        z: parsed.playerJoin.z ?? 0
+      });
       this.emitPlayers();
       return;
     }
 
-    const leftUsername = parsePlayerLeave(line);
-    if (leftUsername && this.players.delete(leftUsername)) {
-      this.emitPlayers();
+    if (parsed.playerLeave) {
+      if (this.players.delete(parsed.playerLeave)) {
+        this.emitPlayers();
+      }
     }
   }
 
   /** Returns true when the line answered one of our own position/dimension queries. */
   private consumeQueryResponse(line: string): boolean {
-    const position = parsePositionResponse(line);
-    if (position && this.pendingQueries.delete(this.queryKey(position.username, 'Pos'))) {
-      this.updatePlayer(position.username, { x: position.x, y: position.y, z: position.z });
-      return true;
+    if (this.driver.consumeQueryResponse) {
+      const result = this.driver.consumeQueryResponse(line, this.pendingQueries);
+      if (result) {
+        this.updatePlayer(result.username, result.patch as Partial<PlayerState>);
+        return true;
+      }
     }
-
-    const dimension = parseDimensionResponse(line);
-    if (dimension && this.pendingQueries.delete(this.queryKey(dimension.username, 'Dimension'))) {
-      this.updatePlayer(dimension.username, { dimension: dimension.dimension });
-      return true;
-    }
-
     return false;
   }
 
@@ -273,24 +360,19 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     if (changed) this.emitPlayers();
   }
 
-  private queryKey(username: string, dataPath: 'Pos' | 'Dimension'): string {
-    return `${username}:${dataPath}`;
-  }
-
   private pollPlayerPositions(): void {
-    if (!this.process || this.status !== 'ONLINE') return;
-
-    // Drop unanswered queries (e.g. player left between polls) so they never leak.
-    this.pendingQueries.clear();
-    for (const username of this.players.keys()) {
-      for (const dataPath of ['Pos', 'Dimension'] as const) {
-        this.pendingQueries.add(this.queryKey(username, dataPath));
-        this.process.stdin.write(`data get entity ${username} ${dataPath}\n`);
-      }
+    if (!this.process || this.status !== 'ONLINE' || this.isBridgeConnected) return;
+    if (this.driver.pollPlayerPositions) {
+      this.driver.pollPlayerPositions(
+        this.process.stdin,
+        Array.from(this.players.keys()),
+        this.pendingQueries
+      );
     }
   }
 
   private startPositionPolling(): void {
+    if (this.isBridgeConnected) return;
     this.stopPositionPolling();
     this.positionTimer = setInterval(() => this.pollPlayerPositions(), this.config.positionPollIntervalMs);
   }
@@ -314,7 +396,12 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
           cpu: Number(stats.cpu.toFixed(1)),
           ramMb: Math.round(stats.memory / BYTES_PER_MEGABYTE),
           maxRamMb: this.config.maxRamMb,
-          uptime: stats.elapsed
+          uptime: stats.elapsed,
+          tps: this.lastBridgeMetrics?.tps,
+          mspt: this.lastBridgeMetrics?.mspt,
+          loadedChunks: this.lastBridgeMetrics?.loadedChunks,
+          entitiesCount: this.lastBridgeMetrics?.entitiesCount,
+          bridgeConnected: this.isBridgeConnected
         });
       } catch {
         // The process may have exited between the pid check and sampling.
@@ -341,7 +428,12 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   private emitConsole(line: string): void {
-    this.emit('console', `${line}${CONSOLE_LINE_ENDING}`);
+    const formatted = `${line}${CONSOLE_LINE_ENDING}`;
+    this.consoleBuffer.push(formatted);
+    if (this.consoleBuffer.length > 500) {
+      this.consoleBuffer.shift();
+    }
+    this.emit('console', formatted);
   }
 
   private fail(code: SupervisorErrorCode, message: string): void {

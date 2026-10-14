@@ -26,8 +26,8 @@ export class ModJarManager {
       throw new DaemonError('INVALID_FILENAME', 'Path traversal is not allowed in filename.');
     }
 
-    if (!base.endsWith('.jar') && !base.endsWith('.jar.disabled')) {
-      throw new DaemonError('INVALID_FILENAME', 'Only .jar and .jar.disabled files are supported.');
+    if (!base.endsWith('.jar') && !base.endsWith('.jar.disabled') && !base.endsWith('.jar.disable')) {
+      throw new DaemonError('INVALID_FILENAME', 'Only .jar, .jar.disabled, and .jar.disable files are supported.');
     }
 
     return base;
@@ -47,12 +47,12 @@ export class ModJarManager {
     const modItems: ModFileInfo[] = [];
 
     for (const file of files) {
-      if (!file.endsWith('.jar') && !file.endsWith('.jar.disabled')) continue;
+      if (!file.endsWith('.jar') && !file.endsWith('.jar.disabled') && !file.endsWith('.jar.disable')) continue;
 
       const fullPath = path.join(modsDir, file);
       const stat = fs.statSync(fullPath);
       const enabled = file.endsWith('.jar');
-      const cleanModName = file.replace(/\.jar(\.disabled)?$/, '').toLowerCase();
+      const cleanModName = file.replace(/\.jar(\.(disabled|disable))?$/, '').toLowerCase();
 
       // Check if there is a config with matching prefix in config/
       const hasConfig = existingConfigFiles.some((cfg) => {
@@ -62,7 +62,7 @@ export class ModJarManager {
 
       modItems.push({
         filename: file,
-        originalName: file.replace(/\.disabled$/, ''),
+        originalName: file.replace(/\.(disabled|disable)$/, ''),
         sizeBytes: stat.size,
         sizeFormatted: this.formatFileSize(stat.size),
         modifiedAt: stat.mtime.toISOString(),
@@ -90,8 +90,10 @@ export class ModJarManager {
     let targetFilename: string;
     if (safeFilename.endsWith('.disabled')) {
       targetFilename = safeFilename.slice(0, -'.disabled'.length);
+    } else if (safeFilename.endsWith('.disable')) {
+      targetFilename = safeFilename.slice(0, -'.disable'.length);
     } else {
-      targetFilename = `${safeFilename}.disabled`;
+      targetFilename = `${safeFilename}.disable`;
     }
 
     const targetPath = path.join(modsDir, targetFilename);
@@ -102,13 +104,14 @@ export class ModJarManager {
     fs.renameSync(currentPath, targetPath);
 
     const stat = fs.statSync(targetPath);
+    const enabled = !targetFilename.endsWith('.disabled') && !targetFilename.endsWith('.disable');
     return {
       filename: targetFilename,
-      originalName: targetFilename.replace(/\.disabled$/, ''),
+      originalName: targetFilename.replace(/\.(disabled|disable)$/, ''),
       sizeBytes: stat.size,
       sizeFormatted: this.formatFileSize(stat.size),
       modifiedAt: stat.mtime.toISOString(),
-      enabled: !targetFilename.endsWith('.disabled'),
+      enabled,
       hasConfig: false
     };
   }

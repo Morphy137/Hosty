@@ -92,11 +92,12 @@ export class PropertiesParser {
 
   public static createDefaultProperties(
     filePath: string,
-    options?: { port?: number; motd?: string }
+    options?: { port?: number; motd?: string; maxPlayers?: number }
   ): void {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     const port = options?.port ?? 25565;
     const motd = options?.motd ?? 'MC-Nexus Local Server';
+    const maxPlayers = options?.maxPlayers ?? 20;
 
     const defaults = [
       '# Minecraft server properties',
@@ -129,7 +130,7 @@ export class PropertiesParser {
       'level-type=minecraft\\:normal',
       'log-ips=true',
       'max-chained-neighbor-updates=1000000',
-      'max-players=20',
+      `max-players=${maxPlayers}`,
       'max-tick-time=60000',
       'max-world-size=29999984',
       `motd=${motd}`,

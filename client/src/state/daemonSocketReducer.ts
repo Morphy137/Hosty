@@ -3,6 +3,7 @@ import type {
   DaemonMessage,
   DaemonMessageType,
   Metrics,
+  PlayerInventoryData,
   PlayerState,
   ServerStatus
 } from '../types/daemon';
@@ -16,6 +17,7 @@ export interface DaemonSocketState {
   status: ServerStatus;
   metrics: Metrics;
   players: PlayerState[];
+  inventory: PlayerInventoryData | null;
   logs: string[];
   provisionLogs: string[];
   lastError: DaemonErrorPayload | null;
@@ -24,12 +26,14 @@ export interface DaemonSocketState {
 export type DaemonSocketEvent =
   | { kind: 'message'; message: DaemonMessage }
   | { kind: 'clearError' }
+  | { kind: 'clearInventory' }
   | { kind: 'resetProvisionLogs'; lines: string[] };
 
 export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   status: 'OFFLINE',
   metrics: { cpu: 0, ramMb: 0, maxRamMb: DEFAULT_MAX_RAM_MB, uptime: 0 },
   players: [],
+  inventory: null,
   logs: [],
   provisionLogs: [],
   lastError: null
@@ -41,7 +45,9 @@ const KNOWN_MESSAGE_TYPES: ReadonlySet<DaemonMessageType> = new Set([
   'PLAYERS',
   'CONSOLE',
   'PROVISION_LOG',
-  'ERROR'
+  'ERROR',
+  'INSTANCE_STATUS',
+  'INVENTORY_DATA'
 ]);
 
 /** Appends a line and drops the oldest entries so the buffer never exceeds `cap`. */
@@ -85,6 +91,10 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
       };
     case 'ERROR':
       return { ...state, lastError: message.payload };
+    case 'INSTANCE_STATUS':
+      return state;
+    case 'INVENTORY_DATA':
+      return { ...state, inventory: message.payload };
   }
 }
 
@@ -94,6 +104,8 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
       return applyMessage(state, event.message);
     case 'clearError':
       return { ...state, lastError: null };
+    case 'clearInventory':
+      return { ...state, inventory: null };
     case 'resetProvisionLogs':
       return { ...state, provisionLogs: event.lines.slice(-MAX_PROVISION_LOG_LINES) };
   }

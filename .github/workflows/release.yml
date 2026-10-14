@@ -1,0 +1,67 @@
+name: Release Desktop Application
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release Desktop App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            daemon/package-lock.json
+            client/package-lock.json
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: client/src-tauri
+
+      - name: Install Daemon Dependencies
+        run: |
+          cd daemon
+          npm ci
+
+      - name: Install Client Dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Verify Quality Assurance (Tests & Linter)
+        run: |
+          npm run test
+          npm run lint
+
+      - name: Build Daemon
+        run: |
+          cd daemon
+          npm run build
+
+      - name: Build Tauri Desktop Bundle & Publish Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: client
+          tagName: ${{ github.ref_name }}
+          releaseName: 'MC-Nexus v__VERSION__'
+          releaseBody: 'Automated release of MC-Nexus desktop application.'
+          releaseDraft: false
+          prerelease: false

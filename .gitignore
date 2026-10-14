@@ -2,6 +2,8 @@
 node_modules/
 dist/
 coverage/
+src-tauri/target/
+**/src-tauri/target/
 
 # Environment & secrets
 .env
