@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
 import { PropertiesParser } from '../parsers/PropertiesParser';
+import { driverRegistry } from './drivers/GameDriverRegistry';
 
 export interface InstanceSettings {
   name?: string;
@@ -16,6 +17,7 @@ export interface InstanceSettings {
   autostart?: boolean;
   loader?: string;
   loaderVersion?: string;
+  gameId?: string;
 }
 
 export interface InstanceInfo {
@@ -37,11 +39,12 @@ export interface InstanceInfo {
   autostart: boolean;
   loader?: string;
   loaderVersion?: string;
+  gameId: string;
 }
 
 interface RegistryData {
   activeInstanceId: string;
-  importedInstances: Record<string, { name: string; path: string; createdAt: string }>;
+  importedInstances: Record<string, { name: string; path: string; createdAt: string; gameId?: string }>;
 }
 
 const REGISTRY_FILE = 'instances_registry.json';
@@ -130,21 +133,26 @@ export class InstanceManager {
       throw new DaemonError('INVALID_PAYLOAD', `Instance "${safeId}" already exists.`);
     }
 
+    const gameId = customSettings?.gameId || 'minecraft';
+    const driver = driverRegistry.getDriver(gameId);
+
     fs.mkdirSync(targetDir, { recursive: true });
     fs.mkdirSync(path.join(targetDir, 'mods'), { recursive: true });
     fs.mkdirSync(path.join(targetDir, 'config'), { recursive: true });
 
     const serverName = name?.trim() || safeId;
-    const port = customSettings?.port ?? this.findNextAvailablePort();
-    const motd = customSettings?.motd ?? `MC-Nexus - ${serverName}`;
-    const maxPlayers = customSettings?.maxPlayers ?? DEFAULT_MAX_PLAYERS;
+    const port = customSettings?.port ?? this.findNextAvailablePort(driver.summary.defaultPort);
+    const motd = customSettings?.motd ?? `${driver.summary.name} - ${serverName}`;
+    const maxPlayers = customSettings?.maxPlayers ?? driver.summary.defaultMaxPlayers;
 
-    // Create default server.properties with next free port and complete standard schema
-    PropertiesParser.createDefaultProperties(path.join(targetDir, 'server.properties'), {
-      port,
-      motd,
-      maxPlayers
-    });
+    // For Minecraft, generate server.properties with standard schema
+    if (gameId === 'minecraft') {
+      PropertiesParser.createDefaultProperties(path.join(targetDir, 'server.properties'), {
+        port,
+        motd,
+        maxPlayers
+      });
+    }
 
     const settings: InstanceSettings = {
       name: serverName,
@@ -158,7 +166,8 @@ export class InstanceManager {
       forceSaveOnStop: customSettings?.forceSaveOnStop ?? true,
       autostart: customSettings?.autostart ?? false,
       loader: customSettings?.loader,
-      loaderVersion: customSettings?.loaderVersion
+      loaderVersion: customSettings?.loaderVersion,
+      gameId
     };
 
     fs.writeFileSync(
@@ -193,14 +202,16 @@ export class InstanceManager {
 
     fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
 
-    // Also sync to server.properties if port, motd, or maxPlayers were modified
-    const propsUpdates: Record<string, string | number | boolean> = {};
-    if (patch.port !== undefined) propsUpdates['server-port'] = patch.port;
-    if (patch.motd !== undefined) propsUpdates['motd'] = patch.motd;
-    if (patch.maxPlayers !== undefined) propsUpdates['max-players'] = patch.maxPlayers;
+    // Also sync to server.properties for Minecraft instances
+    if ((merged.gameId || 'minecraft') === 'minecraft') {
+      const propsUpdates: Record<string, string | number | boolean> = {};
+      if (patch.port !== undefined) propsUpdates['server-port'] = patch.port;
+      if (patch.motd !== undefined) propsUpdates['motd'] = patch.motd;
+      if (patch.maxPlayers !== undefined) propsUpdates['max-players'] = patch.maxPlayers;
 
-    if (Object.keys(propsUpdates).length > 0) {
-      PropertiesParser.saveFile(instance.dir, propsUpdates);
+      if (Object.keys(propsUpdates).length > 0) {
+        PropertiesParser.saveFile(instance.dir, propsUpdates);
+      }
     }
 
     return this.getInstance(id)!;
@@ -233,7 +244,7 @@ export class InstanceManager {
     }
   }
 
-  public importInstance(externalPath: string, name?: string): InstanceInfo {
+  public importInstance(externalPath: string, name?: string, gameId?: string): InstanceInfo {
     const resolvedPath = path.resolve(externalPath);
     if (!fs.existsSync(resolvedPath) || !fs.statSync(resolvedPath).isDirectory()) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Directory "${resolvedPath}" does not exist.`);
@@ -247,7 +258,8 @@ export class InstanceManager {
     registry.importedInstances[id] = {
       name: serverName,
       path: resolvedPath,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      gameId: gameId || 'minecraft'
     };
     this.saveRegistry(registry);
 
@@ -271,12 +283,15 @@ export class InstanceManager {
       }
     }
 
-    const propsPath = path.join(dir, 'server.properties');
-    let port = settings.port ?? DEFAULT_PORT;
-    let motd = settings.motd ?? id;
-    let maxPlayers = settings.maxPlayers ?? DEFAULT_MAX_PLAYERS;
+    const gameId = settings.gameId || 'minecraft';
+    const driver = driverRegistry.getDriver(gameId);
 
-    if (fs.existsSync(propsPath)) {
+    const propsPath = path.join(dir, 'server.properties');
+    let port = settings.port ?? driver.summary.defaultPort ?? DEFAULT_PORT;
+    let motd = settings.motd ?? id;
+    let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers ?? DEFAULT_MAX_PLAYERS;
+
+    if (gameId === 'minecraft' && fs.existsSync(propsPath)) {
       try {
         const raw = fs.readFileSync(propsPath, 'utf-8');
         for (const line of raw.split(/\r?\n/)) {
@@ -297,7 +312,7 @@ export class InstanceManager {
     }
 
     const stat = fs.statSync(dir);
-    const hasJar = fs.existsSync(path.join(dir, 'server.jar'));
+    const hasJar = driver.validateInstallation(dir);
     const hasIcon = fs.existsSync(path.join(dir, SERVER_ICON_FILE));
 
     return {
@@ -318,7 +333,8 @@ export class InstanceManager {
       forceSaveOnStop: settings.forceSaveOnStop ?? true,
       autostart: settings.autostart ?? false,
       loader: settings.loader,
-      loaderVersion: settings.loaderVersion
+      loaderVersion: settings.loaderVersion,
+      gameId
     };
   }
 
@@ -330,10 +346,10 @@ export class InstanceManager {
     return sanitized;
   }
 
-  private findNextAvailablePort(): number {
+  private findNextAvailablePort(basePort: number = DEFAULT_PORT): number {
     const instances = this.listInstances();
     const usedPorts = new Set(instances.map((i) => i.port));
-    let candidate = DEFAULT_PORT;
+    let candidate = basePort;
     while (usedPorts.has(candidate)) {
       candidate += 1;
     }

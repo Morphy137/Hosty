@@ -1,16 +1,10 @@
 import { spawn as nodeSpawn, ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'child_process';
 import { EventEmitter } from 'events';
-import fs from 'fs';
 import path from 'path';
 import pidusage from 'pidusage';
 import { LineBuffer } from './LineBuffer';
-import {
-  isServerReadyLine,
-  parseDimensionResponse,
-  parsePlayerJoin,
-  parsePlayerLeave,
-  parsePositionResponse
-} from './LogLineParser';
+import type { IGameDriver } from './drivers/IGameDriver';
+import { driverRegistry } from './drivers/GameDriverRegistry';
 
 export interface ServerConfig {
   id: string;
@@ -24,6 +18,7 @@ export interface ServerConfig {
   positionPollIntervalMs: number;
   jvmArgs?: string[];
   forceSaveOnStop?: boolean;
+  gameId?: string;
 }
 
 export interface PlayerState {
@@ -71,7 +66,6 @@ export type SpawnFunction = (
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 const CONSOLE_LINE_ENDING = '\r\n';
-const JVM_FLAGS = ['-XX:+UseG1GC'];
 
 export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private process: ChildProcessWithoutNullStreams | null = null;
@@ -79,20 +73,27 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private positionTimer: NodeJS.Timeout | null = null;
   private stopTimer: NodeJS.Timeout | null = null;
   private readonly players = new Map<string, PlayerState>();
-  /** Outstanding `/data get` queries issued by the poller; their output is hidden from the console. */
+  /** Outstanding queries issued by the poller; their output is hidden from the console. */
   private readonly pendingQueries = new Set<string>();
   private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
+  private driver: IGameDriver;
 
   constructor(
     private readonly config: ServerConfig,
-    private readonly spawnProcess: SpawnFunction = nodeSpawn
+    private readonly spawnProcess: SpawnFunction = nodeSpawn,
+    driver?: IGameDriver
   ) {
     super();
+    this.driver = driver ?? driverRegistry.getDriver(config.gameId);
   }
 
   public getStatus(): ServerStatus {
     return this.status;
+  }
+
+  public getDriver(): IGameDriver {
+    return this.driver;
   }
 
   public getPlayers(): PlayerState[] {
@@ -109,6 +110,9 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   public updateConfig(patch: Partial<ServerConfig>): void {
     Object.assign(this.config, patch);
+    if (patch.gameId) {
+      this.driver = driverRegistry.getDriver(patch.gameId);
+    }
   }
 
   public isRunning(): boolean {
@@ -130,15 +134,15 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     }
 
     const workingDir = path.resolve(this.config.workingDir);
-    const jarPath = path.join(workingDir, this.config.jarFile);
-    if (!fs.existsSync(jarPath)) {
-      this.fail('JAR_MISSING', `Server jar not found at ${jarPath}. Provision a server first.`);
+    if (!this.driver.validateInstallation(workingDir)) {
+      this.fail('JAR_MISSING', `Server executable or valid installation not found at ${workingDir}.`);
       return;
     }
 
     this.setStatus('STARTING');
-    const child = this.spawnProcess(this.config.javaPath, this.buildJvmArgs(), {
-      cwd: workingDir,
+    const launchPlan = this.driver.buildLaunchPlan(this.config);
+    const child = this.spawnProcess(launchPlan.executable, launchPlan.args, {
+      cwd: launchPlan.cwd,
       stdio: ['pipe', 'pipe', 'pipe']
     });
     this.process = child;
@@ -164,7 +168,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     if (this.config.forceSaveOnStop !== false) {
       try {
-        this.process.stdin.write('save-all\n');
+        const saveCmd = this.driver.buildSaveCommand();
+        if (saveCmd) this.process.stdin.write(saveCmd);
       } catch {
         // Stream might be closed
       }
@@ -172,7 +177,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     this.setStatus('STOPPING');
     this.stopPositionPolling();
-    this.process.stdin.write('stop\n');
+    this.process.stdin.write(this.driver.buildStopCommand());
     this.stopTimer = setTimeout(() => {
       this.emitConsole(`[Hypervisor] Graceful stop timed out after ${this.config.stopTimeoutMs} ms, killing process.`);
       this.kill();
@@ -199,19 +204,6 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     this.process.kill('SIGKILL');
   }
 
-  private buildJvmArgs(): string[] {
-    const customFlags = this.config.jvmArgs ?? [];
-    return [
-      `-Xms${this.config.minRamMb}M`,
-      `-Xmx${this.config.maxRamMb}M`,
-      ...JVM_FLAGS,
-      ...customFlags,
-      '-jar',
-      this.config.jarFile,
-      'nogui'
-    ];
-  }
-
   private attachProcessListeners(child: ChildProcessWithoutNullStreams): void {
     const stdoutBuffer = new LineBuffer();
     const stderrBuffer = new LineBuffer();
@@ -230,7 +222,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     child.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') {
-        this.fail('JAVA_NOT_FOUND', `Java executable "${this.config.javaPath}" was not found. Install Java or set MC_NEXUS_JAVA_PATH.`);
+        this.fail('JAVA_NOT_FOUND', `Executable "${this.config.javaPath}" was not found. Install runtime or set correct path.`);
       } else {
         this.fail('PROCESS_ERROR', err.message);
       }
@@ -267,39 +259,43 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     this.emitConsole(line);
 
-    if (this.status === 'STARTING' && isServerReadyLine(line)) {
+    const parsed = this.driver.parseLogLine(line);
+    if (!parsed) return;
+
+    if (this.status === 'STARTING' && parsed.isReady) {
       this.setStatus('ONLINE');
       this.startPositionPolling();
       return;
     }
 
-    const joined = parsePlayerJoin(line);
-    if (joined) {
-      this.players.set(joined.username, joined);
+    if (parsed.playerJoin) {
+      this.players.set(parsed.playerJoin.username, {
+        username: parsed.playerJoin.username,
+        dimension: parsed.playerJoin.dimension ?? 'overworld',
+        x: parsed.playerJoin.x ?? 0,
+        y: parsed.playerJoin.y ?? 64,
+        z: parsed.playerJoin.z ?? 0
+      });
       this.emitPlayers();
       return;
     }
 
-    const leftUsername = parsePlayerLeave(line);
-    if (leftUsername && this.players.delete(leftUsername)) {
-      this.emitPlayers();
+    if (parsed.playerLeave) {
+      if (this.players.delete(parsed.playerLeave)) {
+        this.emitPlayers();
+      }
     }
   }
 
   /** Returns true when the line answered one of our own position/dimension queries. */
   private consumeQueryResponse(line: string): boolean {
-    const position = parsePositionResponse(line);
-    if (position && this.pendingQueries.delete(this.queryKey(position.username, 'Pos'))) {
-      this.updatePlayer(position.username, { x: position.x, y: position.y, z: position.z });
-      return true;
+    if (this.driver.consumeQueryResponse) {
+      const result = this.driver.consumeQueryResponse(line, this.pendingQueries);
+      if (result) {
+        this.updatePlayer(result.username, result.patch as Partial<PlayerState>);
+        return true;
+      }
     }
-
-    const dimension = parseDimensionResponse(line);
-    if (dimension && this.pendingQueries.delete(this.queryKey(dimension.username, 'Dimension'))) {
-      this.updatePlayer(dimension.username, { dimension: dimension.dimension });
-      return true;
-    }
-
     return false;
   }
 
@@ -313,20 +309,14 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     if (changed) this.emitPlayers();
   }
 
-  private queryKey(username: string, dataPath: 'Pos' | 'Dimension'): string {
-    return `${username}:${dataPath}`;
-  }
-
   private pollPlayerPositions(): void {
     if (!this.process || this.status !== 'ONLINE') return;
-
-    // Drop unanswered queries (e.g. player left between polls) so they never leak.
-    this.pendingQueries.clear();
-    for (const username of this.players.keys()) {
-      for (const dataPath of ['Pos', 'Dimension'] as const) {
-        this.pendingQueries.add(this.queryKey(username, dataPath));
-        this.process.stdin.write(`data get entity ${username} ${dataPath}\n`);
-      }
+    if (this.driver.pollPlayerPositions) {
+      this.driver.pollPlayerPositions(
+        this.process.stdin,
+        Array.from(this.players.keys()),
+        this.pendingQueries
+      );
     }
   }
 

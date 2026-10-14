@@ -155,8 +155,17 @@
     }
   },
   "create_server": {
-    "modal_title": "New Minecraft Server",
-    "modal_subtitle": "Configure and automatically bootstrap a new local Minecraft server instance.",
+    "modal_title": "New Game Server",
+    "modal_subtitle": "Configure and automatically bootstrap a new local game server instance.",
+    "game_engine_label": "Game Server Engine",
+    "game_minecraft_desc": "Mojang, Fabric, Paper, Purpur, Forge",
+    "game_zomboid_desc": "SteamCMD Dedicated Server (AppID 380870)",
+    "game_hytale_desc": "Upcoming Voxel Adventure Sandbox Engine",
+    "zomboid_info_title": "Project Zomboid Dedicated Server",
+    "zomboid_info_desc": "Managed via SteamCMD AppID 380870 and servertest.ini. Default port 16261 (UDP/TCP).",
+    "hytale_info_title": "Hytale Dedicated Server Engine",
+    "hytale_info_desc": "Configured for Hytale runtime with port 25565. Launch ready as soon as server binaries are released.",
+    "create_instance_button": "Create Game Instance",
     "name_label": "Server Name",
     "id_label": "Directory ID (slug)",
     "submit_button": "Create & Install Server"

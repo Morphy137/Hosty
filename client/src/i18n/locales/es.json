@@ -155,8 +155,17 @@
     }
   },
   "create_server": {
-    "modal_title": "Nuevo Servidor de Minecraft",
-    "modal_subtitle": "Configura e instala automáticamente una nueva instancia local de servidor.",
+    "modal_title": "Nuevo Servidor de Juego",
+    "modal_subtitle": "Configura e inicializa automáticamente una nueva instancia local de servidor.",
+    "game_engine_label": "Motor del Servidor de Juego",
+    "game_minecraft_desc": "Mojang, Fabric, Paper, Purpur, Forge",
+    "game_zomboid_desc": "Servidor Dedicado SteamCMD (AppID 380870)",
+    "game_hytale_desc": "Próximo motor de aventura y sandbox voxel",
+    "zomboid_info_title": "Servidor Dedicado Project Zomboid",
+    "zomboid_info_desc": "Gestionado mediante SteamCMD AppID 380870 y servertest.ini. Puerto predeterminado 16261 (UDP/TCP).",
+    "hytale_info_title": "Motor de Servidor Dedicado Hytale",
+    "hytale_info_desc": "Configurado para el runtime de Hytale con puerto 25565. Listo para arrancar al disponer de los binarios.",
+    "create_instance_button": "Crear Instancia de Juego",
     "name_label": "Nombre del Servidor",
     "id_label": "Identificador de Carpeta (slug)",
     "submit_button": "Crear e Instalar Servidor"

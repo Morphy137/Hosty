@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseErrorResponse,
   toErrorPayload,
   DaemonApiError,
-  UNKNOWN_ERROR_CODE
+  UNKNOWN_ERROR_CODE,
+  fetchSupportedGames
 } from '../src/api/daemonApi';
 import { toConfigPayload, updateEntryValue } from '../src/utils/configEntries';
 
@@ -58,5 +59,25 @@ describe('daemonApi utilities', () => {
     ];
     const updated = updateEntryValue(entries, 'online', false);
     expect(updated[1].value).toBe(false);
+  });
+
+  it('fetches supported game drivers list via fetchSupportedGames', async () => {
+    const mockGames = [
+      { id: 'minecraft', name: 'Minecraft' },
+      { id: 'project-zomboid', name: 'Project Zomboid' }
+    ];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ games: mockGames }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    );
+
+    const res = await fetchSupportedGames();
+    expect(res.games).toHaveLength(2);
+    expect(res.games[0].id).toBe('minecraft');
+
+    globalThis.fetch = origFetch;
   });
 });

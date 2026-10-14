@@ -138,6 +138,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 />
                 {status}
               </span>
+              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[#666666] dark:text-[#a1a1a1] uppercase">
+                {instance?.gameId === 'project-zomboid'
+                  ? 'Project Zomboid'
+                  : instance?.gameId === 'hytale'
+                  ? 'Hytale'
+                  : 'Minecraft'}
+              </span>
             </div>
 
             {/* Sub-meta Strip: IP, Loader, Player Count, MOTD */}

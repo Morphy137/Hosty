@@ -10,6 +10,7 @@ import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSup
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModJarManager } from './core/ModJarManager';
+import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { PropertiesParser } from './parsers/PropertiesParser';
 import { ModConfigParser } from './parsers/ModConfigParser';
 import { ServerInstaller, LoaderType } from './provisioning/ServerInstaller';
@@ -75,7 +76,8 @@ const getActiveSupervisor = (): ProcessSupervisor => {
     jvmArgs: [],
     javaPath: config.javaPath,
     forceSaveOnStop: true,
-    autostart: false
+    autostart: false,
+    gameId: 'minecraft'
   });
 };
 
@@ -129,6 +131,26 @@ app.get('/api/health', (_req, res) => {
     serverStatus: sup.getStatus(),
     activeInstance: instanceManager.getActiveInstanceId()
   });
+});
+
+// Game Drivers API
+app.get('/api/games', (_req, res) => {
+  res.json({
+    games: driverRegistry.listDrivers()
+  });
+});
+
+app.get('/api/games/:gameId', (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    if (!driverRegistry.hasDriver(gameId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game driver "${gameId}" not supported.`);
+    }
+    const driver = driverRegistry.getDriver(gameId);
+    res.json(driver.summary);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Instances API
@@ -300,10 +322,10 @@ app.post('/api/instances/create', (req, res, next) => {
 
 app.post('/api/instances/import', (req, res, next) => {
   try {
-    const { path: folderPath, name } = req.body as { path: string; name?: string };
+    const { path: folderPath, name, gameId } = req.body as { path: string; name?: string; gameId?: string };
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
 
-    const imported = instanceManager.importInstance(folderPath, name);
+    const imported = instanceManager.importInstance(folderPath, name, gameId);
     res.json({ ok: true, instance: imported });
   } catch (err) {
     next(err);

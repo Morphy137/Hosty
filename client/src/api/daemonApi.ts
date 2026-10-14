@@ -8,7 +8,8 @@ import type {
   InstancesResponse,
   ModFileInfo,
   ServerLoader,
-  InstanceSettings
+  InstanceSettings,
+  GameDriverSummary
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
 
@@ -109,6 +110,10 @@ export function createInstance(
   settings?: Partial<InstanceSettings>
 ): Promise<{ ok: boolean; instance: InstanceInfo }> {
   return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/create', { id, name, settings });
+}
+
+export function fetchSupportedGames(): Promise<{ games: GameDriverSummary[] }> {
+  return request<{ games: GameDriverSummary[] }>('/api/games');
 }
 
 export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {

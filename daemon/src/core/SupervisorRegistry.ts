@@ -48,7 +48,8 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
         minRamMb: instance.minRamMb,
         maxRamMb: instance.maxRamMb,
         jvmArgs: instance.jvmArgs,
-        forceSaveOnStop: instance.forceSaveOnStop
+        forceSaveOnStop: instance.forceSaveOnStop,
+        gameId: instance.gameId
       });
       return existing;
     }
@@ -64,7 +65,8 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
       metricsIntervalMs: this.defaults.metricsIntervalMs,
       positionPollIntervalMs: this.defaults.positionPollIntervalMs,
       jvmArgs: instance.jvmArgs,
-      forceSaveOnStop: instance.forceSaveOnStop
+      forceSaveOnStop: instance.forceSaveOnStop,
+      gameId: instance.gameId
     };
 
     const supervisor = new ProcessSupervisor(config);

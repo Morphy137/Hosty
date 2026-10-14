@@ -33,6 +33,46 @@ interface CreateServerModalProps {
   provisionLogs: string[];
 }
 
+interface SupportedGameOption {
+  id: string;
+  name: string;
+  badge: string;
+  category: string;
+  defaultPort: number;
+  defaultPlayers: number;
+  descKey: string;
+}
+
+const SUPPORTED_GAMES: SupportedGameOption[] = [
+  {
+    id: 'minecraft',
+    name: 'Minecraft',
+    badge: 'MC',
+    category: 'Voxel Sandbox',
+    defaultPort: 25565,
+    defaultPlayers: 20,
+    descKey: 'create_server.game_minecraft_desc'
+  },
+  {
+    id: 'project-zomboid',
+    name: 'Project Zomboid',
+    badge: 'PZ',
+    category: 'Survival RPG',
+    defaultPort: 16261,
+    defaultPlayers: 32,
+    descKey: 'create_server.game_zomboid_desc'
+  },
+  {
+    id: 'hytale',
+    name: 'Hytale',
+    badge: 'HY',
+    category: 'Voxel RPG',
+    defaultPort: 25565,
+    defaultPlayers: 40,
+    descKey: 'create_server.game_hytale_desc'
+  }
+];
+
 export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   isOpen,
   onClose,
@@ -43,6 +83,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [selectedGame, setSelectedGame] = useState<string>('minecraft');
   const [serverName, setServerName] = useState('My Minecraft Server');
   const [instanceId, setInstanceId] = useState('survival-main');
   const [motd, setMotd] = useState('A Minecraft Server');
@@ -129,31 +170,51 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     const calculatedMinRamMb = Math.min(1024, calculatedMaxRamMb);
     const settings: Partial<InstanceSettings> = {
       motd: motd.trim(),
-      port: Number(port) || 25565,
-      maxPlayers: Number(maxPlayers) || 20,
+      port: Number(port) || (selectedGame === 'project-zomboid' ? 16261 : 25565),
+      maxPlayers: Number(maxPlayers) || (selectedGame === 'project-zomboid' ? 32 : 20),
       minRamMb: calculatedMinRamMb,
-      maxRamMb: calculatedMaxRamMb
+      maxRamMb: calculatedMaxRamMb,
+      gameId: selectedGame
     };
 
     setIsInstalling(true);
     try {
-      if (requiresManualJar || (useCustomJar && attachedFile)) {
-        if (!attachedFile) return;
-        await onUploadJar({
-          file: attachedFile,
-          instanceId: safeId,
-          instanceName: safeName,
-          settings
-        });
+      if (selectedGame === 'minecraft') {
+        if (requiresManualJar || (useCustomJar && attachedFile)) {
+          if (!attachedFile) return;
+          await onUploadJar({
+            file: attachedFile,
+            instanceId: safeId,
+            instanceName: safeName,
+            settings
+          });
+        } else {
+          if (!selectedVersion) return;
+          await onInstall({
+            loader: selectedLoader,
+            version: selectedVersion,
+            instanceId: safeId,
+            instanceName: safeName,
+            settings
+          });
+        }
       } else {
-        if (!selectedVersion) return;
-        await onInstall({
-          loader: selectedLoader,
-          version: selectedVersion,
-          instanceId: safeId,
-          instanceName: safeName,
-          settings
-        });
+        if (attachedFile) {
+          await onUploadJar({
+            file: attachedFile,
+            instanceId: safeId,
+            instanceName: safeName,
+            settings
+          });
+        } else {
+          await onInstall({
+            loader: 'vanilla',
+            version: 'custom',
+            instanceId: safeId,
+            instanceName: safeName,
+            settings
+          });
+        }
       }
       setIsInstalling(false);
       onClose();
@@ -164,9 +225,9 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
   const isSubmitDisabled =
     isInstalling ||
-    (requiresManualJar && !attachedFile) ||
-    (!requiresManualJar && useCustomJar && !attachedFile) ||
-    (!requiresManualJar && !useCustomJar && !selectedVersion);
+    (selectedGame === 'minecraft' && requiresManualJar && !attachedFile) ||
+    (selectedGame === 'minecraft' && !requiresManualJar && useCustomJar && !attachedFile) ||
+    (selectedGame === 'minecraft' && !requiresManualJar && !useCustomJar && !selectedVersion);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
@@ -193,6 +254,62 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {/* Game Engine Selection */}
+          <div className="space-y-1.5">
+            <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+              {t('create_server.game_engine_label')}
+            </label>
+            <div className="grid grid-cols-3 gap-2.5">
+              {SUPPORTED_GAMES.map((game) => {
+                const isSelected = selectedGame === game.id;
+                return (
+                  <button
+                    key={game.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedGame(game.id);
+                      setPort(game.defaultPort);
+                      setMaxPlayers(game.defaultPlayers);
+                      if (game.id === 'project-zomboid') {
+                        setServerName('Project Zomboid Server');
+                        setInstanceId('zomboid-main');
+                        setMotd('Project Zomboid Dedicated Server');
+                      } else if (game.id === 'hytale') {
+                        setServerName('Hytale Adventure Server');
+                        setInstanceId('hytale-main');
+                        setMotd('Hytale Community Server');
+                      } else {
+                        setServerName('My Minecraft Server');
+                        setInstanceId('survival-main');
+                        setMotd('A Minecraft Server');
+                      }
+                    }}
+                    disabled={isInstalling}
+                    className={`p-3 rounded-[6px] border text-left transition cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-[#0070f3] bg-[#0070f3]/5 dark:bg-[#0070f3]/10 text-[#0070f3]'
+                        : 'border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#141414] hover:border-[#888888] text-[#171717] dark:text-[#ededed]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] bg-[#171717] text-white dark:bg-white dark:text-[#171717]">
+                        {game.badge}
+                      </span>
+                      <span className="text-[10px] text-[#888888] dark:text-[#a1a1a1]">
+                        {game.category}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-[13px] font-semibold">{game.name}</div>
+                      <div className="text-[11px] text-[#888888] dark:text-[#a1a1a1] truncate mt-0.5">
+                        {t(game.descKey)}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           {/* Server Name & ID */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -301,184 +418,221 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
             </div>
           </div>
 
-          {/* Loader Selection Grid */}
-          <div className="space-y-2">
-            <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
-              <span>{t('provisioning.loader_label')}</span>
-              <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
-                {requiresManualJar ? t('provisioning.manual_loader_badge') : t('provisioning.auto_loader_badge')}
-              </span>
-            </label>
+          {/* Minecraft Loaders & Versions */}
+          {selectedGame === 'minecraft' && (
+            <>
+              {/* Loader Selection Grid */}
+              <div className="space-y-2">
+                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
+                  <span>{t('provisioning.loader_label')}</span>
+                  <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                    {requiresManualJar ? t('provisioning.manual_loader_badge') : t('provisioning.auto_loader_badge')}
+                  </span>
+                </label>
 
-            <div className="grid grid-cols-4 gap-2">
-              {SERVER_LOADERS.map((loader) => {
-                const meta = LOADER_METADATA[loader];
-                const isSelected = selectedLoader === loader;
+                <div className="grid grid-cols-4 gap-2">
+                  {SERVER_LOADERS.map((loader) => {
+                    const meta = LOADER_METADATA[loader];
+                    const isSelected = selectedLoader === loader;
 
-                return (
-                  <button
-                    key={loader}
-                    type="button"
-                    onClick={() => {
-                      setSelectedLoader(loader);
-                      if (!meta.isAutomatic) {
-                        setUseCustomJar(true);
-                      }
-                    }}
-                    disabled={isInstalling}
-                    className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
-                        : 'bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed] border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[12px] font-semibold uppercase">
-                        {meta.name}
-                      </span>
-                      <span
-                        className={`font-mono text-[9px] uppercase px-1 py-0.5 rounded-[2px] ${
+                    return (
+                      <button
+                        key={loader}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLoader(loader);
+                          if (!meta.isAutomatic) {
+                            setUseCustomJar(true);
+                          }
+                        }}
+                        disabled={isInstalling}
+                        className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'bg-white/20 dark:bg-black/20 text-white dark:text-[#171717]'
-                            : meta.isAutomatic
-                            ? 'bg-[#50e3c2]/15 text-[#0070f3] dark:text-[#50e3c2]'
-                            : 'bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]'
+                            ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717] border-[#171717] dark:border-[#ededed]'
+                            : 'bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed] border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f]'
                         }`}
                       >
-                        {meta.isAutomatic ? 'Auto' : 'Jar'}
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[12px] font-semibold uppercase">
+                            {meta.name}
+                          </span>
+                          <span
+                            className={`font-mono text-[9px] uppercase px-1 py-0.5 rounded-[2px] ${
+                              isSelected
+                                ? 'bg-white/20 dark:bg-black/20 text-white dark:text-[#171717]'
+                                : meta.isAutomatic
+                                ? 'bg-[#50e3c2]/15 text-[#0070f3] dark:text-[#50e3c2]'
+                                : 'bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]'
+                            }`}
+                          >
+                            {meta.isAutomatic ? 'Auto' : 'Jar'}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] mt-1 capitalize ${
+                            isSelected ? 'text-[#a1a1a1] dark:text-[#4d4d4d]' : 'text-[#888888] dark:text-[#a1a1a1]'
+                          }`}
+                        >
+                          {meta.category}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* AUTOMATED DOWNLOAD: Version Selection Dropdown */}
+              {!requiresManualJar && !useCustomJar && (
+                <div className="space-y-1.5">
+                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
+                    <span>{t('provisioning.version_label')}</span>
+                    {isLoadingVersions && (
+                      <span className="flex items-center gap-1 text-[11px] text-[#0070f3] dark:text-[#3291ff]">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {t('provisioning.loading_versions')}
                       </span>
-                    </div>
-                    <span
-                      className={`text-[10px] mt-1 capitalize ${
-                        isSelected ? 'text-[#a1a1a1] dark:text-[#4d4d4d]' : 'text-[#888888] dark:text-[#a1a1a1]'
-                      }`}
+                    )}
+                  </label>
+
+                  <div className="relative flex items-center">
+                    <select
+                      value={selectedVersion}
+                      onChange={(e) => setSelectedVersion(e.target.value)}
+                      disabled={isInstalling || versions.length === 0}
+                      className="w-full h-9 pl-3 pr-8 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#404040] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer disabled:opacity-50 appearance-none transition"
                     >
-                      {meta.category}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                      {versions.map((v) => (
+                        <option key={v} value={v}>
+                          Minecraft {v} ({selectedLoader.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#888888] dark:text-[#a1a1a1] absolute right-3 pointer-events-none" />
+                  </div>
 
-          {/* AUTOMATED DOWNLOAD: Version Selection Dropdown */}
-          {!requiresManualJar && !useCustomJar && (
-            <div className="space-y-1.5">
-              <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
-                <span>{t('provisioning.version_label')}</span>
-                {isLoadingVersions && (
-                  <span className="flex items-center gap-1 text-[11px] text-[#0070f3] dark:text-[#3291ff]">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {t('provisioning.loading_versions')}
-                  </span>
-                )}
-              </label>
+                  <div className="flex justify-end pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setUseCustomJar(true)}
+                      className="text-[11px] text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer"
+                    >
+                      {t('provisioning.switch_to_custom_jar')}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              <div className="relative flex items-center">
-                <select
-                  value={selectedVersion}
-                  onChange={(e) => setSelectedVersion(e.target.value)}
-                  disabled={isInstalling || versions.length === 0}
-                  className="w-full h-9 pl-3 pr-8 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#404040] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer disabled:opacity-50 appearance-none transition"
-                >
-                  {versions.map((v) => (
-                    <option key={v} value={v}>
-                      Minecraft {v} ({selectedLoader.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#888888] dark:text-[#a1a1a1] absolute right-3 pointer-events-none" />
+              {/* MANUAL JAR / ATTACHMENT SECTION */}
+              {(requiresManualJar || useCustomJar) && (
+                <div className="space-y-3 p-3.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626]">
+                  {currentLoaderMeta.officialUrl && (
+                    <div className="flex items-start justify-between gap-3 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+                      <p>
+                        {t('provisioning.manual_download_instructions', {
+                          loader: currentLoaderMeta.name
+                        })}
+                      </p>
+                      <a
+                        href={currentLoaderMeta.officialUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#171717] dark:hover:border-[#ededed] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center gap-1 transition"
+                      >
+                        <span>{t('provisioning.visit_official_site')}</span>
+                        <ExternalLink className="w-3 h-3 text-[#888888] dark:text-[#a1a1a1]" />
+                      </a>
+                    </div>
+                  )}
+
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-[#d4d4d4] dark:border-[#333333] hover:border-[#171717] dark:hover:border-[#ededed] rounded-[4px] p-4 text-center cursor-pointer transition bg-white dark:bg-[#0d0d0d]"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".jar"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+
+                    {attachedFile ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText className="w-5 h-5 text-[#0070f3] dark:text-[#3291ff]" />
+                        <div className="text-left">
+                          <div className="font-mono text-[12px] font-medium text-[#171717] dark:text-[#ededed]">
+                            {attachedFile.name}
+                          </div>
+                          <div className="font-mono text-[10px] text-[#888888] dark:text-[#a1a1a1]">
+                            {(attachedFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Upload className="w-5 h-5 text-[#888888] dark:text-[#a1a1a1] mx-auto" />
+                        <div className="text-[12px] font-medium text-[#171717] dark:text-[#ededed]">
+                          {t('provisioning.upload_jar_dropzone')}
+                        </div>
+                        <div className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                          {t('provisioning.upload_jar_hint')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {!requiresManualJar && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseCustomJar(false);
+                          setAttachedFile(null);
+                        }}
+                        className="text-[11px] text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed] cursor-pointer"
+                      >
+                        {t('provisioning.switch_to_auto_download')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Project Zomboid Dedicated Server Info */}
+          {selectedGame === 'project-zomboid' && (
+            <div className="p-4 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] bg-[#171717] text-white dark:bg-white dark:text-[#171717]">
+                  PZ
+                </span>
+                <span className="text-[13px] font-semibold text-[#171717] dark:text-[#ededed]">
+                  {t('create_server.zomboid_info_title')}
+                </span>
               </div>
-
-              <div className="flex justify-end pt-0.5">
-                <button
-                  type="button"
-                  onClick={() => setUseCustomJar(true)}
-                  className="text-[11px] text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer"
-                >
-                  {t('provisioning.switch_to_custom_jar')}
-                </button>
-              </div>
+              <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] leading-relaxed">
+                {t('create_server.zomboid_info_desc')}
+              </p>
             </div>
           )}
 
-          {/* MANUAL JAR / ATTACHMENT SECTION */}
-          {(requiresManualJar || useCustomJar) && (
-            <div className="space-y-3 p-3.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626]">
-              {/* Guidance & Official Download URL */}
-              {currentLoaderMeta.officialUrl && (
-                <div className="flex items-start justify-between gap-3 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
-                  <p>
-                    {t('provisioning.manual_download_instructions', {
-                      loader: currentLoaderMeta.name
-                    })}
-                  </p>
-                  <a
-                    href={currentLoaderMeta.officialUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0 px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#171717] dark:hover:border-[#ededed] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center gap-1 transition"
-                  >
-                    <span>{t('provisioning.visit_official_site')}</span>
-                    <ExternalLink className="w-3 h-3 text-[#888888] dark:text-[#a1a1a1]" />
-                  </a>
-                </div>
-              )}
-
-              {/* Drag and Drop / File Picker Area */}
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#d4d4d4] dark:border-[#333333] hover:border-[#171717] dark:hover:border-[#ededed] rounded-[4px] p-4 text-center cursor-pointer transition bg-white dark:bg-[#0d0d0d]"
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".jar"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-
-                {attachedFile ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <FileText className="w-5 h-5 text-[#0070f3] dark:text-[#3291ff]" />
-                    <div className="text-left">
-                      <div className="font-mono text-[12px] font-medium text-[#171717] dark:text-[#ededed]">
-                        {attachedFile.name}
-                      </div>
-                      <div className="font-mono text-[10px] text-[#888888] dark:text-[#a1a1a1]">
-                        {(attachedFile.size / (1024 * 1024)).toFixed(2)} MB
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <Upload className="w-5 h-5 text-[#888888] dark:text-[#a1a1a1] mx-auto" />
-                    <div className="text-[12px] font-medium text-[#171717] dark:text-[#ededed]">
-                      {t('provisioning.upload_jar_dropzone')}
-                    </div>
-                    <div className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
-                      {t('provisioning.upload_jar_hint')}
-                    </div>
-                  </div>
-                )}
+          {/* Hytale Server Engine Info */}
+          {selectedGame === 'hytale' && (
+            <div className="p-4 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] bg-[#171717] text-white dark:bg-white dark:text-[#171717]">
+                  HY
+                </span>
+                <span className="text-[13px] font-semibold text-[#171717] dark:text-[#ededed]">
+                  {t('create_server.hytale_info_title')}
+                </span>
               </div>
-
-              {!requiresManualJar && (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseCustomJar(false);
-                      setAttachedFile(null);
-                    }}
-                    className="text-[11px] text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed] cursor-pointer"
-                  >
-                    {t('provisioning.switch_to_auto_download')}
-                  </button>
-                </div>
-              )}
+              <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] leading-relaxed">
+                {t('create_server.hytale_info_desc')}
+              </p>
             </div>
           )}
 
@@ -507,6 +661,11 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {t('provisioning.installing')}
+              </>
+            ) : selectedGame !== 'minecraft' ? (
+              <>
+                <DownloadCloud className="w-4 h-4" />
+                {t('create_server.create_instance_button')}
               </>
             ) : requiresManualJar || (useCustomJar && attachedFile) ? (
               <>

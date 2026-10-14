@@ -88,11 +88,14 @@ export const Header: React.FC<HeaderProps> = ({
               className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#383838] text-[13px] font-medium text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer appearance-none min-w-[200px] transition"
               title={t('header.instance_tooltip')}
             >
-              {instances.map((inst) => (
-                <option key={inst.id} value={inst.id} className="dark:bg-[#141414]">
-                  {inst.name} (:{inst.port})
-                </option>
-              ))}
+              {instances.map((inst) => {
+                const gameTag = inst.gameId === 'project-zomboid' ? ' [PZ]' : inst.gameId === 'hytale' ? ' [HY]' : '';
+                return (
+                  <option key={inst.id} value={inst.id} className="dark:bg-[#141414]">
+                    {inst.name}{gameTag} (:{inst.port})
+                  </option>
+                );
+              })}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#888888] absolute right-2.5 pointer-events-none" />
           </div>

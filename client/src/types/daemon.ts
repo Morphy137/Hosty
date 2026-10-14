@@ -122,6 +122,22 @@ export interface InstanceSettings {
   autostart?: boolean;
   loader?: string;
   loaderVersion?: string;
+  gameId?: string;
+}
+
+export interface GameDriverSummary {
+  id: string;
+  name: string;
+  category: 'voxel' | 'survival' | 'sandbox';
+  defaultPort: number;
+  defaultMaxPlayers: number;
+  executableName: string;
+  supportsMods: boolean;
+  modFormat: string;
+  supportsCustomJava: boolean;
+  configFileName: string;
+  badge: string;
+  description: string;
 }
 
 export interface InstanceInfo {
@@ -145,6 +161,7 @@ export interface InstanceInfo {
   onlinePlayersCount?: number;
   loader?: string;
   loaderVersion?: string;
+  gameId?: string;
 }
 
 export interface InstancesResponse {
