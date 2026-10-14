@@ -1,0 +1,30 @@
+{
+  "name": "mc-nexus",
+  "version": "1.0.0",
+  "description": "MC-Nexus: Local Game Server Manager",
+  "private": true,
+  "scripts": {
+    "dev:daemon": "npm --prefix daemon run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build:daemon": "npm --prefix daemon run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:daemon && npm run build:client",
+    "lint:daemon": "npm --prefix daemon run lint",
+    "lint:client": "npm --prefix client run lint",
+    "lint": "npm run lint:daemon && npm run lint:client",
+    "test:daemon": "npm --prefix daemon test",
+    "test:client": "npm --prefix client test",
+    "test": "npm run test:daemon && npm run test:client",
+    "tauri": "npm --prefix client run tauri",
+    "tauri:dev": "npm --prefix client run tauri:dev",
+    "tauri:build": "npm --prefix client run tauri:build"
+  },
+  "keywords": [
+    "minecraft",
+    "server-manager",
+    "tauri",
+    "dashboard"
+  ],
+  "author": "Mr Morphy",
+  "license": "MIT"
+}
