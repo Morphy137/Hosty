@@ -1,5 +1,5 @@
 import React from 'react';
-import minecraftLogo from '../../assets/logos/minecraft.svg';
+import minecraftLogo from '../../assets/minecraft/Grass_Block.png';
 import zomboidLogo from '../../assets/logos/project-zomboid.webp';
 import hytaleLogo from '../../assets/logos/hytale.png';
 

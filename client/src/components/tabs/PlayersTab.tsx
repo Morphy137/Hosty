@@ -235,8 +235,8 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
                             </span>
                           )}
                         </div>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[10px] text-[#4d4d4d] dark:text-[#a1a1a1] mt-0.5">
-                          <DimensionIcon dimension={player.dimension} className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-[3px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[10px] text-[#4d4d4d] dark:text-[#a1a1a1] mt-0.5">
+                          <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
                           <span className="truncate">{dimLabel}</span>
                         </span>
                       </div>

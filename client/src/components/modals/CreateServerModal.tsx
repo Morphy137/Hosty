@@ -364,12 +364,9 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       <div className="flex items-center gap-3.5 min-w-0">
                         <GameLogo gameId={game.id} size={36} />
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div>
                             <span className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed]">
                               {game.name}
-                            </span>
-                            <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded-[3px] bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]">
-                              {game.category}
                             </span>
                           </div>
                           <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] mt-0.5 truncate">
