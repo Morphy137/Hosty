@@ -588,6 +588,40 @@
     "load_more": "और लोड करें",
     "installed": "{{name}} इंस्टॉल हो गया",
     "install_failed": "{{name}} इंस्टॉल नहीं हो सका",
-    "restart_required": "इसे लोड करने के लिए सर्वर रीस्टार्ट करें।"
+    "restart_required": "इसे लोड करने के लिए सर्वर रीस्टार्ट करें।",
+    "filters": "फ़िल्टर",
+    "reset": "रीसेट",
+    "sort_label": "क्रमबद्ध करें",
+    "sort_default": "डिफ़ॉल्ट",
+    "sort": {
+      "relevance": "प्रासंगिकता",
+      "downloads": "डाउनलोड",
+      "follows": "फ़ॉलो",
+      "newest": "नवीनतम",
+      "updated": "हाल में अपडेट"
+    },
+    "loader": "लोडर",
+    "game_version": "गेम संस्करण",
+    "any": "कोई भी",
+    "server_default": "यह सर्वर ({{value}})",
+    "environment": "परिवेश",
+    "env_any": "कोई भी",
+    "env_server": "सर्वर",
+    "env_client": "क्लाइंट",
+    "categories": "श्रेणियाँ",
+    "results": "{{count}} परिणाम",
+    "downloads": "डाउनलोड",
+    "updated": "{{date}} को अपडेट",
+    "install_latest": "नवीनतम इंस्टॉल करें",
+    "versions": "संस्करण",
+    "open_page": "पेज खोलें",
+    "loading_versions": "संस्करण लोड हो रहे हैं...",
+    "versions_failed": "संस्करण लोड नहीं हो सके।",
+    "no_versions": "वर्तमान लोडर और गेम संस्करण से मेल खाता कोई संस्करण नहीं।",
+    "type": {
+      "release": "रिलीज़",
+      "beta": "बीटा",
+      "alpha": "अल्फ़ा"
+    }
   }
 }

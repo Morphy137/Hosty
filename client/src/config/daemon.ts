@@ -51,3 +51,14 @@ export async function openDaemonLogs(): Promise<void> {
   const { invoke } = await import('@tauri-apps/api/core');
   await invoke('open_daemon_logs');
 }
+
+/** Opens a link in the system browser (the desktop webview ignores `target="_blank"`). */
+export async function openExternalUrl(url: string): Promise<void> {
+  if (!/^https?:\/\//i.test(url)) return;
+  if (isTauriRuntime()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('open_external', { url });
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}

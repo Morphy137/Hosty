@@ -588,6 +588,40 @@
     "load_more": "Carregar mais",
     "installed": "{{name}} instalado",
     "install_failed": "Não foi possível instalar {{name}}",
-    "restart_required": "Reinicie o servidor para carregá-lo."
+    "restart_required": "Reinicie o servidor para carregá-lo.",
+    "filters": "Filtros",
+    "reset": "Redefinir",
+    "sort_label": "Ordenar por",
+    "sort_default": "Padrão",
+    "sort": {
+      "relevance": "Relevância",
+      "downloads": "Downloads",
+      "follows": "Seguidores",
+      "newest": "Mais recentes",
+      "updated": "Atualizados"
+    },
+    "loader": "Loader",
+    "game_version": "Versão do jogo",
+    "any": "Qualquer",
+    "server_default": "Este servidor ({{value}})",
+    "environment": "Ambiente",
+    "env_any": "Qualquer",
+    "env_server": "Servidor",
+    "env_client": "Cliente",
+    "categories": "Categorias",
+    "results": "{{count}} resultados",
+    "downloads": "downloads",
+    "updated": "atualizado em {{date}}",
+    "install_latest": "Instalar a mais recente",
+    "versions": "Versões",
+    "open_page": "Abrir página",
+    "loading_versions": "Carregando versões...",
+    "versions_failed": "Não foi possível carregar as versões.",
+    "no_versions": "Nenhuma versão corresponde ao loader e à versão do jogo atuais.",
+    "type": {
+      "release": "Estável",
+      "beta": "Beta",
+      "alpha": "Alfa"
+    }
   }
 }

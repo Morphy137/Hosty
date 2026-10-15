@@ -152,6 +152,23 @@ fn get_daemon_token(state: State<'_, DaemonState>) -> String {
   state.api_token.lock().unwrap().clone().unwrap_or_default()
 }
 
+/// Opens an http(s) link in the user's default browser (webview links with target=_blank do nothing).
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+  if !(url.starts_with("https://") || url.starts_with("http://")) {
+    return Err("Only http(s) links can be opened".to_string());
+  }
+
+  #[cfg(target_os = "windows")]
+  let result = std::process::Command::new("explorer").arg(&url).spawn();
+  #[cfg(target_os = "macos")]
+  let result = std::process::Command::new("open").arg(&url).spawn();
+  #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+  let result = std::process::Command::new("xdg-open").arg(&url).spawn();
+
+  result.map(|_| ()).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn open_daemon_logs(state: State<'_, DaemonState>) -> Result<(), String> {
   let dir = state
@@ -221,7 +238,7 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(DaemonState::default())
-    .invoke_handler(tauri::generate_handler![get_daemon_url, get_daemon_token, open_daemon_logs])
+    .invoke_handler(tauri::generate_handler![get_daemon_url, get_daemon_token, open_daemon_logs, open_external])
     .setup(|app| {
       #[cfg(desktop)]
       {
