@@ -116,6 +116,8 @@ export interface Metrics {
   loadedChunks?: number;
   entitiesCount?: number;
   bridgeConnected?: boolean;
+  bridgeInstalled?: boolean;
+  bridgeSupported?: boolean;
   /** Capabilities advertised by the connected bridge (`action.heal`, `inventory.view`, ...). */
   bridgeCapabilities?: string[];
 }
@@ -258,6 +260,8 @@ export interface InstanceInfo {
   loaderVersion?: string;
   gameId?: string;
   bridgeConnected?: boolean;
+  bridgeInstalled?: boolean;
+  bridgeSupported?: boolean;
 }
 
 export interface InstancesResponse {

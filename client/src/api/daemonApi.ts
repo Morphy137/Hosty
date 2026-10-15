@@ -200,8 +200,8 @@ export function deleteInstanceIcon(id: string): Promise<{ ok: boolean }> {
   return deleteRequest<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`);
 }
 
-export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
-  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
+export function installInstanceBridge(id: string): Promise<{ ok: boolean; serverRunning: boolean }> {
+  return postJson<{ ok: boolean; serverRunning: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
 }
 
 export function getInstanceIconUrl(id: string): string {
@@ -275,14 +275,14 @@ export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[
       const res = await fetch('https://meta.fabricmc.net/v2/versions/game');
       if (res.ok) {
         const data = (await res.json()) as Array<{ version: string; stable: boolean }>;
-        const stable = data.filter((v) => v.stable).map((v) => v.version).slice(0, 15);
+        const stable = data.filter((v) => v.stable).map((v) => v.version);
         if (stable.length > 0) return stable;
       }
     } else if (loader === 'vanilla') {
       const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
       if (res.ok) {
         const data = (await res.json()) as { versions: Array<{ id: string; type: string }> };
-        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id).slice(0, 15);
+        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id);
         if (releases.length > 0) return releases;
       }
     }

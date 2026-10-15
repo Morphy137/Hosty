@@ -3,6 +3,7 @@ import path from 'path';
 import { DaemonError } from '../errors';
 import { PropertiesParser } from '../parsers/PropertiesParser';
 import { driverRegistry } from './drivers/GameDriverRegistry';
+import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 
 export interface InstanceSettings {
   name?: string;
@@ -46,6 +47,10 @@ export interface InstanceInfo {
   gameId: string;
   pzBranch?: string;
   gameConfig?: Record<string, string | number | boolean>;
+  /** A bridge jar exists in plugins/ or mods/ (independent of a live connection). */
+  bridgeInstalled?: boolean;
+  /** A bridge artifact exists for this instance's loader. */
+  bridgeSupported?: boolean;
 }
 
 interface RegistryData {
@@ -295,10 +300,14 @@ export class InstanceManager {
     }
 
     const folderName = path.basename(resolvedPath);
-    const id = this.sanitizeInstanceId(folderName);
+    const registry = this.loadRegistry();
+    const baseId = this.sanitizeInstanceId(folderName);
+    let id = baseId;
+    for (let n = 2; registry.importedInstances[id] && registry.importedInstances[id].path !== resolvedPath; n += 1) {
+      id = `${baseId}-${n}`;
+    }
     const serverName = name?.trim() || folderName;
 
-    const registry = this.loadRegistry();
     registry.importedInstances[id] = {
       name: serverName,
       path: resolvedPath,
@@ -380,7 +389,9 @@ export class InstanceManager {
       loaderVersion: settings.loaderVersion,
       gameId,
       pzBranch: settings.pzBranch,
-      gameConfig: settings.gameConfig
+      gameConfig: settings.gameConfig,
+      bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(dir),
+      bridgeSupported: gameId === 'minecraft' && TelemetryBridgeManager.supportsLoader(settings.loader)
     };
   }
 

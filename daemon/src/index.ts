@@ -448,8 +448,26 @@ app.post('/api/instances/import', (req, res, next) => {
     const { path: folderPath, name, gameId } = req.body as { path: string; name?: string; gameId?: string };
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
 
-    const imported = instanceManager.importInstance(folderPath, name, gameId);
-    res.json({ ok: true, instance: imported });
+    // Only folders a driver recognises can be imported: anything else would never start.
+    const inspection = inspectServerFolder(folderPath);
+    if (!inspection.gameId) {
+      throw new DaemonError('INVALID_FOLDER', 'This folder does not look like a supported game server.');
+    }
+    if (gameId && gameId !== inspection.gameId) {
+      throw new DaemonError(
+        'INVALID_FOLDER',
+        `This folder was detected as "${inspection.gameId}", not "${gameId}".`
+      );
+    }
+
+    const imported = instanceManager.importInstance(folderPath, name, inspection.gameId);
+    const detected: Partial<InstanceSettings> = {
+      gameId: inspection.gameId,
+      ...(inspection.loader ? { loader: inspection.loader } : {}),
+      ...(inspection.mcVersion ? { loaderVersion: inspection.mcVersion } : {})
+    };
+    const persisted = instanceManager.updateInstanceSettings(imported.id, detected);
+    res.json({ ok: true, instance: persisted ?? imported });
   } catch (err) {
     next(err);
   }

@@ -101,18 +101,23 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   // Bridge installation state
   const [isInstallingBridge, setIsInstallingBridge] = useState(false);
   const [bridgeFeedback, setBridgeFeedback] = useState<string | null>(null);
-  const [bridgeInstalled, setBridgeInstalled] = useState(false);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
+  const bridgeInstalled = Boolean(instance.bridgeInstalled);
 
   const handleInstallBridge = async () => {
     setIsInstallingBridge(true);
     setBridgeFeedback(null);
+    setBridgeError(null);
     try {
-      await installInstanceBridge(instance.id);
-      setBridgeInstalled(true);
-      setBridgeFeedback(t('edit_server.bridge_installed_success'));
+      const result = await installInstanceBridge(instance.id);
+      setBridgeFeedback(
+        result.serverRunning ? t('edit_server.bridge_installed_restart') : t('edit_server.bridge_installed_ready')
+      );
       await onRefreshInstances();
-    } catch {
-      // Error handled via parent or API
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      const message = err instanceof Error ? err.message : String(err);
+      setBridgeError(code ? t(`errors.${code}`, { defaultValue: message }) : message);
     } finally {
       setIsInstallingBridge(false);
     }
@@ -563,7 +568,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   <button
                     type="button"
                     onClick={handleInstallBridge}
-                    disabled={isInstallingBridge}
+                    disabled={isInstallingBridge || instance.bridgeSupported === false}
                     className="h-8 px-3.5 rounded-[4px] bg-ink hover:bg-ink-hover text-on-ink disabled:opacity-40 text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                   >
                     {isInstallingBridge ? (
@@ -580,6 +585,19 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   </button>
                 </div>
               </div>
+
+              {instance.bridgeSupported === false && (
+                <div className="p-3 rounded-[4px] bg-warning-soft border border-warning-soft text-warning-fg text-[12px]">
+                  {t('edit_server.bridge_unsupported')}
+                </div>
+              )}
+
+              {bridgeError && (
+                <div className="p-3 rounded-[4px] bg-danger-soft border border-danger-soft text-danger-fg text-[12px] flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{bridgeError}</span>
+                </div>
+              )}
 
               {bridgeFeedback && (
                 <div className="p-3 rounded-[4px] bg-success/10 dark:bg-success/15 border border-success/30 text-success-fg text-[12px] flex items-center gap-2">

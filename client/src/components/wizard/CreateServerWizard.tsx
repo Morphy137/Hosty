@@ -185,7 +185,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   const canContinue = (() => {
     switch (step) {
       case 'origin':
-        return draft.origin === 'create' || (draft.importInfo !== null && !isInspecting);
+        return draft.origin === 'create' || (Boolean(draft.importInfo?.gameId) && !isInspecting);
       case 'game':
         return game !== undefined && game.status !== 'coming_soon';
       case 'setup':
