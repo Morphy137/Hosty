@@ -442,5 +442,80 @@
   "toast": {
     "saved": "Changes saved",
     "command_sent": "Command sent"
+  },
+  "wizard": {
+    "steps": {
+      "origin": "Source",
+      "game": "Game",
+      "setup": "Setup",
+      "customize": "Customize",
+      "review": "Install"
+    },
+    "step_desc": {
+      "origin": "Create a new server or import one you already have.",
+      "game": "Choose the game this server will run.",
+      "setup": "Configure the server software for this game.",
+      "customize": "Name your server, set resources and make it yours.",
+      "review": "Review the configuration and install."
+    },
+    "origin_create_title": "Create a new server",
+    "origin_create_desc": "Pick a game, download the server files automatically and customize everything.",
+    "origin_import_title": "Import an existing server",
+    "origin_import_desc": "Add a server folder that is already on this PC. The game and loader are detected for you.",
+    "import_detecting": "Inspecting the folder...",
+    "import_detected": "Detected: {{game}} · {{loader}} · {{version}}",
+    "import_unknown": "Folder found, but the game could not be identified. It will be imported as Minecraft.",
+    "game_status": {
+      "available": "Available",
+      "beta": "Beta",
+      "coming_soon": "Coming soon"
+    },
+    "game_desc": {
+      "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
+      "project-zomboid": "SteamCMD dedicated server (AppID 380870)",
+      "hytale": "Upcoming voxel adventure sandbox"
+    },
+    "setup_nothing": "No extra setup is needed for {{game}}.",
+    "use_own_jar": "Use my own .jar (the loader is detected automatically)",
+    "version_search": "Search versions...",
+    "version_none": "No versions available.",
+    "java_outdated_title": "Java {{installed}} is too old",
+    "java_required_desc": "This Minecraft version needs Java {{required}} or newer.",
+    "java_download": "Download Java {{version}}",
+    "java_ok": "Java {{installed}} detected (needs {{required}}+)",
+    "icon_choose": "Choose an icon",
+    "icon_hint": "Any image works: it is cropped and resized to 64×64 automatically.",
+    "motd_hint": "Use § or & codes for colours (e.g. §aGreen §lBold).",
+    "ram_system": "This PC has {{total}} GB of RAM",
+    "ram_system_unknown": "System memory unknown",
+    "ram_recommended": "Use recommended ({{value}} GB)",
+    "ram_min_hint": "Initial heap (-Xms): {{min}} MB",
+    "gamemode": "Game mode",
+    "difficulty": "Difficulty",
+    "gamemodes": {
+      "survival": "Survival",
+      "creative": "Creative",
+      "adventure": "Adventure",
+      "spectator": "Spectator"
+    },
+    "difficulties": {
+      "peaceful": "Peaceful",
+      "easy": "Easy",
+      "normal": "Normal",
+      "hard": "Hard"
+    },
+    "advanced": "Advanced",
+    "port_taken_instance": "Another server of yours already uses this port.",
+    "port_in_use": "This port is in use by another program on this PC.",
+    "default_name": "My {{game}} server",
+    "default_motd": "A {{game}} server",
+    "summary_source": "Source folder",
+    "warn_icon": "The server was created, but the icon could not be saved.",
+    "warn_properties": "The server was created, but game mode and difficulty could not be applied.",
+    "cancelled": "Installation cancelled",
+    "done_title": "{{name}} is ready",
+    "done_desc": "Your server was created. You can start it now or open its panel to keep configuring.",
+    "start_now": "Start server now",
+    "open_panel": "Open panel"
   }
 }

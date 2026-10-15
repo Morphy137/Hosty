@@ -68,7 +68,11 @@ export class MinecraftDriver implements IGameDriver {
     supportsCustomJava: true,
     configFileName: 'server.properties',
     badge: 'MC',
-    description: 'Official Mojang, Fabric, Paper, Forge and NeoForge Java servers'
+    description: 'Official Mojang, Fabric, Paper, Forge and NeoForge Java servers',
+    status: 'available',
+    setupSchema: [
+      { id: 'install', type: 'custom', labelKey: 'create_server.steps.installation', component: 'minecraft-install' }
+    ]
   };
 
   public validateInstallation(instanceDir: string): boolean {

@@ -37,7 +37,20 @@ export class ProjectZomboidDriver implements IGameDriver {
     supportsCustomJava: false,
     configFileName: 'servertest.ini',
     badge: 'PZ',
-    description: 'Project Zomboid Dedicated Server (SteamCMD AppID 380870)'
+    description: 'Project Zomboid Dedicated Server (SteamCMD AppID 380870)',
+    status: 'beta',
+    setupSchema: [
+      {
+        id: 'pzBranch',
+        type: 'select',
+        labelKey: 'create_server.zomboid_branch_label',
+        default: 'stable',
+        options: [
+          { value: 'stable', labelKey: 'create_server.zomboid_branch_stable' },
+          { value: 'unstable', labelKey: 'create_server.zomboid_branch_unstable' }
+        ]
+      }
+    ]
   };
 
   public validateInstallation(instanceDir: string): boolean {

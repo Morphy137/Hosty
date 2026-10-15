@@ -20,6 +20,8 @@ export interface InstanceSettings {
   gameId?: string;
   /** Project Zomboid Steam branch (stable / unstable) chosen at creation. */
   pzBranch?: string;
+  /** Values of the game's setup schema fields chosen at creation. */
+  gameConfig?: Record<string, string | number | boolean>;
 }
 
 export interface InstanceInfo {
@@ -121,6 +123,8 @@ export class InstanceManager {
         if (!entry.isDirectory()) continue;
         const id = entry.name;
         const dir = path.join(this.instancesBaseDir, id);
+        // `mods` / `config` at the root are leftovers of mod routes run without an active instance.
+        if ((id === 'mods' || id === 'config') && !fs.existsSync(path.join(dir, INSTANCE_SETTINGS_FILE))) continue;
         if (!this.isConfiguredDirectory(dir)) continue;
         list.push(this.inspectInstance(id, dir, false));
       }
@@ -183,7 +187,8 @@ export class InstanceManager {
       loader: customSettings?.loader,
       loaderVersion: customSettings?.loaderVersion,
       gameId,
-      pzBranch: customSettings?.pzBranch
+      pzBranch: customSettings?.pzBranch,
+      gameConfig: customSettings?.gameConfig
     };
 
     fs.writeFileSync(
