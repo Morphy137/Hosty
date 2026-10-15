@@ -67,6 +67,8 @@ export interface DaemonConfig {
   localesDir: string;
   /** Games that ship with Hosty (read-only pack folders). */
   bundledGamesDir: string;
+  /** Starter pack copied by "New pack from template". */
+  packTemplateDir: string;
   /** Translation packs shipped with Hosty (read-only); the user's `localesDir` overrides them. */
   bundledLocalesDir: string;
   /** When set, REST and WebSocket clients must present it (the desktop shell generates one per run). */
@@ -126,6 +128,9 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
     bundledGamesDir: path.resolve(
       env.MC_NEXUS_BUNDLED_GAMES_DIR?.trim() ||
         path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'games')
+    ),
+    packTemplateDir: path.resolve(
+      path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'pack-template')
     ),
     localesDir: path.resolve(
       env.MC_NEXUS_LOCALES_DIR?.trim() ||

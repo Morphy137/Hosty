@@ -27,6 +27,9 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
+import { BackupManager } from './core/BackupManager';
+import { fetchPublicIp, firewallRuleName, isValidPort, listLanAddresses, openFirewallPort } from './core/NetworkInfo';
+import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
 import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
 import net from 'net';
@@ -333,6 +336,94 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
   }
 });
 
+const requireInstance = (id: string) => {
+  const instance = instanceManager.getInstance(id);
+  if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
+  return instance;
+};
+
+app.get('/api/instances/:id/backups', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    res.json({ backups: new BackupManager(instance.dir).list() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/backups', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    const driver = driverRegistry.getDriver(instance.gameId);
+    // Flush the world to disk first when the server is running.
+    const sup = registry.getSupervisor(instance.id);
+    if (sup?.getStatus() === 'ONLINE') sup.sendCommand(driver.buildSaveCommand().trim());
+    const backup = new BackupManager(instance.dir).create(driver.backupPaths?.(), instance.backupsKept);
+    res.json({ ok: true, backup });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/backups/:name/restore', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    if (registry.getSupervisor(instance.id)?.isRunning()) {
+      throw new DaemonError('SERVER_RUNNING', 'Stop the server before restoring a backup.');
+    }
+    const manager = new BackupManager(instance.dir);
+    const driver = driverRegistry.getDriver(instance.gameId);
+    // Safety copy so a wrong restore is never destructive.
+    manager.create(driver.backupPaths?.(), instance.backupsKept + 1, 'prerestore');
+    try {
+      manager.restore(req.params.name);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/instances/:id/backups/:name', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    try {
+      new BackupManager(instance.dir).remove(req.params.name);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/system/network', async (_req, res, next) => {
+  try {
+    res.json({ lanAddresses: listLanAddresses(), publicIp: await fetchPublicIp() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Allows inbound traffic for the server port in the Windows firewall (needs administrator rights).
+app.post('/api/instances/:id/firewall', async (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    if (!isValidPort(instance.port)) throw new DaemonError('INVALID_PAYLOAD', 'The server has no valid port.');
+    try {
+      await openFirewallPort(firewallRuleName(instance.name, instance.port), instance.port);
+    } catch (error) {
+      throw new DaemonError('INTERNAL_ERROR', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, port: instance.port });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/instances/:id/settings', (req, res, next) => {
   try {
     const updated = instanceManager.updateInstanceSettings(req.params.id, req.body as Partial<InstanceSettings>);
@@ -343,7 +434,9 @@ app.post('/api/instances/:id/settings', (req, res, next) => {
         minRamMb: updated.minRamMb,
         maxRamMb: updated.maxRamMb,
         jvmArgs: updated.jvmArgs,
-        forceSaveOnStop: updated.forceSaveOnStop
+        forceSaveOnStop: updated.forceSaveOnStop,
+        autoRestart: updated.autoRestart,
+        scheduledRestartHours: updated.scheduledRestartHours
       });
     }
     broadcast('CONSOLE', `[Hypervisor] Settings updated for server "${updated.name}".\r\n`);
@@ -956,6 +1049,35 @@ app.get('/api/game-packs/:packId/manifest', (req, res, next) => {
   }
 });
 
+app.post('/api/game-packs/open-folder', (_req, res, next) => {
+  try {
+    fs.mkdirSync(config.gamesDir, { recursive: true });
+    try {
+      openFolder(config.gamesDir);
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/game-packs/from-template', (req, res, next) => {
+  try {
+    const { id, name } = req.body as { id?: unknown; name?: unknown };
+    if (typeof id !== 'string' || !id) throw new DaemonError('INVALID_PAYLOAD', 'Pack id is required.');
+    try {
+      createPackFromTemplate(config.gamesDir, config.packTemplateDir, id, typeof name === 'string' ? name : undefined);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir, packs: driverRegistry.reloadAll() });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/game-packs/install', (req, res, next) => {
   try {
     const { path: sourcePath } = req.body as { path?: string };
@@ -1214,6 +1336,12 @@ app.post('/api/provisioning/install', async (req, res, next) => {
       });
       createdInstanceId = target.id;
     } else if (target) {
+      // Changing the version of an existing server: keep a restorable copy first.
+      try {
+        new BackupManager(target.dir).create(driverRegistry.getDriver(gameId).backupPaths?.(), target.backupsKept + 1, 'preupdate');
+      } catch (error) {
+        throw new DaemonError('INVALID_PAYLOAD', `Could not back up before updating: ${error instanceof Error ? error.message : String(error)}`);
+      }
       instanceManager.updateInstanceSettings(target.id, { loader: variant, loaderVersion: version });
     }
     if (!target) {

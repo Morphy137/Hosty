@@ -289,6 +289,17 @@ export class DeclarativeGameDriver implements IGameDriver {
     return command === null ? '' : `${command ?? 'save'}\n`;
   }
 
+  public buildBroadcastCommand(message: string): string | null {
+    const template = this.manifest.commands?.broadcast;
+    if (!template) return null;
+    const clean = message.replace(/[\r\n]+/g, ' ').trim();
+    return `${template.replace(/\{\{\s*message\s*\}\}/g, clean)}\n`;
+  }
+
+  public backupPaths(): string[] | undefined {
+    return this.manifest.backup?.paths;
+  }
+
   public parseLogLine(line: string): ParsedLogEvent | null {
     if (this.ready.some((pattern) => pattern.test(line))) return { isReady: true };
 

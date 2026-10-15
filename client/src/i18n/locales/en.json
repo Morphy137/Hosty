@@ -10,7 +10,9 @@
     "mod_files": "Mods",
     "mods": "Mod Configs",
     "properties": "server.properties",
-    "status": "STATUS"
+    "status": "STATUS",
+    "backups": "Backups",
+    "network": "Network"
   },
   "header": {
     "title": "Hosty",
@@ -129,7 +131,10 @@
         "label": "Silence Unsafe warning",
         "desc": "Hides the sun.misc.Unsafe deprecation warning printed by JOML on Java 23+. Do not use on older Java: the server will not start."
       }
-    }
+    },
+    "auto_restart_label": "Restart automatically after a crash",
+    "scheduled_restart_label": "Scheduled restart every N hours (0 = off)",
+    "backups_kept_label": "Backups kept"
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -428,7 +433,10 @@
     "install_button": "Install",
     "builtin": "Built-in",
     "uninstall": "Uninstall pack",
-    "copy_manifest": "Copy manifest as a template"
+    "copy_manifest": "Copy manifest as a template",
+    "template_placeholder": "New pack id (e.g. my-game)",
+    "template_button": "New pack from template",
+    "open_folder": "Open games folder"
   },
   "mod_catalog": {
     "title": "Find mods",
@@ -477,5 +485,36 @@
       "beta": "Beta",
       "alpha": "Alpha"
     }
+  },
+  "backups": {
+    "title": "Backups",
+    "description": "Zip copies of the server data. Restoring replaces the current files.",
+    "create": "Create backup",
+    "empty": "No backups yet.",
+    "restore": "Restore",
+    "delete": "Delete",
+    "confirm_restore": "Restore this backup? A safety copy of the current state is created first.",
+    "stop_first": "Stop the server to restore a backup.",
+    "created": "Backup created",
+    "restored": "Backup restored",
+    "deleted": "Backup deleted",
+    "version_title": "Server version",
+    "version_hint": "Switch loader or version. A backup is created first.",
+    "version_confirm": "Update the server version? A backup is created first.",
+    "version_update": "Update",
+    "version_started": "Update started"
+  },
+  "network": {
+    "title": "Network access",
+    "description": "Addresses other players can use to join this server.",
+    "lan": "Same network (LAN)",
+    "public": "Internet (public IP)",
+    "copy": "Copy address",
+    "public_unknown": "Could not detect your public IP (offline?).",
+    "forwarding_title": "Playing over the internet",
+    "forwarding_hint": "Forward port {{port}} (TCP and UDP) on your router to this computer, and allow it in the firewall.",
+    "firewall_button": "Allow port {{port}} in the firewall",
+    "firewall_confirm": "Create inbound firewall rules for port {{port}}? Needs administrator rights.",
+    "firewall_done": "Firewall rules added for port {{port}}"
   }
 }

@@ -78,6 +78,10 @@ never sends an action that was not advertised (it falls back to console commands
 Standard actions: `heal`, `damage`, `kill`, `kick`, `teleport`, `freeze`, `unfreeze`, `smite`, `give_exp`,
 `mute`, `unmute`, `inventory_view` (advertised as `inventory.view`).
 
+> **Every action is optional.** `smite`, `give_exp` and the `tps` / `mspt` / chunk metrics are Minecraft concepts:
+> a bridge for another game advertises only what the game has, and the UI hides the rest. Games without a bridge
+> use console commands declared in the manifest (`playerActions`, `commands`).
+
 **Custom actions** declared in `customActions` can be sent by the UI with their `id`. Labels are text or a
 language map so the interface can show buttons in the user's language.
 

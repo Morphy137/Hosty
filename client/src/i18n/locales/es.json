@@ -10,7 +10,9 @@
     "mod_files": "Mods",
     "mods": "Configuración Mods",
     "properties": "server.properties",
-    "status": "ESTADO"
+    "status": "ESTADO",
+    "backups": "Copias",
+    "network": "Red"
   },
   "header": {
     "title": "Hosty",
@@ -129,7 +131,10 @@
         "label": "Silenciar aviso de Unsafe",
         "desc": "Oculta el aviso de obsolescencia de sun.misc.Unsafe que imprime JOML en Java 23+. No usar en Java anterior: el servidor no iniciará."
       }
-    }
+    },
+    "auto_restart_label": "Reiniciar automáticamente tras un fallo",
+    "scheduled_restart_label": "Reinicio programado cada N horas (0 = desactivado)",
+    "backups_kept_label": "Copias conservadas"
   },
   "mod_files": {
     "total_mods": "Total de Mods",
@@ -428,7 +433,10 @@
     "install_button": "Instalar",
     "builtin": "Integrado",
     "uninstall": "Desinstalar pack",
-    "copy_manifest": "Copiar manifest como plantilla"
+    "copy_manifest": "Copiar manifest como plantilla",
+    "template_placeholder": "Id del nuevo pack (p. ej. mi-juego)",
+    "template_button": "Nuevo pack desde plantilla",
+    "open_folder": "Abrir carpeta de juegos"
   },
   "mod_catalog": {
     "title": "Buscar mods",
@@ -477,5 +485,36 @@
       "beta": "Beta",
       "alpha": "Alfa"
     }
+  },
+  "backups": {
+    "title": "Copias de seguridad",
+    "description": "Copias zip de los datos del servidor. Restaurar reemplaza los archivos actuales.",
+    "create": "Crear copia",
+    "empty": "Aún no hay copias.",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "confirm_restore": "¿Restaurar esta copia? Antes se crea una copia de seguridad del estado actual.",
+    "stop_first": "Detén el servidor para restaurar una copia.",
+    "created": "Copia creada",
+    "restored": "Copia restaurada",
+    "deleted": "Copia eliminada",
+    "version_title": "Versión del servidor",
+    "version_hint": "Cambia el motor o la versión. Antes se crea una copia.",
+    "version_confirm": "¿Actualizar la versión del servidor? Antes se crea una copia.",
+    "version_update": "Actualizar",
+    "version_started": "Actualización iniciada"
+  },
+  "network": {
+    "title": "Acceso de red",
+    "description": "Direcciones que otros jugadores pueden usar para entrar a este servidor.",
+    "lan": "Misma red (LAN)",
+    "public": "Internet (IP pública)",
+    "copy": "Copiar dirección",
+    "public_unknown": "No se pudo detectar tu IP pública (¿sin conexión?).",
+    "forwarding_title": "Jugar por internet",
+    "forwarding_hint": "Redirige el puerto {{port}} (TCP y UDP) en tu router a este equipo y permítelo en el firewall.",
+    "firewall_button": "Permitir el puerto {{port}} en el firewall",
+    "firewall_confirm": "¿Crear reglas de entrada del firewall para el puerto {{port}}? Requiere permisos de administrador.",
+    "firewall_done": "Reglas de firewall añadidas para el puerto {{port}}"
   }
 }

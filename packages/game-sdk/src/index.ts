@@ -5,6 +5,9 @@
  * optional `driver.js` that overrides individual driver methods when the manifest is not enough.
  */
 
+export { validateManifest } from './validate';
+export type { ManifestValidation } from './validate';
+
 export const GAME_PACK_API_VERSION = 1;
 
 export type LocalizedText = string | Record<string, string>;
@@ -373,7 +376,20 @@ export interface PackHarness {
   parseLog(line: string): LogEvent | null;
   stopCommand(): string;
   saveCommand(): string;
+  /** Console commands of a declared player action, rendered like the daemon does. */
+  renderAction(actionId: string, player: string, values?: Record<string, string | number | boolean>): string[];
+  /** Declared dimension a reported value belongs to (by id or alias, case-insensitive). */
+  resolveDimension(raw: string): DimensionSpec | undefined;
 }
+
+const toSingleLine = (value: unknown): string =>
+  Array.from(String(value ?? ''), (char) => {
+    const code = char.charCodeAt(0);
+    return code < 32 || code === 127 ? ' ' : char;
+  })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 /**
  * Lightweight simulation of the declarative driver so pack authors can unit-test a manifest
@@ -420,6 +436,26 @@ export function createPackHarness(manifest: GameManifest): PackHarness {
     saveCommand() {
       const command = manifest.commands?.save;
       return command === null ? '' : `${command ?? 'save'}\n`;
+    },
+    renderAction(actionId, player, values = {}) {
+      const spec = manifest.playerActions?.find((action) => action.id === actionId);
+      if (!spec) throw new Error(`Unknown player action "${actionId}"`);
+      const templates = spec.command === undefined ? [] : Array.isArray(spec.command) ? spec.command : [spec.command];
+      const variables: Record<string, unknown> = { ...values, player };
+      return templates
+        .map((template) =>
+          template
+            .replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key: string) => toSingleLine(variables[key]))
+            .replace(/\s+/g, ' ')
+            .trim()
+        )
+        .filter(Boolean);
+    },
+    resolveDimension(raw) {
+      const value = (raw || '').trim().toLowerCase();
+      return manifest.dimensions?.find(
+        (dimension) => dimension.id.toLowerCase() === value || dimension.aliases?.some((alias) => alias.toLowerCase() === value)
+      );
     }
   };
 }

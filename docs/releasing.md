@@ -27,6 +27,16 @@ What is already platform-aware: sidecar per Rust target triple, per-OS data fold
 and the log-folder opener. Known gaps: SteamCMD auto-install is not available on macOS, and process
 termination semantics on Linux/macOS have not been exercised against real game servers.
 
+### Validating macOS and Linux builds
+
+Before calling a platform supported, run this checklist on a real machine with the release artifact:
+
+1. Install, launch and confirm the sidecar daemon starts (`daemon.log` in the app log folder).
+2. Create a Minecraft (Paper) server, start it, join it, and stop it from the UI (graceful `stop`, no orphan process).
+3. Create a backup, change the server version, and restore the backup.
+4. Close the app while a server runs: the server must stop cleanly.
+5. Confirm Java detection and the data folder location from the table above.
+
 ## Code signing
 
 Unsigned Windows installers trigger **Microsoft SmartScreen** on first run. Reputation builds with

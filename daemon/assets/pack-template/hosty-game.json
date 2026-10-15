@@ -1,0 +1,52 @@
+{
+  "$schema": "./node_modules/@hosty/game-sdk/hosty-game.schema.json",
+  "apiVersion": 1,
+  "id": "__ID__",
+  "name": "__NAME__",
+  "version": "0.1.0",
+  "logo": "logo.svg",
+  "badge": "__NAME__",
+  "description": { "en": "Dedicated server for __NAME__", "es": "Servidor dedicado de __NAME__" },
+  "category": "sandbox",
+  "status": "beta",
+  "defaults": { "port": 27015, "maxPlayers": 16, "memoryMb": 2048 },
+  "provision": { "type": "none" },
+  "launch": {
+    "runtime": "native",
+    "executable": { "win32": "server.exe", "default": "server.sh" },
+    "args": ["-port", "{{port}}", "-maxplayers", "{{maxPlayers}}"]
+  },
+  "detect": ["server.exe", "server.sh"],
+  "logs": {
+    "ready": "Server started",
+    "join": "(?<username>\\S+) joined the game",
+    "leave": "(?<username>\\S+) left the game",
+    "dimension": "world"
+  },
+  "commands": { "stop": "stop", "save": "save", "listPlayers": "players" },
+  "configFiles": [{ "path": "server.cfg", "format": "ini", "label": "server.cfg" }],
+  "configSync": {
+    "file": "server.cfg",
+    "format": "ini",
+    "map": { "port": "port", "maxPlayers": "max_players" }
+  },
+  "playerActions": [
+    { "id": "kick", "label": { "en": "Kick", "es": "Expulsar" }, "command": "kick {{player}}", "quick": true, "icon": "user-x" },
+    {
+      "id": "ban",
+      "label": { "en": "Ban", "es": "Banear" },
+      "command": "ban {{player}} {{reason}}",
+      "danger": true,
+      "params": [{ "id": "reason", "label": { "en": "Reason", "es": "Motivo" }, "type": "text", "default": "" }]
+    }
+  ],
+  "dimensions": [{ "id": "world", "label": { "en": "World", "es": "Mundo" }, "aliases": ["main"], "primary": true }],
+  "performance": { "tickRate": 30 },
+  "playerView": { "dimensions": true, "coordinates": false, "vitals": false },
+  "quickCommands": [
+    { "label": "Save", "command": "save" },
+    { "label": "Players", "command": "players" }
+  ],
+  "modLayout": { "modsDir": "mods", "configDir": "config" },
+  "capabilities": { "players": true, "mods": false, "configEditor": true, "bridge": false }
+}

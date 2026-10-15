@@ -1,5 +1,7 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  NetworkInfo,
+  BackupInfo,
   CatalogFilters,
   ModFacets,
   ModSearchHit,
@@ -102,6 +104,35 @@ function deleteRequest<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
 }
 
+export function fetchNetworkInfo(): Promise<NetworkInfo> {
+  return request<NetworkInfo>('/api/system/network');
+}
+
+export function openFirewall(instanceId: string): Promise<{ ok: boolean; port: number }> {
+  return postJson<{ ok: boolean; port: number }>(`/api/instances/${encodeURIComponent(instanceId)}/firewall`, {});
+}
+
+export function fetchBackups(instanceId: string): Promise<{ backups: BackupInfo[] }> {
+  return request<{ backups: BackupInfo[] }>(`/api/instances/${encodeURIComponent(instanceId)}/backups`);
+}
+
+export function createBackup(instanceId: string): Promise<{ ok: boolean; backup: BackupInfo }> {
+  return postJson<{ ok: boolean; backup: BackupInfo }>(`/api/instances/${encodeURIComponent(instanceId)}/backups`, {});
+}
+
+export function restoreBackup(instanceId: string, name: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/backups/${encodeURIComponent(name)}/restore`,
+    {}
+  );
+}
+
+export function deleteBackup(instanceId: string, name: string): Promise<{ ok: boolean }> {
+  return deleteRequest<{ ok: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/backups/${encodeURIComponent(name)}`
+  );
+}
+
 export function fetchHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/api/health');
 }
@@ -172,6 +203,20 @@ export function reloadGamePacks(): Promise<{ gamesDir: string; packs: GamePackIn
 
 export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: GamePackInfo[] }> {
   return postJson<{ ok: boolean; packs: GamePackInfo[] }>(`/api/game-packs/${encodeURIComponent(packId)}/trust`, {});
+}
+
+export function openGamePacksFolder(): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>('/api/game-packs/open-folder', {});
+}
+
+export function createGamePackFromTemplate(
+  id: string,
+  name?: string
+): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/from-template', {
+    id,
+    name
+  });
 }
 
 export function installGamePack(sourcePath: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {

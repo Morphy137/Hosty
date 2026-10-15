@@ -60,7 +60,9 @@
   },
   "commands": {
     "stop": "quit",
-    "save": "save"
+    "save": "save",
+    "listPlayers": "players",
+    "broadcast": "servermsg \"{{message}}\""
   },
   "configFiles": [
     {
@@ -102,5 +104,105 @@
     "bridge": false
   },
   "modFormat": "Steam Workshop / Lua",
-  "logo": "logo.webp"
+  "logo": "logo.webp",
+  "configSync": {
+    "file": "servertest.ini",
+    "format": "ini",
+    "map": {
+      "port": "DefaultPort",
+      "maxPlayers": "MaxPlayers",
+      "motd": "PublicDescription"
+    }
+  },
+  "quickCommands": [
+    {
+      "label": "Players",
+      "command": "players"
+    },
+    {
+      "label": "Save",
+      "command": "save"
+    },
+    {
+      "label": "Chopper",
+      "command": "chopper"
+    }
+  ],
+  "playerActions": [
+    {
+      "id": "kick",
+      "label": {
+        "en": "Kick",
+        "es": "Expulsar"
+      },
+      "command": "kickuser \"{{player}}\"",
+      "quick": true,
+      "icon": "user-x"
+    },
+    {
+      "id": "ban",
+      "label": {
+        "en": "Ban",
+        "es": "Banear"
+      },
+      "command": "banuser \"{{player}}\"",
+      "danger": true,
+      "icon": "ban"
+    },
+    {
+      "id": "additem",
+      "label": {
+        "en": "Give item",
+        "es": "Dar objeto"
+      },
+      "command": "additem \"{{player}}\" \"{{item}}\" {{count}}",
+      "params": [
+        {
+          "id": "item",
+          "label": {
+            "en": "Item (e.g. Base.Axe)",
+            "es": "Objeto (p. ej. Base.Axe)"
+          },
+          "type": "text",
+          "default": "Base.Axe"
+        },
+        {
+          "id": "count",
+          "label": {
+            "en": "Amount",
+            "es": "Cantidad"
+          },
+          "type": "number",
+          "default": 1
+        }
+      ]
+    },
+    {
+      "id": "admin",
+      "label": {
+        "en": "Grant admin",
+        "es": "Dar admin"
+      },
+      "command": "setaccesslevel \"{{player}}\" \"admin\"",
+      "danger": true
+    },
+    {
+      "id": "god",
+      "label": {
+        "en": "Toggle god mode",
+        "es": "Modo dios"
+      },
+      "command": "godmod \"{{player}}\""
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "knox_county",
+      "label": {
+        "en": "Knox County",
+        "es": "Condado de Knox"
+      },
+      "primary": true
+    }
+  ]
 }

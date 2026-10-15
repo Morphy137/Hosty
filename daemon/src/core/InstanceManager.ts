@@ -29,6 +29,12 @@ export interface InstanceSettings {
   javaPath?: string;
   forceSaveOnStop?: boolean;
   autostart?: boolean;
+  /** Restart automatically after an unexpected exit. */
+  autoRestart?: boolean;
+  /** Restart every N hours while running (0 = off). */
+  scheduledRestartHours?: number;
+  /** Backups kept before the oldest is deleted. */
+  backupsKept?: number;
   /** Pinned to the top of the server list. */
   favorite?: boolean;
   loader?: string;
@@ -57,6 +63,9 @@ export interface InstanceInfo {
   javaPath: string;
   forceSaveOnStop: boolean;
   autostart: boolean;
+  autoRestart: boolean;
+  scheduledRestartHours: number;
+  backupsKept: number;
   favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
@@ -370,6 +379,9 @@ export class InstanceManager {
       javaPath: settings.javaPath ?? '',
       forceSaveOnStop: settings.forceSaveOnStop ?? true,
       autostart: settings.autostart ?? false,
+      autoRestart: settings.autoRestart ?? false,
+      scheduledRestartHours: settings.scheduledRestartHours ?? 0,
+      backupsKept: settings.backupsKept ?? 5,
       favorite: settings.favorite ?? false,
       loader: settings.loader,
       loaderVersion: settings.loaderVersion,

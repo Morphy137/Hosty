@@ -193,6 +193,10 @@ export interface IGameDriver {
   }): ProcessLaunchPlan;
   buildStopCommand(): string;
   buildSaveCommand(): string;
+  /** Console command announcing a message to all players; null when the game has none. */
+  buildBroadcastCommand?(message: string): string | null;
+  /** Instance-relative paths a backup contains; undefined means the whole instance. */
+  backupPaths?(): string[] | undefined;
   parseLogLine(line: string): ParsedLogEvent | null;
   /** Creates the game's initial files for a new instance (e.g. a default config). */
   scaffoldInstance?(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void;

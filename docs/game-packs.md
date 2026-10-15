@@ -15,8 +15,9 @@ my-game/
 └─ driver.js         # optional, needs the user's explicit trust
 ```
 
-Scaffold one with `npm create hosty-game my-game`, then copy the folder into the games folder and press
-**Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
+Scaffold one with `npm create hosty-game my-game` (or **Game packs → New pack from template** in the app, which
+creates it directly in the games folder; **Open games folder** shows it). Check it with `npx hosty-pack validate my-game`
+(the same rules the daemon applies), then install it and press **Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
 [`project-zomboid`](examples/project-zomboid/hosty-game.json) and [`hytale`](examples/hytale/hosty-game.json) (the built-in games
 expressed as packs). In the app, the Game packs dialog can copy any built-in game's manifest as a template.
 
@@ -60,6 +61,8 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `dimensions` | | Worlds players can be in: `{ id, label, aliases?, icon?, primary? }`. Labels and pack images (`icon`) are shown on cards and as filter chips; `primary` ones are always offered. |
 | `performance.tickRate` | | Ticks per second the server targets: shows the TPS card (green/amber/red relative to it) when the bridge reports TPS; otherwise the Overview shows uptime. |
 | `commands.listPlayers` | | Console command that prints who is online; offered as "Refresh list" in the Players tab. |
+| `commands.broadcast` | | Console command that announces `{{message}}` to all players; used to warn before scheduled restarts. |
+| `backup` | | `{ "paths": ["world", "config"] }`: instance-relative paths a backup zips. Without it the whole instance is backed up. |
 | `creationSettings` | | Choices shown when creating a server and written to a config file: `{ id, label, type, options?, default?, file, key }`. |
 | `quickCommands` | | `{ label, command }` shortcuts shown above the console. |
 | `playerView` | | What the player cards show: `dimensions`, `coordinates`, `vitals`, an `avatarUrl` template, inventory item images (`itemIconUrls` templates with `{{item}}` / `{{namespace}}`, limited to `itemNamespaces`) and `inventoryClearAction` (id of the action the inventory viewer offers). |

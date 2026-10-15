@@ -13,7 +13,9 @@
     "mod_files": "模组",
     "mods": "模组配置",
     "properties": "server.properties",
-    "status": "状态"
+    "status": "状态",
+    "backups": "备份",
+    "network": "网络"
   },
   "header": {
     "title": "Hosty",
@@ -132,7 +134,10 @@
         "label": "屏蔽 Unsafe 警告",
         "desc": "隐藏 Java 23+ 上 JOML 输出的 sun.misc.Unsafe 弃用警告。请勿在旧版 Java 上使用：服务器将无法启动。"
       }
-    }
+    },
+    "auto_restart_label": "崩溃后自动重启",
+    "scheduled_restart_label": "每 N 小时定时重启（0 = 关闭）",
+    "backups_kept_label": "保留的备份数"
   },
   "mod_files": {
     "total_mods": "模组总数",
@@ -431,7 +436,10 @@
     "install_button": "安装",
     "builtin": "内置",
     "uninstall": "卸载游戏包",
-    "copy_manifest": "复制清单作为模板"
+    "copy_manifest": "复制清单作为模板",
+    "template_placeholder": "新包 ID（例如 my-game）",
+    "template_button": "从模板新建包",
+    "open_folder": "打开游戏文件夹"
   },
   "mod_catalog": {
     "title": "查找模组",
@@ -480,5 +488,36 @@
       "beta": "测试版",
       "alpha": "内测版"
     }
+  },
+  "backups": {
+    "title": "备份",
+    "description": "服务器数据的 zip 副本。恢复会替换当前文件。",
+    "create": "创建备份",
+    "empty": "暂无备份。",
+    "restore": "恢复",
+    "delete": "删除",
+    "confirm_restore": "恢复此备份？会先为当前状态创建安全副本。",
+    "stop_first": "请先停止服务器再恢复备份。",
+    "created": "备份已创建",
+    "restored": "备份已恢复",
+    "deleted": "备份已删除",
+    "version_title": "服务器版本",
+    "version_hint": "切换加载器或版本。会先创建备份。",
+    "version_confirm": "更新服务器版本？会先创建备份。",
+    "version_update": "更新",
+    "version_started": "更新已开始"
+  },
+  "network": {
+    "title": "网络访问",
+    "description": "其他玩家加入此服务器可使用的地址。",
+    "lan": "同一网络（局域网）",
+    "public": "互联网（公网 IP）",
+    "copy": "复制地址",
+    "public_unknown": "无法检测公网 IP（是否离线？）。",
+    "forwarding_title": "通过互联网游玩",
+    "forwarding_hint": "在路由器上将端口 {{port}}（TCP 和 UDP）转发到此电脑，并在防火墙中放行。",
+    "firewall_button": "在防火墙中允许端口 {{port}}",
+    "firewall_confirm": "为端口 {{port}} 创建入站防火墙规则？需要管理员权限。",
+    "firewall_done": "已为端口 {{port}} 添加防火墙规则"
   }
 }

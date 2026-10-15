@@ -1,5 +1,6 @@
 import { spawn as nodeSpawn, ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'child_process';
 import { EventEmitter } from 'events';
+import fs from 'fs';
 import path from 'path';
 import pidusage from 'pidusage';
 import { LineBuffer } from './LineBuffer';
@@ -23,6 +24,14 @@ export interface ServerConfig {
   port?: number;
   maxPlayers?: number;
   gameConfig?: Record<string, string | number | boolean>;
+  /** Restart automatically (with backoff) when the process exits without being asked to. */
+  autoRestart?: boolean;
+  /** Restart the server every N hours while it runs; 0 or undefined disables it. */
+  scheduledRestartHours?: number;
+  /** First crash-restart delay; doubles per attempt (default 2000). */
+  restartBackoffMs?: number;
+  /** How long players are warned before a scheduled restart (default 30000). */
+  restartWarnMs?: number;
 }
 
 export interface PlayerState {
@@ -86,6 +95,14 @@ export type SpawnFunction = (
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 const CONSOLE_LINE_ENDING = '\r\n';
+const CONSOLE_BUFFER_LINES = 500;
+const CONSOLE_LOG_RELATIVE = path.join('.hosty', 'console.log');
+const CONSOLE_LOG_FLUSH_MS = 1000;
+const MAX_CRASH_RESTARTS = 5;
+const DEFAULT_RESTART_BACKOFF_MS = 2000;
+const MAX_RESTART_BACKOFF_MS = 60_000;
+const DEFAULT_RESTART_WARN_MS = 30_000;
+const MS_PER_HOUR = 3_600_000;
 
 export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private process: ChildProcessWithoutNullStreams | null = null;
@@ -98,6 +115,14 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
   private driver: IGameDriver;
+  /** True once the user (or a scheduled restart) asked for the process to stop. */
+  private stopRequested = false;
+  private crashAttempts = 0;
+  private crashRestartTimer: NodeJS.Timeout | null = null;
+  private scheduleTimer: NodeJS.Timeout | null = null;
+  private restartWarnTimer: NodeJS.Timeout | null = null;
+  private pendingLogLines: string[] = [];
+  private logFlushTimer: NodeJS.Timeout | null = null;
   private isBridgeConnected = false;
   private lastBridgeMetrics?: {
     tps: number;
@@ -113,6 +138,49 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   ) {
     super();
     this.driver = driver ?? driverRegistry.getDriver(config.gameId);
+    this.consoleBuffer.push(...this.readPersistedConsole());
+  }
+
+  private consoleLogPath(): string {
+    return path.join(path.resolve(this.config.workingDir), CONSOLE_LOG_RELATIVE);
+  }
+
+  /** Last lines of the previous run, so the console is not empty after reopening the app. */
+  private readPersistedConsole(): string[] {
+    try {
+      const content = fs.readFileSync(this.consoleLogPath(), 'utf-8');
+      const lines = content.split('\n').filter((line) => line.length > 0);
+      return lines.slice(-CONSOLE_BUFFER_LINES).map((line) => `${line}${CONSOLE_LINE_ENDING}`);
+    } catch {
+      return [];
+    }
+  }
+
+  private persistConsoleLine(line: string): void {
+    this.pendingLogLines.push(line);
+    if (this.logFlushTimer) return;
+    this.logFlushTimer = setTimeout(() => this.flushConsoleLog(), CONSOLE_LOG_FLUSH_MS);
+    this.logFlushTimer.unref();
+  }
+
+  public flushConsoleLog(): void {
+    if (this.logFlushTimer) {
+      clearTimeout(this.logFlushTimer);
+      this.logFlushTimer = null;
+    }
+    if (this.pendingLogLines.length === 0) return;
+    const chunk = `${this.pendingLogLines.join('\n')}\n`;
+    this.pendingLogLines = [];
+    const file = this.consoleLogPath();
+    try {
+      if (!fs.existsSync(path.dirname(file))) {
+        if (!fs.existsSync(path.resolve(this.config.workingDir))) return;
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+      }
+      fs.appendFileSync(file, chunk, 'utf-8');
+    } catch {
+      // Persisting history is best effort.
+    }
   }
 
   public getStatus(): ServerStatus {
@@ -200,6 +268,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       return;
     }
 
+    this.stopRequested = false;
+    this.clearCrashRestart();
     this.setStatus('STARTING');
     const launchPlan = this.driver.buildLaunchPlan(this.config);
     const child = this.spawnProcess(launchPlan.executable, launchPlan.args, {
@@ -209,6 +279,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     this.process = child;
     this.attachProcessListeners(child);
     this.startMetrics();
+    this.startRestartSchedule();
   }
 
   public sendCommand(command: string): boolean {
@@ -225,6 +296,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   public stop(): void {
+    this.stopRequested = true;
+    this.clearCrashRestart();
     if (!this.process || this.status === 'STOPPING') return;
 
     if (this.config.forceSaveOnStop !== false) {
@@ -261,6 +334,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   }
 
   public kill(): void {
+    this.stopRequested = true;
     if (!this.process) return;
     this.process.kill('SIGKILL');
   }
@@ -295,7 +369,10 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       stderrBuffer.flush().forEach((line) => this.emitConsole(line));
       const wasTracked = this.process === child;
       this.cleanup(child);
-      if (wasTracked) this.emitConsole(`[Hypervisor] Process exited with code ${code}`);
+      if (wasTracked) {
+        this.emitConsole(`[Hypervisor] Process exited with code ${code}`);
+        if (!this.stopRequested) this.scheduleCrashRestart();
+      }
     });
   }
 
@@ -306,6 +383,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     this.process = null;
     this.stopMetrics();
     this.stopPositionPolling();
+    this.stopRestartSchedule();
     if (this.stopTimer) {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;
@@ -326,6 +404,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     if (!parsed) return;
 
     if (this.status === 'STARTING' && parsed.isReady) {
+      this.crashAttempts = 0;
       this.setStatus('ONLINE');
       this.startPositionPolling();
       return;
@@ -444,10 +523,70 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private emitConsole(line: string): void {
     const formatted = `${line}${CONSOLE_LINE_ENDING}`;
     this.consoleBuffer.push(formatted);
-    if (this.consoleBuffer.length > 500) {
+    if (this.consoleBuffer.length > CONSOLE_BUFFER_LINES) {
       this.consoleBuffer.shift();
     }
+    this.persistConsoleLine(line);
     this.emit('console', formatted);
+  }
+
+  /** Restarts after an unexpected exit, doubling the delay per attempt and giving up after a few. */
+  private scheduleCrashRestart(): void {
+    if (!this.config.autoRestart) return;
+    if (this.crashAttempts >= MAX_CRASH_RESTARTS) {
+      this.emitConsole(`[Hypervisor] Giving up after ${MAX_CRASH_RESTARTS} automatic restarts.`);
+      return;
+    }
+    const base = this.config.restartBackoffMs ?? DEFAULT_RESTART_BACKOFF_MS;
+    const delay = Math.min(base * 2 ** this.crashAttempts, MAX_RESTART_BACKOFF_MS);
+    this.crashAttempts += 1;
+    this.emitConsole(
+      `[Hypervisor] Server crashed. Restarting in ${Math.round(delay / 1000)}s (attempt ${this.crashAttempts}/${MAX_CRASH_RESTARTS}).`
+    );
+    this.crashRestartTimer = setTimeout(() => {
+      this.crashRestartTimer = null;
+      if (!this.stopRequested && !this.process) this.start();
+    }, delay);
+  }
+
+  private clearCrashRestart(): void {
+    if (this.crashRestartTimer) {
+      clearTimeout(this.crashRestartTimer);
+      this.crashRestartTimer = null;
+    }
+  }
+
+  private startRestartSchedule(): void {
+    this.stopRestartSchedule();
+    const hours = this.config.scheduledRestartHours;
+    if (!hours || hours <= 0) return;
+    this.scheduleTimer = setInterval(() => this.runScheduledRestart(), hours * MS_PER_HOUR);
+    this.scheduleTimer.unref();
+  }
+
+  private stopRestartSchedule(): void {
+    if (this.scheduleTimer) {
+      clearInterval(this.scheduleTimer);
+      this.scheduleTimer = null;
+    }
+    if (this.restartWarnTimer) {
+      clearTimeout(this.restartWarnTimer);
+      this.restartWarnTimer = null;
+    }
+  }
+
+  /** Warns players (when the game declares a broadcast command), then restarts. */
+  private runScheduledRestart(): void {
+    if (this.status !== 'ONLINE' || this.restartWarnTimer) return;
+    const warnMs = this.config.restartWarnMs ?? DEFAULT_RESTART_WARN_MS;
+    const seconds = Math.round(warnMs / 1000);
+    const broadcast = this.driver.buildBroadcastCommand?.(`Server restarting in ${seconds} seconds`);
+    if (broadcast && this.process) this.process.stdin.write(broadcast);
+    this.emitConsole(`[Hypervisor] Scheduled restart in ${seconds}s.`);
+    this.restartWarnTimer = setTimeout(() => {
+      this.restartWarnTimer = null;
+      if (this.status === 'ONLINE') this.restart();
+    }, warnMs);
   }
 
   private fail(code: SupervisorErrorCode, message: string): void {

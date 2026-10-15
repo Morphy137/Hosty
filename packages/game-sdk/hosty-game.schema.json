@@ -72,6 +72,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint: path or URL of this schema."
+    },
     "apiVersion": {
       "const": 1
     },
@@ -313,6 +317,10 @@
         "listPlayers": {
           "type": "string",
           "description": "Console command that prints who is online (offered as \"refresh list\")."
+        },
+        "broadcast": {
+          "type": "string",
+          "description": "Console command announcing {{message}} to every player (used before scheduled restarts)."
         }
       },
       "additionalProperties": false
@@ -1048,6 +1056,22 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "backup": {
+      "type": "object",
+      "required": [
+        "paths"
+      ],
+      "additionalProperties": false,
+      "description": "Paths (relative to the instance) a backup contains. Without it the whole instance is zipped.",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relativePath"
           }
         }
       }

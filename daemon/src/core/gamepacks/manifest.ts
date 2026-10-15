@@ -269,7 +269,10 @@ export interface GameManifest {
     dimension?: string;
   };
   /** `listPlayers`: console command that makes the server print who is online (offered as "refresh list"). */
-  commands?: { stop?: string; save?: string | null; listPlayers?: string };
+  /** `broadcast`: console command that announces `{{message}}` to every player (used before scheduled restarts). */
+  commands?: { stop?: string; save?: string | null; listPlayers?: string; broadcast?: string };
+  /** Paths (relative to the instance) a backup contains. Without it the whole instance is zipped. */
+  backup?: { paths: string[] };
   configFiles?: ManifestConfigFile[];
   setup?: ManifestSetupField[];
   capabilities?: Partial<GameCapabilities>;
@@ -593,6 +596,12 @@ export function validateManifest(raw: unknown): ManifestValidation {
       (icon.size as number) > 1024
     ) {
       errors.push('serverIcon must be { file (relative .png), size (16-1024) }');
+    }
+  }
+  if (raw.backup !== undefined) {
+    const backup = raw.backup;
+    if (!isObject(backup) || !Array.isArray(backup.paths) || !backup.paths.every(isSafeRelativePath)) {
+      errors.push('backup must be { paths: list of relative paths }');
     }
   }
   if (raw.bridgeLoaders !== undefined && !isStringList(raw.bridgeLoaders)) {

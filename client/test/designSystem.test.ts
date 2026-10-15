@@ -61,7 +61,7 @@ describe('capability-driven tabs', () => {
   };
 
   it('shows every tab for a moddable game with server.properties', () => {
-    expect(availableTabs(base)).toEqual(['overview', 'players', 'mod_files', 'mods', 'properties']);
+    expect(availableTabs(base)).toEqual(['overview', 'players', 'mod_files', 'mods', 'properties', 'backups', 'network']);
   });
 
   it('hides mod and properties tabs when the driver lacks them', () => {
@@ -70,7 +70,7 @@ describe('capability-driven tabs', () => {
       capabilities: { players: true, mods: false, configEditor: false, bridge: false },
       configFiles: []
     });
-    expect(tabs).toEqual(['overview', 'players']);
+    expect(tabs).toEqual(['overview', 'players', 'backups', 'network']);
   });
 
   it('falls back to overview when the selected tab disappears', () => {

@@ -13,7 +13,9 @@
     "mod_files": "Mods",
     "mods": "Configs dos mods",
     "properties": "server.properties",
-    "status": "STATUS"
+    "status": "STATUS",
+    "backups": "Backups",
+    "network": "Rede"
   },
   "header": {
     "title": "Hosty",
@@ -132,7 +134,10 @@
         "label": "Silenciar aviso do Unsafe",
         "desc": "Oculta o aviso de descontinuação de sun.misc.Unsafe exibido pelo JOML no Java 23+. Não use em Java mais antigo: o servidor não iniciará."
       }
-    }
+    },
+    "auto_restart_label": "Reiniciar automaticamente após uma falha",
+    "scheduled_restart_label": "Reinício agendado a cada N horas (0 = desligado)",
+    "backups_kept_label": "Backups mantidos"
   },
   "mod_files": {
     "total_mods": "Total de mods",
@@ -431,7 +436,10 @@
     "install_button": "Instalar",
     "builtin": "Integrado",
     "uninstall": "Desinstalar pacote",
-    "copy_manifest": "Copiar manifest como modelo"
+    "copy_manifest": "Copiar manifest como modelo",
+    "template_placeholder": "ID do novo pack (ex.: meu-jogo)",
+    "template_button": "Novo pack a partir do modelo",
+    "open_folder": "Abrir pasta de jogos"
   },
   "mod_catalog": {
     "title": "Buscar mods",
@@ -480,5 +488,36 @@
       "beta": "Beta",
       "alpha": "Alfa"
     }
+  },
+  "backups": {
+    "title": "Backups",
+    "description": "Cópias zip dos dados do servidor. Restaurar substitui os arquivos atuais.",
+    "create": "Criar backup",
+    "empty": "Nenhum backup ainda.",
+    "restore": "Restaurar",
+    "delete": "Excluir",
+    "confirm_restore": "Restaurar este backup? Uma cópia de segurança do estado atual é criada antes.",
+    "stop_first": "Pare o servidor para restaurar um backup.",
+    "created": "Backup criado",
+    "restored": "Backup restaurado",
+    "deleted": "Backup excluído",
+    "version_title": "Versão do servidor",
+    "version_hint": "Troque o loader ou a versão. Um backup é criado antes.",
+    "version_confirm": "Atualizar a versão do servidor? Um backup é criado antes.",
+    "version_update": "Atualizar",
+    "version_started": "Atualização iniciada"
+  },
+  "network": {
+    "title": "Acesso de rede",
+    "description": "Endereços que outros jogadores podem usar para entrar neste servidor.",
+    "lan": "Mesma rede (LAN)",
+    "public": "Internet (IP público)",
+    "copy": "Copiar endereço",
+    "public_unknown": "Não foi possível detectar seu IP público (offline?).",
+    "forwarding_title": "Jogar pela internet",
+    "forwarding_hint": "Encaminhe a porta {{port}} (TCP e UDP) no roteador para este computador e libere-a no firewall.",
+    "firewall_button": "Permitir a porta {{port}} no firewall",
+    "firewall_confirm": "Criar regras de entrada no firewall para a porta {{port}}? Exige administrador.",
+    "firewall_done": "Regras de firewall adicionadas para a porta {{port}}"
   }
 }
