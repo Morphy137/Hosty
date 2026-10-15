@@ -23,8 +23,8 @@ describe('inspectServerFolder', () => {
     const result = inspectServerFolder(dir);
     expect(result).toMatchObject({
       gameId: 'minecraft',
-      loader: 'paper',
-      mcVersion: '1.21.1',
+      variant: 'paper',
+      gameVersion: '1.21.1',
       port: 25570,
       motd: 'Hello',
       maxPlayers: 12
@@ -46,8 +46,8 @@ describe('inspectServerFolder', () => {
     const result = inspectServerFolder(jar, 'minecraft');
     expect(result).toMatchObject({
       gameId: 'minecraft',
-      loader: 'paper',
-      mcVersion: '1.20.4',
+      variant: 'paper',
+      gameVersion: '1.20.4',
       launchFile: 'my-custom-paper-build.jar',
       path: dir
     });
@@ -59,7 +59,7 @@ describe('inspectServerFolder', () => {
     fs.mkdirSync(argsDir, { recursive: true });
     fs.writeFileSync(path.join(argsDir, argsName), '');
 
-    expect(inspectServerFolder(dir)).toMatchObject({ gameId: 'minecraft', loader: 'neoforge' });
+    expect(inspectServerFolder(dir)).toMatchObject({ gameId: 'minecraft', variant: 'neoforge' });
   });
 
   it('identifies Project Zomboid before falling back to Minecraft', () => {

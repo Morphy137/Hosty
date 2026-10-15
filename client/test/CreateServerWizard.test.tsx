@@ -52,7 +52,8 @@ const baseGame: GameDriverSummary = {
   badge: 'MC',
   description: 'Mojang, Fabric, Paper',
   status: 'available',
-  setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'minecraft-install' }],
+  setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'installer' }],
+  installer: { variants: [{ id: 'paper', name: 'PaperMC', automatic: true }], defaultVariant: 'paper' },
   capabilities: { players: true, mods: true, configEditor: true, bridge: true },
   configFiles: [{ path: 'server.properties', format: 'properties' }],
   configSync: { file: 'server.properties', format: 'properties', map: { port: 'server-port', motd: 'motd', maxPlayers: 'max-players' } },
@@ -67,6 +68,7 @@ const zomboid: GameDriverSummary = {
   status: 'beta',
   configFileName: 'servertest.ini',
   configSync: undefined,
+  installer: undefined,
   setupSchema: [
     {
       id: 'pzBranch',

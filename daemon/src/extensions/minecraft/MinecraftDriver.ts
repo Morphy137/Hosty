@@ -1,16 +1,19 @@
 import fs from 'fs';
 import path from 'path';
-import type { ParsedLogEvent } from './IGameDriver';
-import { DeclarativeGameDriver } from '../gamepacks/DeclarativeDriver';
-import type { GameManifest } from '../gamepacks/manifest';
-import { inspectJar } from '../../provisioning/JarInspector';
-import { PropertiesParser } from '../../parsers/PropertiesParser';
+import type { GameInstaller, InstallFileInfo, ParsedLogEvent } from '../../core/drivers/IGameDriver';
+import type { ProvisionHooks } from '../../provisioning/download';
+import { ServerInstaller, type LoaderType } from './ServerInstaller';
+import { runServerInstaller } from './JavaInstallerRunner';
+import { DeclarativeGameDriver } from '../../core/gamepacks/DeclarativeDriver';
+import type { GameManifest } from '../../core/gamepacks/manifest';
+import { inspectJar } from './JarInspector';
+import { PropertiesParser } from './PropertiesParser';
 import {
   normalizeDimension,
   isServerReadyLine,
   parsePlayerJoin,
   parsePlayerLeave
-} from '../LogLineParser';
+} from './LogLineParser';
 
 export type MinecraftLaunchMode = 'jar' | 'argsFile';
 
@@ -63,6 +66,46 @@ export class MinecraftDriver extends DeclarativeGameDriver {
     super(manifest, packDir, 'builtin');
   }
 
+  /** Paper / Purpur / Fabric / Vanilla / Forge / NeoForge downloads and uploaded jars (variants: manifest `installer`). */
+  public readonly installer: GameInstaller = {
+    listVersions: (variant) => ServerInstaller.getVersions(variant as LoaderType),
+    install: (instanceDir, variant, version, hooks) =>
+      ServerInstaller.provisionServer(instanceDir, variant as LoaderType, version, hooks),
+    inspectFile: (filePath): InstallFileInfo => {
+      const inspection = inspectJar(filePath);
+      return {
+        variant: inspection.loader,
+        gameVersion: inspection.mcVersion,
+        variantVersion: inspection.loaderVersion,
+        kind: inspection.kind
+      };
+    },
+    placeFile: (instanceDir, filePath, info) => {
+      const destination = path.join(instanceDir, info.kind === 'installer' ? 'installer.jar' : 'server.jar');
+      fs.copyFileSync(filePath, destination);
+      if (info.kind !== 'installer') return { launchFile: 'server.jar' };
+      return {
+        run: async (hooks: ProvisionHooks) => {
+          hooks.onPhase?.('install');
+          hooks.onLog('[Provisioner] Running the uploaded installer (this can take a few minutes)...');
+          try {
+            await runServerInstaller({
+              javaPath: hooks.javaPath || 'java',
+              installerJar: destination,
+              cwd: instanceDir,
+              signal: hooks.signal,
+              onLine: (line) => hooks.onLog(`[Installer] ${line}`)
+            });
+          } finally {
+            fs.rmSync(destination, { force: true });
+            fs.rmSync(path.join(instanceDir, 'installer.jar.log'), { force: true });
+          }
+          hooks.onPhase?.('configure');
+        }
+      };
+    }
+  };
+
   public override parseLogLine(line: string): ParsedLogEvent | null {
     if (isServerReadyLine(line)) {
       return { isReady: true };
@@ -107,7 +150,7 @@ export class MinecraftDriver extends DeclarativeGameDriver {
     if (!fs.existsSync(eulaPath)) fs.writeFileSync(eulaPath, 'eula=true\n', 'utf-8');
   }
 
-  public inspectFolder(instanceDir: string, launchFile?: string): { loader?: string | null; version?: string | null } {
+  public inspectFolder(instanceDir: string, launchFile?: string): { variant?: string | null; version?: string | null } {
     // A file chosen by the user wins over the conventional names.
     const chosen = launchFile && fs.existsSync(path.join(instanceDir, launchFile)) ? launchFile : undefined;
     const launch = chosen
@@ -116,13 +159,13 @@ export class MinecraftDriver extends DeclarativeGameDriver {
     if (launch?.mode === 'argsFile') {
       const versionDir = launch.target.split('/').slice(-2, -1)[0] ?? '';
       return {
-        loader: launch.target.includes('/neoforged/') ? 'neoforge' : 'forge',
+        variant: launch.target.includes('/neoforged/') ? 'neoforge' : 'forge',
         version: versionDir.split('-')[0] || null
       };
     }
     if (launch?.mode === 'jar') {
       const inspection = inspectJar(path.join(instanceDir, launch.target));
-      return { loader: inspection.loader, version: inspection.mcVersion };
+      return { variant: inspection.loader, version: inspection.mcVersion };
     }
     return {};
   }

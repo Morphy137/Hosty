@@ -2,10 +2,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle2, Circle, Loader2 } from 'lucide-react';
 import type { GameDriverSummary, ProvisionJobState, ProvisionPhase } from '../../../types/daemon';
-import { LOADER_METADATA } from '../../../types/daemon';
 import { GameLogo } from '../../common/GameIcons';
 import { Button } from '../../ui/Button';
-import { bridgeEligible, usesLoaderInstall } from '../wizardPlan';
+import { bridgeEligible, selectedVariant, usesInstaller } from '../wizardPlan';
 import { cn } from '../../../utils/cn';
 import type { WizardDraft } from '../wizardTypes';
 import { Activity } from 'lucide-react';
@@ -35,15 +34,18 @@ const PHASES: ProvisionPhase[] = ['resolve', 'download', 'install', 'configure']
 export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job, logs, error, onCancel, update }) => {
   const { t } = useTranslation();
   const isImport = draft.origin === 'import';
-  const install = draft.loaderInstall;
-  const usesJar = !LOADER_METADATA[install.loader].isAutomatic || install.useCustomJar;
+  const install = draft.install;
+  const variant = selectedVariant(draft, game);
+  const usesFile = Boolean(variant && (!variant.automatic || install.useOwnFile));
+  const variantName = (id: string | null | undefined) =>
+    game?.installer?.variants.find((candidate) => candidate.id === id)?.name ?? id;
 
   const engine = isImport
-    ? draft.importInfo?.loader ?? draft.importInfo?.gameId ?? '—'
-    : usesLoaderInstall(game)
-      ? usesJar
-        ? install.jarFile?.name ?? t('create_server.engine_custom_jar')
-        : `${LOADER_METADATA[install.loader].name} ${install.version}`
+    ? variantName(draft.importInfo?.variant) ?? draft.importInfo?.gameId ?? '—'
+    : usesInstaller(game) && variant
+      ? usesFile
+        ? install.file?.name ?? t('create_server.engine_custom_jar')
+        : `${variant.name} ${install.version}`
       : provisionLabel(game, draft) ?? t('create_server.engine_native');
 
   const rows: Array<[string, string]> = [

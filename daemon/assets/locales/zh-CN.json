@@ -4,14 +4,13 @@
   },
   "common": {
     "cancel": "取消",
-    "apply": "应用",
     "save": "保存",
     "close": "关闭"
   },
   "nav": {
     "overview": "概览",
     "players": "玩家",
-    "mod_files": "模组 (.jar)",
+    "mod_files": "模组",
     "mods": "模组配置",
     "properties": "server.properties",
     "status": "状态"
@@ -19,18 +18,11 @@
   "header": {
     "title": "Hosty",
     "instance": "本地实例",
-    "instance_tooltip": "切换当前服务器实例",
     "no_servers": "没有服务器",
-    "new_server": "新建服务器",
     "import_server": "导入",
     "mock_button": "模拟遥测",
-    "mock_active": "模拟已启用",
-    "language": "语言",
-    "theme_toggle": "切换主题",
     "theme_dark": "切换到深色模式",
-    "theme_light": "切换到浅色模式",
-    "connected": "已连接",
-    "disconnected": "已断开"
+    "theme_light": "切换到浅色模式"
   },
   "overview": {
     "metrics": {
@@ -40,12 +32,7 @@
       "players_online": "在线玩家",
       "tps": "服务器性能 (TPS)",
       "mspt": "刻耗时 (MSPT)",
-      "bridge": "遥测桥",
-      "bridge_connected": "桥已启用",
-      "bridge_disconnected": "标准轮询",
-      "tick_optimal": "刻状态良好",
-      "tick_warning": "轻微刻延迟",
-      "tick_critical": "严重刻延迟"
+      "bridge_connected": "桥已启用"
     },
     "controls": {
       "start": "启动服务器",
@@ -58,9 +45,6 @@
       "status_starting": "启动中",
       "status_stopping": "停止中"
     },
-    "quick_commands": {
-      "title": "快捷预设"
-    },
     "players": {
       "title": "已连接的玩家",
       "empty": "没有玩家连接到服务器",
@@ -68,28 +52,10 @@
       "no_matches": "没有找到匹配的玩家",
       "no_matches_description": "请尝试使用其他用户名搜索。",
       "clear_search": "清除",
-      "tp": "传送",
-      "op": "设为管理员",
-      "deop": "取消管理员",
-      "kick": "踢出",
-      "ban": "封禁",
-      "gamemode_creative": "创造",
-      "gamemode_survival": "生存",
-      "feed": "治疗",
-      "clear_inventory": "清空背包",
-      "health": "生命值",
       "food": "饥饿值",
-      "ping": "延迟",
-      "operator": "OP",
-      "dimension": {
-        "overworld": "主世界",
-        "the_nether": "下界",
-        "the_end": "末地"
-      }
+      "operator": "OP"
     },
     "console": {
-      "title": "实时终端",
-      "clear": "清除",
       "placeholder": "输入控制台命令...",
       "send": "发送"
     },
@@ -103,62 +69,11 @@
     "filter_all": "全部",
     "empty_description": "使用游戏客户端连接服务器，或使用“模拟遥测”查看在线玩家会话。",
     "manage_title": "管理玩家",
-    "gamemode_label": "更改游戏模式",
-    "permissions_label": "管理员权限",
-    "teleport_coords_label": "传送到坐标",
-    "tp_spawn": "出生点",
-    "kick_reason_placeholder": "踢出原因...",
-    "ban_reason_placeholder": "封禁原因...",
-    "kick_default_reason": "被管理员踢出",
-    "ban_default_reason": "被管理员封禁",
-    "inspect_inventory": "背包",
     "inventory_button": "背包",
-    "freeze": "冻结",
-    "unfreeze": "解冻",
     "frozen": "已冻结",
-    "mute": "禁言",
-    "unmute": "解除禁言",
     "muted": "已禁言",
-    "smite": "雷击",
-    "give_exp": "给予经验",
-    "experience": "经验",
-    "experience_modal": {
-      "title": "给予经验",
-      "type_label": "单位类型",
-      "type_levels": "等级 (Lvl)",
-      "type_points": "经验点 (XP)",
-      "mode_label": "操作模式",
-      "mode_add": "增加 (+)",
-      "mode_set": "设为精确值 (=)",
-      "amount_label": "数量",
-      "levels": "等级",
-      "points": "点数",
-      "exact_value": "精确值",
-      "submit": "给予经验"
-    },
-    "exp_5": "+5 级",
-    "exp_30": "+30 级",
-    "frost_effect_label": "屏幕冰冻效果（细雪）",
-    "admin_actions": "高级管理控制",
     "actions": {
-      "heal_title": "治疗 {{player}}",
-      "damage_title": "伤害 {{player}}",
-      "gift_title": "赠送物品给 {{player}}",
-      "heal_amount": "恢复的心数",
-      "feed_checkbox": "同时恢复饥饿值和饱和度",
-      "damage_amount": "伤害数值",
-      "gift_select_item": "选择预设物品",
-      "gift_custom_item": "或自定义物品 ID",
-      "gift_quantity": "数量",
-      "execute_button": "执行操作",
-      "hearts_label": "心数",
-      "heart_single": "1 颗心",
-      "hearts_full": "10（满）",
-      "custom_item_placeholder": "例如 minecraft:nether_star",
-      "gift": "赠送",
-      "hurt": "伤害",
-      "kill": "击杀",
-      "inventory_short": "背包"
+      "execute_button": "执行操作"
     }
   },
   "edit_server": {
@@ -224,7 +139,7 @@
     "active_mods": "已启用",
     "disabled_mods": "已禁用",
     "search_placeholder": "按名称筛选模组...",
-    "empty": "在 /mods 目录中没有找到模组 jar 文件。",
+    "empty": "模组文件夹中没有模组文件。",
     "active": "已启用",
     "disabled": "已禁用",
     "open_config": "打开配置",
@@ -233,7 +148,7 @@
     "directory_hint": "/mods 目录",
     "headers": {
       "index": "#",
-      "name": "模组名称 / Jar 文件",
+      "name": "模组 / 文件",
       "size": "文件大小",
       "status": "状态",
       "actions": "操作"
@@ -241,58 +156,40 @@
   },
   "create_server": {
     "modal_title": "新建游戏服务器",
-    "modal_subtitle": "配置并自动创建一个新的本地游戏服务器实例。",
     "steps": {
-      "game": "1. 游戏引擎",
-      "installation": "2. 安装",
-      "settings": "3. 服务器规格",
-      "review": "4. 部署"
-    },
-    "step_desc": {
-      "game": "为此实例选择专用游戏服务器引擎。",
-      "installation": "配置加载器、服务端软件，或附加自定义程序。",
-      "settings": "设置服务器名称、网络端口和分配的内存。",
-      "review": "检查配置参数并创建服务器。"
+      "installation": "2. 安装"
     },
     "game_engine_label": "游戏服务器引擎",
-    "summary_title": "配置摘要",
     "summary_game": "游戏引擎",
     "summary_engine": "服务端软件",
-    "summary_version": "版本",
     "summary_resources": "分配内存",
     "summary_network": "端口 / 最大玩家数",
     "name_label": "服务器名称",
     "id_label": "目录 ID（slug）",
     "back_button": "返回",
     "continue_button": "继续",
-    "create_instance_button": "创建游戏实例",
     "submit_button": "创建并安装服务器",
     "badge_auto": "自动",
-    "badge_manual": "Jar",
-    "version_option": "Minecraft {{version}} ({{loader}})",
-    "detecting_jar": "正在检查 jar...",
+    "badge_manual": "手动",
+    "version_option": "{{version}}（{{loader}}）",
+    "detecting_jar": "正在检查文件...",
     "detected_installer": "已识别：{{loader}} {{version}}（安装器，将自动运行）",
     "detected_server": "已识别：{{loader}} {{version}}",
-    "detected_unknown": "无法识别此 jar，将直接使用 java -jar 启动。",
+    "detected_unknown": "无法识别此文件，将按原样启动。",
     "motd_placeholder": "一个游戏服务器",
-    "engine_custom_jar": "自定义 JAR",
+    "engine_custom_jar": "自定义服务器文件",
     "engine_native": "原生引擎",
     "network_summary": "端口 {{port}} / 最多 {{max}} 人"
   },
   "import_server": {
     "modal_title": "导入现有服务器",
     "path_label": "服务器文件路径",
-    "path_hint": "选择启动服务器的文件（例如 server.jar，即使已重命名）。也可以直接输入文件夹路径。",
-    "name_label": "显示名称（可选）",
+    "path_hint": "选择服务器文件夹或启动它的文件（即使已重命名）。也可以直接输入路径。",
     "submit_button": "导入服务器",
-    "submitting": "正在导入...",
-    "display_name_placeholder": "自定义显示名称（可选）",
     "browse": "浏览...",
     "picker_title": "选择服务器文件"
   },
   "properties": {
-    "title": "服务器属性",
-    "subtitle": "调整游戏机制、端口和世界生成参数。",
     "search_placeholder": "筛选属性（例如 motd、pvp、port）...",
     "save": "保存更改",
     "saved": "已保存！",
@@ -304,13 +201,10 @@
     }
   },
   "mods": {
-    "title": "模组配置",
-    "subtitle": "查看并实时编辑 TOML 和 JSON 模组配置文件。",
-    "file_select": "选择文件",
     "search_placeholder": "筛选配置项...",
     "save": "保存配置",
     "saved": "已保存！",
-    "empty": "没有找到配置项。",
+    "empty": "模组文件夹中没有模组文件。",
     "no_files": "在 config/ 目录中没有找到模组配置文件。",
     "directory_hint": "/config 目录",
     "headers": {
@@ -321,28 +215,15 @@
     }
   },
   "provisioning": {
-    "title": "服务器引擎部署",
-    "subtitle": "自动下载并部署高性能 Minecraft 加载器。",
     "loader_label": "选择服务器引擎",
-    "loader_fabric_desc": "面向现代 Minecraft 的高性能模组工具链。",
-    "loader_paper_desc": "经过深度优化的高性能 Spigot 分支。",
-    "loader_vanilla_desc": "Mojang 官方 Minecraft 服务端，无模组。",
     "version_label": "选择发行版本",
     "loading_versions": "加载中...",
-    "install_button": "部署并安装",
     "installing": "正在部署...",
-    "server_must_be_offline": "安装新程序前，服务器必须处于离线状态。",
     "logs_title": "部署输出",
-    "ready_hint": "选择引擎和版本即可开始安装。",
-    "manual_loader_badge": "手动上传 JAR",
-    "auto_loader_badge": "可自动下载",
-    "switch_to_custom_jar": "或附加自定义服务端 .jar",
-    "switch_to_auto_download": "切换回自动下载",
     "manual_download_instructions": "{{loader}} 需要下载官方服务端程序或安装器。请访问官方网站下载文件，然后在下方附加。",
     "visit_official_site": "官方下载站点",
-    "upload_jar_dropzone": "将 .jar 文件拖到此处，或点击浏览",
-    "upload_jar_hint": "附加你的 server.jar 或加载器安装器 .jar",
-    "create_and_upload": "创建服务器并上传 JAR",
+    "upload_jar_dropzone": "将服务器文件拖到此处或点击浏览",
+    "upload_jar_hint": "附加服务器文件或其安装程序",
     "cancel_install": "取消安装",
     "phase": {
       "queued": "等待开始...",
@@ -350,10 +231,7 @@
       "download": "正在下载...",
       "install": "正在运行安装器...",
       "configure": "正在配置服务器..."
-    },
-    "automated_setup": "自动配置",
-    "auto_eula": "自动同意 EULA：已启用",
-    "target_jar": "目标：server.jar"
+    }
   },
   "inventory": {
     "modal_title": "背包：{{player}}",
@@ -368,7 +246,7 @@
     "enchantments": "附魔"
   },
   "errors": {
-    "JAR_MISSING": "未找到服务端 jar。请先部署服务器引擎。",
+    "JAR_MISSING": "未找到服务器文件。请先安装服务器软件。",
     "JAVA_NOT_FOUND": "未找到 Java 可执行文件。请安装 Java (JDK 21) 或设置 MC_NEXUS_JAVA_PATH。",
     "PROCESS_ERROR": "服务器进程出现错误。",
     "SERVER_NOT_ONLINE": "服务器离线时无法发送命令。",
@@ -384,7 +262,7 @@
     "INTERNAL_ERROR": "内部错误。请查看守护进程日志了解详情。",
     "UNAUTHORIZED": "守护进程拒绝了请求（令牌无效）。",
     "INVALID_MESSAGE": "收到无效消息。",
-    "INVALID_VERSION": "Minecraft 版本无效。",
+    "INVALID_VERSION": "游戏版本无效。",
     "INVALID_PAYLOAD": "收到的数据无效。",
     "UPSTREAM_ERROR": "无法连接下载服务器。请检查网络连接。",
     "NETWORK_ERROR": "无法连接到 Hosty 守护进程。请确认它正在 4000 端口运行。",
@@ -393,23 +271,11 @@
   },
   "environment": {
     "java_missing_title": "未检测到 Java 运行环境",
-    "java_missing_desc": "Minecraft 及基于 Java 的游戏服务器需要在系统中安装 Java (JDK 21)。",
-    "java_download_btn": "下载 Java (Temurin 21)",
-    "java_detected": "已检测到 Java {{version}}"
+    "java_download_btn": "下载 Java (Temurin 21)"
   },
   "onboarding": {
     "welcome_title": "欢迎使用 Hosty",
-    "welcome_subtitle": "你想从哪里开始？",
     "welcome_desc": "你还没有配置任何游戏服务器。Hosty 可以从零创建专用服务器，也可以导入已有文件夹。",
-    "create_server_title": "创建新服务器",
-    "create_server_desc": "按步骤设置服务器：选择游戏、自动下载文件并自定义性能。",
-    "create_server_btn": "创建服务器",
-    "import_server_title": "导入现有服务器",
-    "import_server_desc": "添加电脑上已有的服务器文件夹，用 Hosty 进行管理、监控和运行。",
-    "import_server_btn": "导入服务器",
-    "empty_overview_title": "未选择服务器",
-    "empty_overview_desc": "创建新的专用服务器或导入现有服务器文件夹，开始管理你的游戏。",
-    "footer_tagline": "Hosty • 多游戏服务器管理器",
     "get_started": "开始使用"
   },
   "updater": {
@@ -434,8 +300,6 @@
   "sidebar": {
     "servers": "服务器",
     "new_server": "新建服务器",
-    "language_to_es": "Cambiar a español",
-    "language_to_en": "Switch to English",
     "version": "v{{version}}",
     "game_packs": "游戏包",
     "menu_edit": "编辑服务器",
@@ -477,8 +341,7 @@
     "kill_confirm_action": "强制关闭"
   },
   "toast": {
-    "saved": "更改已保存",
-    "command_sent": "命令已发送"
+    "saved": "更改已保存"
   },
   "wizard": {
     "no_games_title": "没有已启用的游戏",
@@ -510,11 +373,11 @@
       "coming_soon": "即将推出"
     },
     "setup_nothing": "{{game}} 无需额外设置。",
-    "use_own_jar": "使用我自己的 .jar（自动识别加载器）",
+    "use_own_jar": "使用我自己的服务器文件（会自动识别类型）",
     "version_search": "搜索版本...",
     "version_none": "没有可用版本。",
     "java_outdated_title": "Java {{installed}} 版本过低",
-    "java_required_desc": "此 Minecraft 版本需要 Java {{required}} 或更高版本。",
+    "java_required_desc": "此版本需要 Java {{required}} 或更高版本。",
     "java_download": "下载 Java {{version}}",
     "java_ok": "已检测到 Java {{installed}}（需要 {{required}}+）",
     "icon_choose": "选择图标",
@@ -522,20 +385,6 @@
     "ram_system": "这台电脑有 {{total}} GB 内存",
     "ram_system_unknown": "系统内存未知",
     "ram_min_hint": "初始堆 (-Xms)：{{min}} MB",
-    "gamemode": "游戏模式",
-    "difficulty": "难度",
-    "gamemodes": {
-      "survival": "生存",
-      "creative": "创造",
-      "adventure": "冒险",
-      "spectator": "旁观"
-    },
-    "difficulties": {
-      "peaceful": "和平",
-      "easy": "简单",
-      "normal": "普通",
-      "hard": "困难"
-    },
     "advanced": "高级",
     "port_taken_instance": "你的另一个服务器已在使用此端口。",
     "port_in_use": "此端口已被这台电脑上的其他程序占用。",
@@ -590,7 +439,6 @@
     "browse": "查找模组",
     "source": "来源",
     "search_placeholder": "搜索模组和插件...",
-    "search": "搜索",
     "empty": "没有结果。",
     "by": "作者：{{author}}",
     "install": "安装",

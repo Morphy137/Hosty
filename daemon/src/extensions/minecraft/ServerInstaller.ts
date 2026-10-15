@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { Readable } from 'stream';
-import { finished } from 'stream/promises';
-import { DaemonError } from '../errors';
-import { PropertiesParser } from '../parsers/PropertiesParser';
+import { DaemonError } from '../../errors';
+import { downloadFile, type ProvisionHooks } from '../../provisioning/download';
+import { PropertiesParser } from './PropertiesParser';
 import { runServerInstaller } from './JavaInstallerRunner';
 import {
   FORGE_METADATA_URL,
@@ -31,15 +30,7 @@ export type LoaderType = (typeof VALID_LOADERS)[number];
 
 export const AUTOMATIC_LOADERS: readonly LoaderType[] = ['paper', 'purpur', 'fabric', 'vanilla', 'forge', 'neoforge'];
 
-export type ProvisionPhase = 'resolve' | 'download' | 'install' | 'configure';
-
-export interface ProvisionHooks {
-  signal?: AbortSignal;
-  javaPath?: string;
-  onLog: (message: string) => void;
-  onPhase?: (phase: ProvisionPhase) => void;
-  onBytes?: (received: number, total: number | null) => void;
-}
+export type { ProvisionHooks, ProvisionPhase } from '../../provisioning/download';
 
 const USER_AGENT = 'mc-nexus/1.0.0 (contact@mc-nexus.local)';
 const DEFAULT_HEADERS = { 'User-Agent': USER_AGENT };
@@ -137,7 +128,7 @@ export class ServerInstaller {
 
     onPhase?.('download');
     onLog(`[Provisioner] Downloading ${isInstallerLoader ? 'installer' : 'server binary'}...`);
-    await this.downloadFile(downloadUrl, downloadTarget, hooks);
+    await downloadFile(downloadUrl, downloadTarget, hooks);
 
     if (isInstallerLoader) {
       onPhase?.('install');
@@ -163,43 +154,6 @@ export class ServerInstaller {
       PropertiesParser.createDefaultProperties(propsPath);
     }
     onLog('[Provisioner] Server installed & eula.txt signed automatically.');
-  }
-
-  /** Streams a URL to disk, reporting byte progress and honouring cancellation. */
-  public static async downloadFile(url: string, dest: string, hooks: ProvisionHooks): Promise<void> {
-    let response: Response;
-    try {
-      response = await fetch(url, { headers: DEFAULT_HEADERS, signal: hooks.signal });
-    } catch (err: unknown) {
-      if (hooks.signal?.aborted) throw new DaemonError('INSTALL_CANCELLED', 'Installation cancelled.');
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new DaemonError('UPSTREAM_ERROR', `Failed to reach download server: ${msg}`);
-    }
-
-    if (!response.ok || !response.body) {
-      throw new DaemonError(
-        'UPSTREAM_ERROR',
-        `Failed to download server file (${response.status} ${response.statusText})`
-      );
-    }
-
-    const totalHeader = Number(response.headers.get('content-length'));
-    const total = Number.isFinite(totalHeader) && totalHeader > 0 ? totalHeader : null;
-    let received = 0;
-
-    const source = Readable.fromWeb(response.body as any);
-    source.on('data', (chunk: Buffer) => {
-      received += chunk.length;
-      hooks.onBytes?.(received, total);
-    });
-
-    try {
-      await finished(source.pipe(fs.createWriteStream(dest)));
-    } catch (err: unknown) {
-      fs.rmSync(dest, { force: true });
-      if (hooks.signal?.aborted) throw new DaemonError('INSTALL_CANCELLED', 'Installation cancelled.');
-      throw err;
-    }
   }
 
   private static async fetchMavenVersions(url: string): Promise<string[]> {

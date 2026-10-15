@@ -1,5 +1,5 @@
 import type { IGameDriver } from '../drivers/IGameDriver';
-import { MinecraftDriver } from '../drivers/MinecraftDriver';
+import { MinecraftDriver } from '../../extensions/minecraft/MinecraftDriver';
 import type { GameManifest } from './manifest';
 
 /**

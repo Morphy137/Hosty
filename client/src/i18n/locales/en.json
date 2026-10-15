@@ -1,14 +1,13 @@
 {
   "common": {
     "cancel": "Cancel",
-    "apply": "Apply",
     "save": "Save",
     "close": "Close"
   },
   "nav": {
     "overview": "Overview",
     "players": "Players",
-    "mod_files": "Mods (.jar)",
+    "mod_files": "Mods",
     "mods": "Mod Configs",
     "properties": "server.properties",
     "status": "STATUS"
@@ -16,18 +15,11 @@
   "header": {
     "title": "Hosty",
     "instance": "Local Instance",
-    "instance_tooltip": "Switch active server instance",
     "no_servers": "No servers",
-    "new_server": "New Server",
     "import_server": "Import",
     "mock_button": "Simulate Telemetry",
-    "mock_active": "Mock Active",
-    "language": "Language",
-    "theme_toggle": "Toggle Theme",
     "theme_dark": "Switch to Dark Mode",
-    "theme_light": "Switch to Light Mode",
-    "connected": "Connected",
-    "disconnected": "Disconnected"
+    "theme_light": "Switch to Light Mode"
   },
   "overview": {
     "metrics": {
@@ -37,12 +29,7 @@
       "players_online": "Players Online",
       "tps": "Server Performance (TPS)",
       "mspt": "Tick Time (MSPT)",
-      "bridge": "Telemetry Bridge",
-      "bridge_connected": "Bridge Active",
-      "bridge_disconnected": "Standard Polling",
-      "tick_optimal": "Optimal Tick",
-      "tick_warning": "Minor Tick Lag",
-      "tick_critical": "Heavy Tick Lag"
+      "bridge_connected": "Bridge Active"
     },
     "controls": {
       "start": "Start Server",
@@ -55,9 +42,6 @@
       "status_starting": "STARTING",
       "status_stopping": "STOPPING"
     },
-    "quick_commands": {
-      "title": "Quick Presets"
-    },
     "players": {
       "title": "Connected Players",
       "empty": "No players connected to the server",
@@ -65,28 +49,10 @@
       "no_matches": "No players found matching search",
       "no_matches_description": "Try searching with a different username.",
       "clear_search": "Clear",
-      "tp": "Teleport",
-      "op": "OP Player",
-      "deop": "De-OP",
-      "kick": "Kick",
-      "ban": "Ban",
-      "gamemode_creative": "Creative",
-      "gamemode_survival": "Survival",
-      "feed": "Heal",
-      "clear_inventory": "Clear Inv",
-      "health": "Health",
       "food": "Food",
-      "ping": "Ping",
-      "operator": "OP",
-      "dimension": {
-        "overworld": "Overworld",
-        "the_nether": "The Nether",
-        "the_end": "The End"
-      }
+      "operator": "OP"
     },
     "console": {
-      "title": "Live Terminal",
-      "clear": "Clear",
       "placeholder": "Type a console command...",
       "send": "Send"
     },
@@ -100,62 +66,11 @@
     "filter_all": "All",
     "empty_description": "Connect to the server with the game, or use Simulate Telemetry to inspect active player sessions.",
     "manage_title": "Manage Player",
-    "gamemode_label": "Change Game Mode",
-    "permissions_label": "Operator Privileges",
-    "teleport_coords_label": "Teleport to Coordinates",
-    "tp_spawn": "Spawn",
-    "kick_reason_placeholder": "Kick reason...",
-    "ban_reason_placeholder": "Ban reason...",
-    "kick_default_reason": "Kicked by administrator",
-    "ban_default_reason": "Banned by administrator",
-    "inspect_inventory": "Inventory",
     "inventory_button": "Inventory",
-    "freeze": "Freeze",
-    "unfreeze": "Unfreeze",
     "frozen": "Frozen",
-    "mute": "Mute",
-    "unmute": "Unmute",
     "muted": "Muted",
-    "smite": "Smite",
-    "give_exp": "Give Experience",
-    "experience": "Experience",
-    "experience_modal": {
-      "title": "Grant Experience",
-      "type_label": "Unit Type",
-      "type_levels": "Levels (Lvl)",
-      "type_points": "Experience Points (XP)",
-      "mode_label": "Action Mode",
-      "mode_add": "Add (+)",
-      "mode_set": "Set exact (=)",
-      "amount_label": "Amount",
-      "levels": "Levels",
-      "points": "Points",
-      "exact_value": "Exact value",
-      "submit": "Grant Experience"
-    },
-    "exp_5": "+5 Lvl",
-    "exp_30": "+30 Lvl",
-    "frost_effect_label": "Frost screen vignette (powdered snow)",
-    "admin_actions": "Advanced Admin Controls",
     "actions": {
-      "heal_title": "Heal {{player}}",
-      "damage_title": "Damage {{player}}",
-      "gift_title": "Gift Item to {{player}}",
-      "heal_amount": "Hearts to Restore",
-      "feed_checkbox": "Also restore hunger and saturation",
-      "damage_amount": "Damage Amount",
-      "gift_select_item": "Select Item Preset",
-      "gift_custom_item": "Or Custom Item ID",
-      "gift_quantity": "Quantity",
-      "execute_button": "Apply Action",
-      "hearts_label": "Hearts",
-      "heart_single": "1 Heart",
-      "hearts_full": "10 (Full)",
-      "custom_item_placeholder": "e.g. minecraft:nether_star",
-      "gift": "Gift",
-      "hurt": "Hurt",
-      "kill": "Kill",
-      "inventory_short": "Inv"
+      "execute_button": "Apply Action"
     }
   },
   "edit_server": {
@@ -221,7 +136,7 @@
     "active_mods": "Active",
     "disabled_mods": "Disabled",
     "search_placeholder": "Filter mods by name...",
-    "empty": "No mod jar files found in /mods directory.",
+    "empty": "No mod files found in the mods folder.",
     "active": "Enabled",
     "disabled": "Disabled",
     "open_config": "Open Configuration",
@@ -230,7 +145,7 @@
     "directory_hint": "/mods directory",
     "headers": {
       "index": "#",
-      "name": "Mod Name / Jar File",
+      "name": "Mod / File",
       "size": "File Size",
       "status": "Status",
       "actions": "Actions"
@@ -238,58 +153,40 @@
   },
   "create_server": {
     "modal_title": "New Game Server",
-    "modal_subtitle": "Configure and automatically bootstrap a new local game server instance.",
     "steps": {
-      "game": "1. Game Engine",
-      "installation": "2. Installation",
-      "settings": "3. Server Specs",
-      "review": "4. Deploy"
-    },
-    "step_desc": {
-      "game": "Select the dedicated game engine for this instance.",
-      "installation": "Configure loader, server software, or attach custom binaries.",
-      "settings": "Define server identity, network ports, and allocated RAM.",
-      "review": "Review configuration parameters and bootstrap the server."
+      "installation": "2. Installation"
     },
     "game_engine_label": "Game Server Engine",
-    "summary_title": "Configuration Summary",
     "summary_game": "Game Engine",
     "summary_engine": "Server Software",
-    "summary_version": "Version",
     "summary_resources": "Allocated RAM",
     "summary_network": "Port / Max Players",
     "name_label": "Server Name",
     "id_label": "Directory ID (slug)",
     "back_button": "Back",
     "continue_button": "Continue",
-    "create_instance_button": "Create Game Instance",
     "submit_button": "Create & Install Server",
     "badge_auto": "Auto",
-    "badge_manual": "Jar",
-    "version_option": "Minecraft {{version}} ({{loader}})",
-    "detecting_jar": "Inspecting jar...",
+    "badge_manual": "Manual",
+    "version_option": "{{version}} ({{loader}})",
+    "detecting_jar": "Inspecting file...",
     "detected_installer": "Detected: {{loader}} {{version}} (installer, it will be run automatically)",
     "detected_server": "Detected: {{loader}} {{version}}",
-    "detected_unknown": "Could not identify this jar. It will be launched as-is with java -jar.",
+    "detected_unknown": "Could not identify this file. It will be launched as-is.",
     "motd_placeholder": "A Game Server",
-    "engine_custom_jar": "Custom JAR",
+    "engine_custom_jar": "Custom server file",
     "engine_native": "Native Engine",
     "network_summary": "Port {{port}} / Max {{max}}"
   },
   "import_server": {
     "modal_title": "Import Existing Server",
     "path_label": "Server File Path",
-    "path_hint": "Choose the file that starts the server (for example server.jar, even if it was renamed). You can also type a folder path.",
-    "name_label": "Display Name (optional)",
+    "path_hint": "Choose the server folder or the file that starts it (even if it was renamed). You can also type the path.",
     "submit_button": "Import Server",
-    "submitting": "Importing...",
-    "display_name_placeholder": "Custom display name (optional)",
     "browse": "Browse...",
     "picker_title": "Select the server file"
   },
   "properties": {
-    "title": "Server Properties",
-    "subtitle": "Tune vanilla game mechanics, ports, and world generation parameters.",
     "search_placeholder": "Filter properties (e.g. motd, pvp, port)...",
     "save": "Save Changes",
     "saved": "Saved!",
@@ -301,13 +198,10 @@
     }
   },
   "mods": {
-    "title": "Mod Configurations",
-    "subtitle": "Inspect and live-edit TOML and JSON mod configuration files.",
-    "file_select": "Select File",
     "search_placeholder": "Filter config entries...",
     "save": "Save Config",
     "saved": "Saved!",
-    "empty": "No configuration entries found.",
+    "empty": "No mod files found in the mods folder.",
     "no_files": "No mod configuration files found in config/ directory.",
     "directory_hint": "/config directory",
     "headers": {
@@ -318,28 +212,15 @@
     }
   },
   "provisioning": {
-    "title": "Server Engine Provisioning",
-    "subtitle": "Download and bootstrap high-performance Minecraft loaders automatically.",
     "loader_label": "Select Server Engine",
-    "loader_fabric_desc": "High performance modding toolchain for modern Minecraft.",
-    "loader_paper_desc": "High-performance Spigot fork with advanced optimization.",
-    "loader_vanilla_desc": "Official Mojang Minecraft server binary without mods.",
     "version_label": "Select Release Version",
     "loading_versions": "Loading...",
-    "install_button": "Provision & Install",
     "installing": "Provisioning...",
-    "server_must_be_offline": "The server must be OFFLINE before installing a new binary.",
     "logs_title": "Provisioning Output",
-    "ready_hint": "Select an engine and version to begin installation.",
-    "manual_loader_badge": "Manual JAR Upload",
-    "auto_loader_badge": "Auto Download Available",
-    "switch_to_custom_jar": "Or attach custom server .jar",
-    "switch_to_auto_download": "Switch back to automated download",
     "manual_download_instructions": "{{loader}} requires downloading the official server binary or installer. Visit the official website, download the file, and attach it below.",
     "visit_official_site": "Official Download Site",
-    "upload_jar_dropzone": "Drop .jar file here or click to browse",
-    "upload_jar_hint": "Attach your server.jar or loader installer .jar",
-    "create_and_upload": "Create Server & Upload JAR",
+    "upload_jar_dropzone": "Drop the server file here or click to browse",
+    "upload_jar_hint": "Attach the server file or its installer",
     "cancel_install": "Cancel installation",
     "phase": {
       "queued": "Waiting to start...",
@@ -347,10 +228,7 @@
       "download": "Downloading...",
       "install": "Running the installer...",
       "configure": "Configuring the server..."
-    },
-    "automated_setup": "Automated Setup",
-    "auto_eula": "Auto-EULA: Enabled",
-    "target_jar": "Target: server.jar"
+    }
   },
   "inventory": {
     "modal_title": "Inventory: {{player}}",
@@ -365,7 +243,7 @@
     "enchantments": "Enchantments"
   },
   "errors": {
-    "JAR_MISSING": "Server jar not found. Provision a server engine first.",
+    "JAR_MISSING": "Server file not found. Install the server software first.",
     "JAVA_NOT_FOUND": "Java executable not found. Please install Java (JDK 21) or set MC_NEXUS_JAVA_PATH.",
     "PROCESS_ERROR": "An error occurred with the server process.",
     "SERVER_NOT_ONLINE": "Cannot send commands while the server is offline.",
@@ -381,7 +259,7 @@
     "INTERNAL_ERROR": "Internal error. Check the daemon log for details.",
     "UNAUTHORIZED": "The daemon rejected the request (invalid token).",
     "INVALID_MESSAGE": "Invalid message received.",
-    "INVALID_VERSION": "Invalid Minecraft version.",
+    "INVALID_VERSION": "Invalid game version.",
     "INVALID_PAYLOAD": "Invalid payload received.",
     "UPSTREAM_ERROR": "Failed to contact download servers. Check your internet connection.",
     "NETWORK_ERROR": "Cannot reach the Hosty daemon. Ensure the daemon is running on port 4000.",
@@ -390,23 +268,11 @@
   },
   "environment": {
     "java_missing_title": "Java Runtime Not Detected",
-    "java_missing_desc": "Minecraft and Java-based game servers require Java (JDK 21) to run on your system.",
-    "java_download_btn": "Download Java (Temurin 21)",
-    "java_detected": "Java {{version}} detected"
+    "java_download_btn": "Download Java (Temurin 21)"
   },
   "onboarding": {
     "welcome_title": "Welcome to Hosty",
-    "welcome_subtitle": "What would you like to do to get started?",
     "welcome_desc": "You do not have any game servers configured yet. Hosty lets you create dedicated servers from scratch or import existing folders.",
-    "create_server_title": "Create a New Server",
-    "create_server_desc": "Set up a server step-by-step. Choose a game, download files automatically, and customize performance.",
-    "create_server_btn": "Create Server",
-    "import_server_title": "Import Existing Server",
-    "import_server_desc": "Add a server folder already on your PC to manage, monitor, and run it with Hosty.",
-    "import_server_btn": "Import Server",
-    "empty_overview_title": "No Server Selected",
-    "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game.",
-    "footer_tagline": "Hosty • Multi-game Server Supervisor",
     "get_started": "Get started"
   },
   "updater": {
@@ -431,8 +297,6 @@
   "sidebar": {
     "servers": "Servers",
     "new_server": "New server",
-    "language_to_es": "Cambiar a español",
-    "language_to_en": "Switch to English",
     "version": "v{{version}}",
     "game_packs": "Game packs",
     "menu_edit": "Edit server",
@@ -474,8 +338,7 @@
     "kill_confirm_action": "Force close"
   },
   "toast": {
-    "saved": "Changes saved",
-    "command_sent": "Command sent"
+    "saved": "Changes saved"
   },
   "wizard": {
     "no_games_title": "No games enabled",
@@ -507,11 +370,11 @@
       "coming_soon": "Coming soon"
     },
     "setup_nothing": "No extra setup is needed for {{game}}.",
-    "use_own_jar": "Use my own .jar (the loader is detected automatically)",
+    "use_own_jar": "Use my own server file (its type is detected automatically)",
     "version_search": "Search versions...",
     "version_none": "No versions available.",
     "java_outdated_title": "Java {{installed}} is too old",
-    "java_required_desc": "This Minecraft version needs Java {{required}} or newer.",
+    "java_required_desc": "This version needs Java {{required}} or newer.",
     "java_download": "Download Java {{version}}",
     "java_ok": "Java {{installed}} detected (needs {{required}}+)",
     "icon_choose": "Choose an icon",
@@ -519,20 +382,6 @@
     "ram_system": "This PC has {{total}} GB of RAM",
     "ram_system_unknown": "System memory unknown",
     "ram_min_hint": "Initial heap (-Xms): {{min}} MB",
-    "gamemode": "Game mode",
-    "difficulty": "Difficulty",
-    "gamemodes": {
-      "survival": "Survival",
-      "creative": "Creative",
-      "adventure": "Adventure",
-      "spectator": "Spectator"
-    },
-    "difficulties": {
-      "peaceful": "Peaceful",
-      "easy": "Easy",
-      "normal": "Normal",
-      "hard": "Hard"
-    },
     "advanced": "Advanced",
     "port_taken_instance": "Another server of yours already uses this port.",
     "port_in_use": "This port is in use by another program on this PC.",
@@ -587,7 +436,6 @@
     "browse": "Find mods",
     "source": "Source",
     "search_placeholder": "Search mods and plugins...",
-    "search": "Search",
     "empty": "No results.",
     "by": "by {{author}}",
     "install": "Install",

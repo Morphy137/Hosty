@@ -9,7 +9,7 @@
     "bridge_installed_restart": "Telemetry Bridge instalado. Reinicia el servidor para activarlo."
   },
   "mod_files": {
-    "empty": "No se han encontrado archivos .jar en la carpeta /mods."
+    "empty": "No se han encontrado archivos de mods en la carpeta de mods."
   },
   "wizard": {
     "default_name": "Mi servidor de {{game}}",

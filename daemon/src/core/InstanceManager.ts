@@ -76,8 +76,6 @@ interface RegistryData {
 
 const REGISTRY_FILE = 'instances_registry.json';
 const INSTANCE_SETTINGS_FILE = 'instance.json';
-const DEFAULT_PORT = 25565;
-const DEFAULT_MAX_PLAYERS = 20;
 const DEFAULT_MIN_RAM_MB = 1024;
 const DEFAULT_MAX_RAM_MB = 4096;
 
@@ -339,9 +337,9 @@ export class InstanceManager {
     const gameId = settings.gameId || defaultGameId();
     const driver = driverRegistry.getDriver(gameId);
 
-    let port = settings.port ?? driver.summary.defaultPort ?? DEFAULT_PORT;
+    let port = settings.port ?? driver.summary.defaultPort;
     let motd = settings.motd ?? id;
-    let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers ?? DEFAULT_MAX_PLAYERS;
+    let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers;
 
     // The game's own config file wins over stored settings (it is what the server really uses).
     if (driver.summary.configSync) {
@@ -395,7 +393,7 @@ export class InstanceManager {
     return sanitized;
   }
 
-  private findNextAvailablePort(basePort: number = DEFAULT_PORT): number {
+  private findNextAvailablePort(basePort: number): number {
     const instances = this.listInstances();
     const usedPorts = new Set(instances.map((i) => i.port));
     let candidate = basePort;
@@ -423,14 +421,16 @@ export class InstanceManager {
     const dir = path.join(this.instancesBaseDir, id);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-      for (const folder of driverRegistry.getDriver().summary.instanceFolders ?? []) {
+      // The default game's own defaults (port, player limit, folders).
+      const summary = driverRegistry.getDriver().summary;
+      for (const folder of summary.instanceFolders ?? []) {
         fs.mkdirSync(path.join(dir, folder), { recursive: true });
       }
       const defaultSettings: InstanceSettings = {
         name: id,
         gameId: defaultGameId(),
-        port: DEFAULT_PORT,
-        maxPlayers: DEFAULT_MAX_PLAYERS,
+        port: summary.defaultPort,
+        maxPlayers: summary.defaultMaxPlayers,
         minRamMb: DEFAULT_MIN_RAM_MB,
         maxRamMb: DEFAULT_MAX_RAM_MB
       };

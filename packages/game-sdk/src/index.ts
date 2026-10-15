@@ -103,13 +103,50 @@ export interface PlayerActionParam {
   options?: Array<{ value: string; label: LocalizedText }>;
 }
 
-/** A console command an operator can run on an online player; `{{player}}` and `{{<param id>}}` are replaced. */
+/**
+ * Something an operator can do to an online player. The daemon sends `command` (one or several console
+ * commands; `{{player}}` and `{{<param id>}}` are replaced) unless the Telemetry Bridge is connected and
+ * advertises `bridgeAction`, which then receives `{ action, username, ...param values }`.
+ */
 export interface PlayerActionSpec {
   id: string;
   label: LocalizedText;
-  command: string;
+  command?: string | string[];
+  bridgeAction?: string;
   params?: PlayerActionParam[];
   danger?: boolean;
+  /** Shown as a button on each player card and in the Overview; the rest live in the player's menu. */
+  quick?: boolean;
+  /** One of the app's icon names (see the JSON schema). */
+  icon?: string;
+}
+
+/** One flavour of server software the installer offers (e.g. a mod loader). */
+export interface InstallerVariant {
+  id: string;
+  name: string;
+  group?: LocalizedText;
+  /** Downloaded by Hosty; otherwise the user brings the server file (`url` says where to get it). */
+  automatic: boolean;
+  url?: string;
+}
+
+/** Data for the generic installer step; the download logic comes from a bundled extension. */
+export interface InstallerSpec {
+  variants: InstallerVariant[];
+  defaultVariant?: string;
+  fileTypes?: string[];
+  /** Java major per game version: the last entry whose `from` <= version wins. */
+  javaRequirements?: { default: number; versions: Array<{ from: string; java: number }> };
+}
+
+/** A world/dimension players can be in: filter chip, label and icon (image inside the pack). */
+export interface DimensionSpec {
+  id: string;
+  label: LocalizedText;
+  aliases?: string[];
+  icon?: string;
+  primary?: boolean;
 }
 
 export interface CreationSetting {
@@ -134,6 +171,12 @@ export interface PlayerView {
   vitals?: boolean;
   /** Avatar URL template (`{{player}}`). */
   avatarUrl?: string;
+  /** Inventory item image URL templates tried in order (`{{item}}`, `{{namespace}}`). */
+  itemIconUrls?: string[];
+  /** Item namespaces the templates cover; other items show their initials. */
+  itemNamespaces?: string[];
+  /** Id of the player action that empties an inventory. */
+  inventoryClearAction?: string;
 }
 
 export interface GameManifest {
@@ -163,8 +206,15 @@ export interface GameManifest {
   creationSettings?: CreationSetting[];
   quickCommands?: QuickCommand[];
   playerView?: PlayerView;
-  /** Rich players panel registered by the app; bundled packs only. */
-  playerPanel?: string;
+  dimensions?: DimensionSpec[];
+  /** Ticks per second the server targets; enables the TPS card when the bridge reports TPS. */
+  performance?: { tickRate: number };
+  /** `colorCodes`: § / & formatting in the MOTD; `preview`: server-list style preview. */
+  motd?: { colorCodes?: boolean; preview?: boolean };
+  /** Development only: JSON file in the pack with sample `players` / `inventory` for simulated telemetry. */
+  devMock?: string;
+  /** Bundled packs whose extension implements an installer. */
+  installer?: InstallerSpec;
   /** Reserved for packs bundled with Hosty; user packs that set it are rejected. */
   extension?: string;
   playerQueries?: PlayerQuery[];
@@ -173,6 +223,8 @@ export interface GameManifest {
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSource[];
+  /** Where the Mods tabs look (defaults `mods` / `config`) and which extensions are mods (empty = any file). */
+  modLayout?: { modsDir?: string; configDir?: string; fileTypes?: string[] };
   /** Icon the game itself shows, e.g. in its server list: a square PNG of `size` px at `file` (relative). */
   serverIcon?: { file: string; size: number };
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */
@@ -185,7 +237,8 @@ export interface GameManifest {
     dimension?: string;
   };
   /** `stop: "ctrl+c"` sends Ctrl+C instead of a console command. `save: null` disables saving. */
-  commands?: { stop?: string; save?: string | null };
+  /** `listPlayers`: console command that prints who is online. */
+  commands?: { stop?: string; save?: string | null; listPlayers?: string };
   configFiles?: ConfigFileManifest[];
   setup?: SetupFieldManifest[];
   capabilities?: Partial<GameCapabilities>;

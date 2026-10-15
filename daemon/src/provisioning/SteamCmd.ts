@@ -3,7 +3,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import AdmZip from 'adm-zip';
 import { DaemonError } from '../errors';
-import { ServerInstaller, type ProvisionHooks } from './ServerInstaller';
+import { downloadFile, type ProvisionHooks } from './download';
 
 const STEAMCMD_URL_WINDOWS = 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip';
 const STEAMCMD_URL_LINUX = 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz';
@@ -37,7 +37,7 @@ async function ensureSteamCmd(toolsDir: string, hooks: ProvisionHooks): Promise<
   fs.mkdirSync(toolsDir, { recursive: true });
   hooks.onLog('[Provisioner] Downloading SteamCMD...');
   const archive = path.join(toolsDir, isWindows ? 'steamcmd.zip' : 'steamcmd.tar.gz');
-  await ServerInstaller.downloadFile(isWindows ? STEAMCMD_URL_WINDOWS : STEAMCMD_URL_LINUX, archive, hooks);
+  await downloadFile(isWindows ? STEAMCMD_URL_WINDOWS : STEAMCMD_URL_LINUX, archive, hooks);
 
   if (isWindows) {
     new AdmZip(archive).extractAllTo(toolsDir, true);

@@ -1,3 +1,6 @@
+import type { DimensionSpec, InstallerSpec, PlayerActionSpec, PlayerView } from '../gamepacks/manifest';
+import type { ProvisionHooks } from '../../provisioning/download';
+
 export type GameAvailability = 'available' | 'beta' | 'coming_soon';
 
 /** One input of a game's setup step, rendered by the client from data (no per-game UI code). */
@@ -74,6 +77,8 @@ export interface GameDriverSummary {
   defaultPort: number;
   defaultMaxPlayers: number;
   executableName: string;
+  /** Launch arguments as declared (placeholders unrendered), for previews. */
+  launchArgs?: string[];
   supportsMods: boolean;
   modFormat: string;
   supportsCustomJava: boolean;
@@ -85,21 +90,9 @@ export interface GameDriverSummary {
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
-  playerActions?: Array<{
-    id: string;
-    label: string | Record<string, string>;
-    command: string;
-    params?: Array<{
-      id: string;
-      label: string | Record<string, string>;
-      type: 'text' | 'number' | 'select';
-      default?: string | number;
-      options?: Array<{ value: string; label: string | Record<string, string> }>;
-    }>;
-    danger?: boolean;
-  }>;
+  playerActions?: PlayerActionSpec[];
   instanceFolders?: string[];
-  modLayout?: { modsDir?: string; configDir?: string };
+  modLayout?: { modsDir?: string; configDir?: string; fileTypes?: string[] };
   bridgeTargets?: Record<string, { dir: string; asset: string }>;
   creationSettings?: Array<{
     id: string;
@@ -111,8 +104,14 @@ export interface GameDriverSummary {
     key: string;
   }>;
   quickCommands?: Array<{ label: string; command: string }>;
-  playerView?: { dimensions?: boolean; coordinates?: boolean; vitals?: boolean; avatarUrl?: string };
-  playerPanel?: string;
+  playerView?: PlayerView;
+  dimensions?: DimensionSpec[];
+  performance?: { tickRate: number };
+  motd?: { colorCodes?: boolean; preview?: boolean };
+  /** Present when the game's extension implements an installer (`IGameDriver.installer`). */
+  installer?: InstallerSpec;
+  /** Console command that prints the online players (manifest `commands.listPlayers`). */
+  listPlayersCommand?: string;
   /** Config file kept in sync with the instance's port / motd / player limit. */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
@@ -149,6 +148,28 @@ export interface ProcessLaunchPlan {
   cwd: string;
 }
 
+/** What a server file the user brought turned out to be. */
+export interface InstallFileInfo {
+  variant: string | null;
+  gameVersion: string | null;
+  variantVersion: string | null;
+  /** `installer` files must be run once before the server can start. */
+  kind: 'server' | 'installer' | 'unknown';
+}
+
+/** Server-software installer a bundled extension provides; the routes and the wizard step are generic. */
+export interface GameInstaller {
+  listVersions(variant: string): Promise<string[]>;
+  install(instanceDir: string, variant: string, version: string, hooks: ProvisionHooks): Promise<void>;
+  inspectFile(filePath: string): InstallFileInfo;
+  /** Moves an uploaded server file into the instance; `run` is set when it still has to be executed. */
+  placeFile(
+    instanceDir: string,
+    filePath: string,
+    info: InstallFileInfo
+  ): { launchFile?: string; run?: (hooks: ProvisionHooks) => Promise<void> };
+}
+
 export interface IGameDriver {
   readonly id: string;
   readonly name: string;
@@ -175,8 +196,9 @@ export interface IGameDriver {
   parseLogLine(line: string): ParsedLogEvent | null;
   /** Creates the game's initial files for a new instance (e.g. a default config). */
   scaffoldInstance?(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void;
-  /** Identifies what an existing folder contains (loader / version) so importing needs no user input. */
-  inspectFolder?(instanceDir: string, launchFile?: string): { loader?: string | null; version?: string | null };
+  /** Identifies what an existing folder contains (variant / version) so importing needs no user input. */
+  inspectFolder?(instanceDir: string, launchFile?: string): { variant?: string | null; version?: string | null };
+  installer?: GameInstaller;
   consumeQueryResponse?(
     line: string,
     pendingQueries: Set<string>

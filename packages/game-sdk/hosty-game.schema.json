@@ -309,6 +309,10 @@
             "string",
             "null"
           ]
+        },
+        "listPlayers": {
+          "type": "string",
+          "description": "Console command that prints who is online (offered as \"refresh list\")."
         }
       },
       "additionalProperties": false
@@ -553,11 +557,23 @@
     "serverIcon": {
       "type": "object",
       "description": "Icon the game itself shows (e.g. its server list). Omit it when the game has none: the icon is then only shown inside Hosty.",
-      "required": ["file", "size"],
+      "required": [
+        "file",
+        "size"
+      ],
       "additionalProperties": false,
       "properties": {
-        "file": { "type": "string", "pattern": "\\.png$", "description": "PNG path relative to the instance folder." },
-        "size": { "type": "integer", "minimum": 16, "maximum": 1024, "description": "Exact width and height in pixels." }
+        "file": {
+          "type": "string",
+          "pattern": "\\.png$",
+          "description": "PNG path relative to the instance folder."
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 1024,
+          "description": "Exact width and height in pixels."
+        }
       }
     },
     "modSources": {
@@ -616,6 +632,26 @@
         }
       }
     },
+    "modLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where the Mods tabs look and which files are mods.",
+      "properties": {
+        "modsDir": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "configDir": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "fileTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extensions of mod files (e.g. \".jar\"); empty = any file."
+        }
+      }
+    },
     "extension": {
       "type": "string",
       "description": "Reserved for packs bundled with Hosty."
@@ -626,8 +662,7 @@
         "type": "object",
         "required": [
           "id",
-          "label",
-          "command"
+          "label"
         ],
         "additionalProperties": false,
         "properties": {
@@ -638,7 +673,19 @@
             "$ref": "#/$defs/localized"
           },
           "command": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "description": "Console command(s); {{player}} and {{<param id>}} are replaced. Used unless the bridge runs bridgeAction."
           },
           "danger": {
             "type": "boolean"
@@ -694,8 +741,54 @@
                 }
               }
             }
+          },
+          "bridgeAction": {
+            "type": "string",
+            "description": "Telemetry Bridge action used instead of command when the bridge is connected and advertises it. Param values are sent under their ids."
+          },
+          "quick": {
+            "type": "boolean",
+            "description": "Shown as a button on each player card and in the Overview."
+          },
+          "icon": {
+            "enum": [
+              "ban",
+              "cloud-lightning",
+              "gamepad",
+              "gift",
+              "heart",
+              "map-pin",
+              "message",
+              "package",
+              "shield",
+              "shield-off",
+              "skull",
+              "snowflake",
+              "sparkles",
+              "star",
+              "sun",
+              "trash",
+              "user-x",
+              "users",
+              "utensils",
+              "volume-2",
+              "volume-x",
+              "zap"
+            ]
           }
-        }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "command"
+            ]
+          },
+          {
+            "required": [
+              "bridgeAction"
+            ]
+          }
+        ]
       }
     },
     "quickCommands": {
@@ -732,12 +825,172 @@
         },
         "avatarUrl": {
           "type": "string"
+        },
+        "itemIconUrls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Inventory item image URL templates tried in order ({{item}}, {{namespace}})."
+        },
+        "itemNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Item namespaces the image templates cover; other items show their initials."
+        },
+        "inventoryClearAction": {
+          "type": "string",
+          "description": "Id of the player action that empties an inventory (offered in the inventory viewer)."
         }
       }
     },
-    "playerPanel": {
-      "type": "string",
-      "description": "Reserved for bundled packs."
+    "dimensions": {
+      "type": "array",
+      "description": "Worlds/dimensions players can be in: filter chips, labels and icons.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "icon": {
+            "$ref": "#/$defs/relativePath"
+          },
+          "primary": {
+            "type": "boolean",
+            "description": "Listed as a filter chip even when nobody is there."
+          }
+        }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "tickRate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tickRate": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Ticks per second the server targets; enables the TPS card when the bridge reports TPS."
+        }
+      }
+    },
+    "motd": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "colorCodes": {
+          "type": "boolean",
+          "description": "§ / & formatting codes in the MOTD."
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Server-list style preview with the server icon."
+        }
+      }
+    },
+    "devMock": {
+      "$ref": "#/$defs/relativePath",
+      "description": "Development only: JSON with sample players / inventory for simulated telemetry."
+    },
+    "installer": {
+      "type": "object",
+      "required": [
+        "variants"
+      ],
+      "additionalProperties": false,
+      "description": "Bundled packs whose extension implements an installer: variants offered by the generic installer step.",
+      "properties": {
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "automatic"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "group": {
+                "$ref": "#/$defs/localized"
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "defaultVariant": {
+          "type": "string"
+        },
+        "fileTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "javaRequirements": {
+          "type": "object",
+          "required": [
+            "default",
+            "versions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "type": "integer"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "java"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "java": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "creationSettings": {
       "type": "array",

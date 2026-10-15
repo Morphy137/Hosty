@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { DaemonError } from '../errors';
+import { DaemonError } from '../../errors';
 
 export interface JavaInstallerOptions {
   javaPath: string;

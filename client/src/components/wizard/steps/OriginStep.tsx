@@ -125,7 +125,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
               id="wizard-import-path"
               value={draft.importPath}
               disabled={disabled}
-              placeholder="C:\Servers\MyServer\server.jar"
+              placeholder="C:\Servers\MyServer"
               className="font-mono text-[12px]"
               onChange={(event) => update({ importPath: event.target.value, importInfo: null })}
               onBlur={() => draft.importPath.trim() && !draft.importInfo && void runInspection(draft.importPath)}
@@ -162,8 +162,8 @@ export const OriginStep: React.FC<OriginStepProps> = ({
                 {draft.importInfo.gameId
                   ? t('wizard.import_detected', {
                       game: draft.importInfo.gameId,
-                      loader: draft.importInfo.loader ?? '—',
-                      version: draft.importInfo.mcVersion ?? '—'
+                      loader: draft.importInfo.variant ?? '—',
+                      version: draft.importInfo.gameVersion ?? '—'
                     })
                   : t('wizard.import_unknown')}
               </span>

@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PlayerActionSpec, PlayerState } from '../../types/daemon';
-import { renderPlayerCommand } from '../../utils/playerActions';
 import { resolveLocalized } from '../../utils/localized';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 
+export type PlayerActionValues = Record<string, string | number>;
+/** Asks the daemon to run a declared player action (it picks the bridge or the console commands). */
+export type RunPlayerAction = (actionId: string, username: string, values?: PlayerActionValues) => void;
+
 interface PlayerActionDialogProps {
   player: PlayerState;
   action: PlayerActionSpec;
   onClose: () => void;
-  onExecute: (command: string) => void;
+  onRun: RunPlayerAction;
 }
 
 /** Form for an action's declared parameters; actions without parameters never open it. */
-export const PlayerActionDialog: React.FC<PlayerActionDialogProps> = ({ player, action, onClose, onExecute }) => {
+export const PlayerActionDialog: React.FC<PlayerActionDialogProps> = ({ player, action, onClose, onRun }) => {
   const { t, i18n } = useTranslation();
-  const [values, setValues] = useState<Record<string, string | number>>(() =>
+  const [values, setValues] = useState<PlayerActionValues>(() =>
     Object.fromEntries((action.params ?? []).map((param) => [param.id, param.default ?? '']))
   );
   const label = resolveLocalized(action.label, i18n.language) ?? action.id;
@@ -37,7 +40,7 @@ export const PlayerActionDialog: React.FC<PlayerActionDialogProps> = ({ player, 
           <Button
             variant={action.danger ? 'danger' : 'primary'}
             onClick={() => {
-              onExecute(renderPlayerCommand(action, player.username, values));
+              onRun(action.id, player.username, values);
               onClose();
             }}
           >

@@ -13,6 +13,7 @@ import { Slider } from '../../ui/Slider';
 import { cn } from '../../../utils/cn';
 import { slugifyInstanceId, type StepProps } from '../wizardTypes';
 import { SchemaFields } from './SchemaFields';
+import { hasMotd } from '../wizardPlan';
 
 interface CustomizeStepProps extends StepProps {
   game: GameDriverSummary | undefined;
@@ -30,7 +31,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
   const [portInUse, setPortInUse] = useState(false);
 
   const isImport = draft.origin === 'import';
-  const isMinecraftLike = Boolean(game?.configSync);
+  const showMotd = hasMotd(game);
   const takenByInstance = instances.some((instance) => instance.port === draft.port);
   const ramLimit = maxAllocatableRamMb(systemRamMb);
   // The game's declared default wins; otherwise fall back to a size derived from system memory.
@@ -129,7 +130,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
         </div>
       </div>
 
-      {!isImport && isMinecraftLike && (
+      {!isImport && showMotd && (
         <div className="space-y-2">
           {field('edit_server.motd_label', 'wizard-motd',
             <Input
@@ -140,8 +141,15 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
               onChange={(e) => update({ motd: e.target.value })}
             />
           )}
-          <p className="text-[11px] text-mute">{t('wizard.motd_hint')}</p>
-          <MotdPreview motd={draft.motd} name={draft.name} iconSrc={draft.iconBase64} />
+          {game?.motd?.colorCodes && <p className="text-[11px] text-mute">{t('wizard.motd_hint')}</p>}
+          {game?.motd?.preview && (
+            <MotdPreview
+              motd={draft.motd}
+              name={draft.name}
+              iconSrc={draft.iconBase64}
+              colorCodes={Boolean(game.motd.colorCodes)}
+            />
+          )}
         </div>
       )}
 

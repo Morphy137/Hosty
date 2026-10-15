@@ -13,11 +13,11 @@ import {
   openInstanceFolder,
   toErrorPayload,
   installServer,
-  uploadServerJar,
+  uploadServerFile,
   waitForProvisionJob,
   cancelProvisionJob
 } from './api/daemonApi';
-import type { DaemonErrorPayload, ServerLoader, InstanceSettings, PlayerState } from './types/daemon';
+import type { DaemonErrorPayload, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
 import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -25,7 +25,6 @@ import { ServerHeader } from './components/layout/ServerHeader';
 import { Skeleton } from './components/ui/Skeleton';
 import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
 import { useGames } from './hooks/useGames';
-import { renderPlayerCommand } from './utils/playerActions';
 import { useLocales } from './hooks/useLocales';
 import { useAppVersion } from './hooks/useAppVersion';
 import { useMetricsHistory } from './hooks/useMetricsHistory';
@@ -33,8 +32,8 @@ import { useToast } from './components/ui/toastContext';
 import { isTauriRuntime } from './config/daemon';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
-import { GenericPlayersTab } from './components/tabs/GenericPlayersTab';
-import { PLAYER_PANELS } from './components/tabs/playerPanels';
+import { PlayersTab } from './components/tabs/PlayersTab';
+import type { PlayerActionValues } from './components/players/PlayerActionDialog';
 import { ModFilesTab } from './components/tabs/ModFilesTab';
 import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
@@ -106,8 +105,6 @@ export default function App() {
   const locales = useLocales(connectionState);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
-  // Rich panels are looked up by the id the game declares; everything else uses the generic list.
-  const PlayersPanel = (activeGame?.playerPanel && PLAYER_PANELS[activeGame.playerPanel]) || GenericPlayersTab;
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
   // Bridge-only features appear only when the connected bridge advertised them (or in mock mode).
@@ -137,10 +134,18 @@ export default function App() {
     [sendAction]
   );
 
+  // The daemon runs the game's declared action (through the bridge or as console commands).
+  const handleRunPlayerAction = useCallback(
+    (actionId: string, username: string, values?: PlayerActionValues) => {
+      sendAction('PLAYER_ACTION', { actionId, username, values: values ?? {} });
+    },
+    [sendAction]
+  );
+
   const handleInspectInventory = useCallback(
     (player: PlayerState) => {
       setInspectingPlayer(player);
-      sendAction('ACTION', { action: 'INVENTORY_VIEW', username: player.username });
+      sendAction('INVENTORY_VIEW', { username: player.username });
     },
     [sendAction]
   );
@@ -152,19 +157,20 @@ export default function App() {
 
   const handleRefreshInventory = useCallback(() => {
     if (inspectingPlayer) {
-      sendAction('ACTION', { action: 'INVENTORY_VIEW', username: inspectingPlayer.username });
+      sendAction('INVENTORY_VIEW', { username: inspectingPlayer.username });
     }
   }, [inspectingPlayer, sendAction]);
 
+  // The game names the player action that empties an inventory (`playerView.inventoryClearAction`).
+  const inventoryClearAction = activeGame?.playerView?.inventoryClearAction;
   const handleClearInspectedInventory = useCallback(() => {
-    if (inspectingPlayer) {
-      const clear = activeGame?.playerActions?.find((action) => action.id === 'clear');
-      if (clear) handleSendCommand(renderPlayerCommand(clear, inspectingPlayer.username));
+    if (inspectingPlayer && inventoryClearAction) {
+      handleRunPlayerAction(inventoryClearAction, inspectingPlayer.username);
       setTimeout(() => {
-        sendAction('ACTION', { action: 'INVENTORY_VIEW', username: inspectingPlayer.username });
+        sendAction('INVENTORY_VIEW', { username: inspectingPlayer.username });
       }, 200);
     }
-  }, [activeGame, handleSendCommand, inspectingPlayer, sendAction]);
+  }, [handleRunPlayerAction, inspectingPlayer, inventoryClearAction, sendAction]);
 
   const handleRestartServer = useCallback(async () => {
     try {
@@ -176,18 +182,18 @@ export default function App() {
 
   const handleCreateServer = useCallback(
     async (params: {
-      loader: ServerLoader;
+      variant: string;
       version: string;
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
     }) => {
       resetProvisionLogs([
-        `[Provisioner] Initializing ${params.loader.toUpperCase()} ${params.version} for "${params.instanceName}"...`
+        `[Provisioner] Initializing ${params.variant.toUpperCase()} ${params.version} for "${params.instanceName}"...`
       ]);
       try {
         const started = await installServer(
-          params.loader,
+          params.variant,
           params.version,
           params.instanceId,
           params.instanceName,
@@ -203,25 +209,25 @@ export default function App() {
     [handleError, instances, resetProvisionLogs]
   );
 
-  const handleUploadServerJar = useCallback(
+  const handleUploadServerFile = useCallback(
     async (params: {
       file: File;
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
-      loader?: ServerLoader;
-      loaderVersion?: string;
+      variant?: string;
+      gameVersion?: string;
     }) => {
       resetProvisionLogs([
         `[Provisioner] Uploading server binary "${params.file.name}" for "${params.instanceName}"...`
       ]);
       try {
-        const result = await uploadServerJar(
+        const result = await uploadServerFile(
           params.file,
           params.instanceId,
           params.instanceName,
           params.settings,
-          { loader: params.loader, loaderVersion: params.loaderVersion }
+          { variant: params.variant, gameVersion: params.gameVersion }
         );
         if (result.jobId) await waitForProvisionJob(result.jobId);
         await instances.refresh();
@@ -241,7 +247,7 @@ export default function App() {
 
   const wizardActions: WizardActions = {
     install: async (params) => handleCreateServer(params),
-    uploadJar: async (params) => handleUploadServerJar(params),
+    uploadServerFile: async (params) => handleUploadServerFile(params),
     createInstance: async (id, name, settings) => {
       try {
         const created = await instances.createInstance(id, name, settings);
@@ -364,27 +370,22 @@ export default function App() {
                     instance={instances.activeInstance}
                     status={status}
                     onSendCommand={handleSendCommand}
-                    onSendAction={sendAction}
+                    onRunAction={handleRunPlayerAction}
                     onOpenEditModal={() => setIsEditModalOpen(true)}
                     onRestart={handleRestartServer}
                     onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
                     history={metricsHistory}
-                    gameName={activeGame?.name}
-                    quickCommands={activeGame?.quickCommands ?? []}
-                    richPlayers={Boolean(activeGame?.playerPanel && PLAYER_PANELS[activeGame.playerPanel])}
-                    playerActions={activeGame?.playerActions ?? []}
-                    playerView={activeGame?.playerView}
+                    game={activeGame}
                   />
                 )}
 
                 {currentTab === 'players' && (
-                  <PlayersPanel
+                  <PlayersTab
                     players={players}
+                    game={activeGame}
                     onSendCommand={handleSendCommand}
-                    onSendAction={sendAction}
+                    onRunAction={handleRunPlayerAction}
                     onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
-                    playerActions={activeGame?.playerActions ?? []}
-                    playerView={activeGame?.playerView}
                   />
                 )}
 
@@ -484,8 +485,9 @@ export default function App() {
           inventory={inventory}
           isLoading={!inventory}
           onClose={handleCloseInventory}
+          game={activeGame}
           onRefresh={handleRefreshInventory}
-          onClearInventory={handleClearInspectedInventory}
+          onClearInventory={inventoryClearAction ? handleClearInspectedInventory : undefined}
         />
       )}
     </div>

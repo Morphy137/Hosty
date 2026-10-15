@@ -334,7 +334,7 @@ export function toLegacyTelemetry(message: TelemetryMessage): {
     return {
       uuid: player.id,
       username: player.name,
-      dimension: player.position?.world ?? 'overworld',
+      dimension: player.position?.world ?? '',
       x: asNumber(player.position?.x),
       y: asNumber(player.position?.y),
       z: asNumber(player.position?.z),

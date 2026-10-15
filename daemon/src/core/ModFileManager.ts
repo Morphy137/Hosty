@@ -15,15 +15,31 @@ export interface ModFileInfo {
 const BYTES_PER_KB = 1024;
 const BYTES_PER_MB = 1024 * 1024;
 
+/** Where a game keeps its mods and which files count as one (`modLayout` in its manifest). */
 export interface ModLayout {
   modsDir: string;
   configDir: string;
+  /** Accepted extensions (e.g. `.jar`); empty = any file. */
+  fileTypes: string[];
 }
 
-export const DEFAULT_MOD_LAYOUT: ModLayout = { modsDir: 'mods', configDir: 'config' };
+export const DEFAULT_MOD_LAYOUT: ModLayout = { modsDir: 'mods', configDir: 'config', fileTypes: [] };
 
-export class ModJarManager {
-  public static validateModFilename(rawFilename: string): string {
+/** A mod is switched off by renaming it with one of these suffixes. */
+const DISABLED_SUFFIXES = ['.disabled', '.disable'];
+
+const withoutDisabledSuffix = (file: string): string => {
+  const suffix = DISABLED_SUFFIXES.find((candidate) => file.toLowerCase().endsWith(candidate));
+  return suffix ? file.slice(0, -suffix.length) : file;
+};
+
+const isAccepted = (file: string, layout: Pick<ModLayout, 'fileTypes'>): boolean => {
+  const name = withoutDisabledSuffix(file).toLowerCase();
+  return layout.fileTypes.length === 0 || layout.fileTypes.some((type) => name.endsWith(type.toLowerCase()));
+};
+
+export class ModFileManager {
+  public static validateModFilename(rawFilename: string, layout: Pick<ModLayout, 'fileTypes'> = DEFAULT_MOD_LAYOUT): string {
     if (!rawFilename || typeof rawFilename !== 'string') {
       throw new DaemonError('INVALID_FILENAME', 'Filename is required.');
     }
@@ -33,8 +49,8 @@ export class ModJarManager {
       throw new DaemonError('INVALID_FILENAME', 'Path traversal is not allowed in filename.');
     }
 
-    if (!base.endsWith('.jar') && !base.endsWith('.jar.disabled') && !base.endsWith('.jar.disable')) {
-      throw new DaemonError('INVALID_FILENAME', 'Only .jar, .jar.disabled, and .jar.disable files are supported.');
+    if (!isAccepted(base, layout)) {
+      throw new DaemonError('INVALID_FILENAME', `Only ${layout.fileTypes.join(', ')} files (optionally .disabled) are supported.`);
     }
 
     return base;
@@ -54,12 +70,14 @@ export class ModJarManager {
     const modItems: ModFileInfo[] = [];
 
     for (const file of files) {
-      if (!file.endsWith('.jar') && !file.endsWith('.jar.disabled') && !file.endsWith('.jar.disable')) continue;
+      if (!isAccepted(file, layout)) continue;
 
       const fullPath = path.join(modsDir, file);
       const stat = fs.statSync(fullPath);
-      const enabled = file.endsWith('.jar');
-      const cleanModName = file.replace(/\.jar(\.(disabled|disable))?$/, '').toLowerCase();
+      if (!stat.isFile()) continue;
+      const active = withoutDisabledSuffix(file);
+      const enabled = active === file;
+      const cleanModName = active.slice(0, active.length - path.extname(active).length).toLowerCase();
 
       // Check if there is a config with matching prefix in config/
       const hasConfig = existingConfigFiles.some((cfg) => {
@@ -69,7 +87,7 @@ export class ModJarManager {
 
       modItems.push({
         filename: file,
-        originalName: file.replace(/\.(disabled|disable)$/, ''),
+        originalName: active,
         sizeBytes: stat.size,
         sizeFormatted: this.formatFileSize(stat.size),
         modifiedAt: stat.mtime.toISOString(),
@@ -86,7 +104,7 @@ export class ModJarManager {
   }
 
   public static toggleMod(instanceDir: string, rawFilename: string, layout: ModLayout = DEFAULT_MOD_LAYOUT): ModFileInfo {
-    const safeFilename = this.validateModFilename(rawFilename);
+    const safeFilename = this.validateModFilename(rawFilename, layout);
     const modsDir = path.join(instanceDir, layout.modsDir);
     const currentPath = path.join(modsDir, safeFilename);
 
@@ -124,7 +142,7 @@ export class ModJarManager {
   }
 
   public static deleteMod(instanceDir: string, rawFilename: string, layout: ModLayout = DEFAULT_MOD_LAYOUT): void {
-    const safeFilename = this.validateModFilename(rawFilename);
+    const safeFilename = this.validateModFilename(rawFilename, layout);
     const modsDir = path.join(instanceDir, layout.modsDir);
     const targetPath = path.join(modsDir, safeFilename);
 

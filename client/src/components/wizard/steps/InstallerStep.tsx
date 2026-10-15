@@ -1,47 +1,54 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle2, ExternalLink, FileText, Loader2, Search } from 'lucide-react';
-import { fetchLoaderVersions, inspectServerJar } from '../../../api/daemonApi';
-import { LOADER_METADATA, SERVER_LOADERS, type ServerLoader } from '../../../types/daemon';
+import { fetchInstallerVersions, inspectServerFile } from '../../../api/daemonApi';
+import type { InstallerVariant } from '../../../types/daemon';
 import { checkJava } from '../../../utils/javaRequirement';
+import { resolveLocalized } from '../../../utils/localized';
 import { Badge } from '../../ui/Badge';
 import { Dropzone } from '../../ui/Dropzone';
 import { Input } from '../../ui/Input';
 import { cn } from '../../../utils/cn';
 import type { CustomSetupProps } from '../wizardTypes';
 
-export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
-  draft,
-  update,
-  disabled,
-  javaMajor,
-  onValidityChange
-}) => {
-  const { t } = useTranslation();
-  const install = draft.loaderInstall;
-  const meta = LOADER_METADATA[install.loader];
-  const requiresJar = !meta.isAutomatic;
-  const usesJar = requiresJar || install.useCustomJar;
+/**
+ * Server software step for games whose extension implements an installer: pick a variant and version
+ * (downloaded by Hosty) or bring your own server file. Everything shown comes from the manifest `installer`.
+ */
+export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update, disabled, javaMajor, onValidityChange }) => {
+  const { t, i18n } = useTranslation();
+  const spec = game.installer;
+  const variants = useMemo(() => spec?.variants ?? [], [spec]);
+  const install = draft.install;
+  const variant: InstallerVariant | undefined =
+    variants.find((candidate) => candidate.id === install.variant) ??
+    variants.find((candidate) => candidate.id === spec?.defaultVariant) ??
+    variants[0];
+  const requiresFile = variant ? !variant.automatic : false;
+  const usesFile = requiresFile || install.useOwnFile;
 
   const [versions, setVersions] = useState<string[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [isInspecting, setIsInspecting] = useState(false);
   const [filter, setFilter] = useState('');
 
-  const patch = (changes: Partial<typeof install>) => update({ loaderInstall: { ...install, ...changes } });
+  const patch = (changes: Partial<typeof install>) => update({ install: { ...install, ...changes } });
+
+  // The draft starts without a variant; settle on the game's default once its manifest is known.
+  useEffect(() => {
+    if (variant && install.variant !== variant.id) update({ install: { ...install, variant: variant.id, version: '' } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variant?.id]);
 
   useEffect(() => {
-    if (!meta.isAutomatic || install.useCustomJar) return;
+    if (!variant?.automatic || install.useOwnFile) return;
     let ignore = false;
     setIsLoadingVersions(true);
-    fetchLoaderVersions(install.loader)
+    fetchInstallerVersions(game.id, variant.id)
       .then((list) => {
         if (ignore) return;
         setVersions(list);
-        if (!list.includes(install.version)) update({ loaderInstall: { ...install, version: list[0] ?? '' } });
-      })
-      .catch(() => {
-        if (!ignore) setVersions([]);
+        if (!list.includes(install.version)) update({ install: { ...install, variant: variant.id, version: list[0] ?? '' } });
       })
       .finally(() => {
         if (!ignore) setIsLoadingVersions(false);
@@ -49,32 +56,32 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
     return () => {
       ignore = true;
     };
-    // `install.version` is intentionally excluded: the list is refetched per loader only.
+    // `install.version` is intentionally excluded: the list is refetched per variant only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [install.loader, install.useCustomJar, meta.isAutomatic]);
+  }, [game.id, variant?.id, variant?.automatic, install.useOwnFile]);
 
-  const isValid = usesJar ? install.jarFile !== null && !isInspecting : install.version !== '';
+  const isValid = usesFile ? install.file !== null && !isInspecting : install.version !== '';
   useEffect(() => {
     onValidityChange(isValid);
   }, [isValid, onValidityChange]);
 
-  const attachJar = (file: File) => {
-    patch({ jarFile: file, jarInspection: null });
+  const attachFile = (file: File) => {
+    patch({ file, fileInfo: null });
     setIsInspecting(true);
-    inspectServerJar(file)
-      .then((inspection) => {
+    inspectServerFile(game.id, file)
+      .then((fileInfo) => {
         update({
-          loaderInstall: {
+          install: {
             ...install,
-            jarFile: file,
-            jarInspection: inspection,
-            useCustomJar: true,
-            loader: inspection.loader ?? install.loader
+            file,
+            fileInfo,
+            useOwnFile: true,
+            variant: fileInfo.variant ?? install.variant
           }
         });
       })
       .catch(() => {
-        // Detection is advisory; the user can still choose the loader manually.
+        // Detection is advisory; the user can still choose the variant manually.
       })
       .finally(() => setIsInspecting(false));
   };
@@ -84,8 +91,11 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
     [versions, filter]
   );
 
-  const effectiveVersion = usesJar ? install.jarInspection?.mcVersion : install.version;
-  const javaCheck = checkJava(javaMajor, effectiveVersion);
+  const variantName = (id: string | null | undefined) => variants.find((candidate) => candidate.id === id)?.name ?? id ?? '';
+  const effectiveVersion = usesFile ? install.fileInfo?.gameVersion : install.version;
+  const javaCheck = game.supportsCustomJava ? checkJava(javaMajor, spec?.javaRequirements, effectiveVersion) : { status: 'unknown' as const };
+
+  if (!spec || !variant) return null;
 
   return (
     <div className="space-y-5">
@@ -120,47 +130,48 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
       <div className="space-y-1.5">
         <p className="font-mono text-[11px] uppercase text-mute">{t('provisioning.loader_label')}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {SERVER_LOADERS.map((loader: ServerLoader) => {
-            const info = LOADER_METADATA[loader];
-            const isSelected = install.loader === loader;
+          {variants.map((candidate) => {
+            const isSelected = variant.id === candidate.id;
             return (
               <button
-                key={loader}
+                key={candidate.id}
                 type="button"
                 disabled={disabled}
-                onClick={() => patch({ loader, version: '' })}
+                onClick={() => patch({ variant: candidate.id, version: '' })}
                 className={cn(
-                  'rounded-[6px] border p-2.5 text-left transition-colors cursor-pointer',
+                  'cursor-pointer rounded-[6px] border p-2.5 text-left transition-colors',
                   isSelected ? 'border-accent bg-info-soft' : 'border-hairline bg-surface hover:bg-surface-2'
                 )}
               >
                 <span className="flex items-center justify-between gap-1">
-                  <span className="text-[12px] font-semibold text-ink">{info.name}</span>
-                  <Badge variant={info.isAutomatic ? 'success' : 'neutral'}>
-                    {info.isAutomatic ? t('create_server.badge_auto') : t('create_server.badge_manual')}
+                  <span className="text-[12px] font-semibold text-ink">{candidate.name}</span>
+                  <Badge variant={candidate.automatic ? 'success' : 'neutral'}>
+                    {candidate.automatic ? t('create_server.badge_auto') : t('create_server.badge_manual')}
                   </Badge>
                 </span>
-                <span className="mt-1 block text-[11px] capitalize text-mute">{info.category}</span>
+                {candidate.group && (
+                  <span className="mt-1 block text-[11px] text-mute">{resolveLocalized(candidate.group, i18n.language)}</span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {meta.isAutomatic && (
+      {variant.automatic && (
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink">
           <input
             type="checkbox"
             className="h-4 w-4 accent-ink"
-            checked={install.useCustomJar}
+            checked={install.useOwnFile}
             disabled={disabled}
-            onChange={(event) => patch({ useCustomJar: event.target.checked })}
+            onChange={(event) => patch({ useOwnFile: event.target.checked })}
           />
           {t('wizard.use_own_jar')}
         </label>
       )}
 
-      {!usesJar && (
+      {!usesFile && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-mono text-[11px] uppercase text-mute">{t('provisioning.version_label')}</p>
@@ -191,11 +202,11 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
                 disabled={disabled}
                 onClick={() => patch({ version })}
                 className={cn(
-                  'flex w-full items-center justify-between border-b border-hairline px-3 py-2 text-left font-mono text-[12px] last:border-b-0 cursor-pointer',
+                  'flex w-full cursor-pointer items-center justify-between border-b border-hairline px-3 py-2 text-left font-mono text-[12px] last:border-b-0',
                   install.version === version ? 'bg-info-soft text-accent-fg' : 'text-ink hover:bg-surface-2'
                 )}
               >
-                {t('create_server.version_option', { version, loader: meta.name.toUpperCase() })}
+                {t('create_server.version_option', { version, loader: variant.name })}
                 {install.version === version && <CheckCircle2 className="h-3.5 w-3.5" />}
               </button>
             ))}
@@ -203,13 +214,13 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
         </div>
       )}
 
-      {usesJar && (
+      {usesFile && (
         <div className="space-y-3 rounded-[6px] border border-hairline bg-surface-2 p-3.5">
-          {meta.officialUrl && requiresJar && (
+          {variant.url && requiresFile && (
             <div className="flex items-start justify-between gap-3 text-[12px] text-body">
-              <p>{t('provisioning.manual_download_instructions', { loader: meta.name })}</p>
+              <p>{t('provisioning.manual_download_instructions', { loader: variant.name })}</p>
               <a
-                href={meta.officialUrl}
+                href={variant.url}
                 target="_blank"
                 rel="noreferrer"
                 className="flex shrink-0 items-center gap-1 rounded-[4px] border border-hairline bg-surface px-2.5 py-1 text-[11px] font-medium text-ink no-underline"
@@ -221,43 +232,36 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
           )}
 
           <Dropzone
-            accept=".jar"
-            onFile={attachJar}
+            accept={(spec.fileTypes ?? []).join(',')}
+            onFile={attachFile}
             disabled={disabled}
             title={t('provisioning.upload_jar_dropzone')}
             hint={t('provisioning.upload_jar_hint')}
           >
-            {install.jarFile ? (
+            {install.file ? (
               <div className="flex items-center justify-center gap-2.5">
                 <FileText className="h-6 w-6 text-accent-fg" />
                 <div className="text-left">
-                  <div className="font-mono text-[13px] font-medium text-ink">{install.jarFile.name}</div>
-                  <div className="font-mono text-[11px] text-mute">
-                    {(install.jarFile.size / (1024 * 1024)).toFixed(2)} MB
-                  </div>
+                  <div className="font-mono text-[13px] font-medium text-ink">{install.file.name}</div>
+                  <div className="font-mono text-[11px] text-mute">{(install.file.size / (1024 * 1024)).toFixed(2)} MB</div>
                 </div>
               </div>
             ) : null}
           </Dropzone>
 
-          {install.jarFile && (
+          {install.file && (
             <div className="flex items-center gap-2 text-[12px] text-body">
               {isInspecting ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   {t('create_server.detecting_jar')}
                 </>
-              ) : install.jarInspection?.loader ? (
+              ) : install.fileInfo?.variant ? (
                 <>
                   <CheckCircle2 className="h-3.5 w-3.5 text-success-fg" />
                   {t(
-                    install.jarInspection.kind === 'installer'
-                      ? 'create_server.detected_installer'
-                      : 'create_server.detected_server',
-                    {
-                      loader: LOADER_METADATA[install.jarInspection.loader].name,
-                      version: install.jarInspection.mcVersion ?? '?'
-                    }
+                    install.fileInfo.kind === 'installer' ? 'create_server.detected_installer' : 'create_server.detected_server',
+                    { loader: variantName(install.fileInfo.variant), version: install.fileInfo.gameVersion ?? '?' }
                   )}
                 </>
               ) : (

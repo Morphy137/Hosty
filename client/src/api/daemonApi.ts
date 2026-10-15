@@ -11,10 +11,9 @@ import type {
   InstanceInfo,
   InstancesResponse,
   ModFileInfo,
-  ServerLoader,
   InstanceSettings,
   GameDriverSummary,
-  JarInspection,
+  InstallFileInfo,
   FolderInspection,
   ConfigFileInfo,
   GamePackInfo,
@@ -288,6 +287,13 @@ export function fetchLocale(code: string): Promise<Record<string, unknown>> {
   return request<Record<string, unknown>>(`/api/locales/${encodeURIComponent(code)}`);
 }
 
+/** An image shipped inside a game pack (dimension icons, ...). */
+export function getGameFileUrl(gameId: string, relativePath: string): string {
+  return withDaemonToken(
+    `${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/files?path=${encodeURIComponent(relativePath)}`
+  );
+}
+
 export function getGameLogoUrl(gameId: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }
@@ -351,7 +357,7 @@ export function getInstanceIconUrl(id: string): string {
 
 // Properties
 
-// Physical Mods .jar Files
+// Mod files (types declared by the game: `modLayout.fileTypes`)
 export function fetchModFiles(): Promise<ModFileInfo[]> {
   return request<ModFileInfo[]>('/api/mods/files');
 }
@@ -378,33 +384,17 @@ export async function saveModConfig(filename: string, entries: ConfigEntry[]): P
   await postJson<unknown>(`/api/mods/configs/${encodeURIComponent(filename)}`, payload);
 }
 
-const FALLBACK_MC_VERSIONS = [
-  '1.21.4',
-  '1.21.3',
-  '1.21.1',
-  '1.21',
-  '1.20.6',
-  '1.20.4',
-  '1.20.2',
-  '1.20.1',
-  '1.19.4',
-  '1.19.2',
-  '1.18.2',
-  '1.16.5'
-];
-
-// Provisioning
-export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[]> {
+// Provisioning (implemented by the game's extension: `installer`)
+/** Versions the game's installer offers for a variant (empty when they cannot be listed). */
+export async function fetchInstallerVersions(gameId: string, variant: string): Promise<string[]> {
   try {
-    const data = await request<string[]>(`/api/provisioning/versions/${encodeURIComponent(loader)}`);
-    if (Array.isArray(data) && data.length > 0) {
-      return data;
-    }
+    const data = await request<string[]>(
+      `/api/games/${encodeURIComponent(gameId)}/installer/versions/${encodeURIComponent(variant)}`
+    );
+    return Array.isArray(data) ? data : [];
   } catch {
-    // Daemon offline or request failed: use the built-in list (catalogs are only reached through the daemon)
+    return [];
   }
-
-  return [...FALLBACK_MC_VERSIONS];
 }
 
 export interface InstallStarted {
@@ -414,14 +404,14 @@ export interface InstallStarted {
 
 /** Starts a background installation job; progress arrives over the socket and via `waitForProvisionJob`. */
 export async function installServer(
-  loader: ServerLoader,
+  variant: string,
   version: string,
   instanceId?: string,
   instanceName?: string,
   settings?: Partial<InstanceSettings>
 ): Promise<InstallStarted> {
   return postJson<InstallStarted>('/api/provisioning/install', {
-    loader,
+    variant,
     version,
     instanceId,
     instanceName,
@@ -432,18 +422,18 @@ export async function installServer(
 export interface UploadResult {
   ok: boolean;
   instanceId: string;
-  /** Present when the jar was an installer that now runs as a background job. */
+  /** Present when the file was an installer that now runs as a background job. */
   jobId: string | null;
-  inspection: JarInspection;
+  inspection: InstallFileInfo;
 }
 
 export interface UploadOverrides {
-  loader?: ServerLoader;
-  loaderVersion?: string;
+  variant?: string;
+  gameVersion?: string;
 }
 
-/** Uploads a server jar; settings are applied in the same request that creates the instance. */
-export async function uploadServerJar(
+/** Uploads the user's own server file; settings are applied in the same request that creates the instance. */
+export async function uploadServerFile(
   file: File,
   instanceId: string,
   instanceName?: string,
@@ -453,19 +443,19 @@ export async function uploadServerJar(
   const query = new URLSearchParams({ instanceId });
   if (instanceName) query.set('name', instanceName);
   if (settings) query.set('settings', JSON.stringify(settings));
-  if (overrides?.loader) query.set('loader', overrides.loader);
-  if (overrides?.loaderVersion) query.set('loaderVersion', overrides.loaderVersion);
+  if (overrides?.variant) query.set('variant', overrides.variant);
+  if (overrides?.gameVersion) query.set('gameVersion', overrides.gameVersion);
 
-  return request<UploadResult>(`/api/instances/upload-server-jar?${query.toString()}`, {
+  return request<UploadResult>(`/api/instances/upload-server-file?${query.toString()}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/octet-stream' },
     body: file
   });
 }
 
-/** Asks the daemon to identify a jar (loader, Minecraft version, installer vs server). */
-export async function inspectServerJar(file: File): Promise<JarInspection> {
-  return request<JarInspection>('/api/provisioning/inspect-jar', {
+/** Asks the game's installer what a server file is (variant, game version, installer vs server). */
+export async function inspectServerFile(gameId: string, file: File): Promise<InstallFileInfo> {
+  return request<InstallFileInfo>(`/api/games/${encodeURIComponent(gameId)}/installer/inspect-file`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/octet-stream' },
     body: file

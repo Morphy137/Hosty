@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, Copy, Ellipsis, FileCode, Loader2, Package, Play, RotateCcw, Settings, Skull, Square, Users, Sliders } from 'lucide-react';
-import type { DaemonAction, GameDriverSummary, InstanceInfo, ServerLoader, ServerStatus } from '../../types/daemon';
-import { LOADER_METADATA } from '../../types/daemon';
+import type { DaemonAction, GameDriverSummary, InstanceInfo, ServerStatus } from '../../types/daemon';
 import type { TabId } from '../../utils/tabs';
 import { GameLogo } from '../common/GameIcons';
 import { StatusDot } from '../common/StatusDot';
@@ -68,8 +67,9 @@ export const ServerHeader: React.FC<ServerHeaderProps> = ({
   const isRunning = status === 'ONLINE';
   const isTransitioning = status === 'STARTING' || status === 'STOPPING';
 
-  const loaderMeta = instance.loader ? LOADER_METADATA[instance.loader as ServerLoader] : undefined;
-  const subtitle = [game?.name, loaderMeta?.name ?? instance.loader, instance.loaderVersion].filter(Boolean).join(' · ');
+  // Variant names come from the game's installer (e.g. "PaperMC" for `paper`).
+  const variantName = game?.installer?.variants.find((variant) => variant.id === instance.loader)?.name;
+  const subtitle = [game?.name, variantName ?? instance.loader, instance.loaderVersion].filter(Boolean).join(' · ');
 
   const copyAddress = async () => {
     try {

@@ -128,6 +128,7 @@ export class DeclarativeGameDriver implements IGameDriver {
       defaultPort: manifest.defaults.port,
       defaultMaxPlayers: manifest.defaults.maxPlayers,
       executableName: resolvePlatformValue(manifest.launch.executable),
+      launchArgs: manifest.launch.args ?? [],
       supportsMods: capabilities.mods,
       modFormat: manifest.modFormat ?? '',
       supportsCustomJava: manifest.launch.runtime === 'java',
@@ -148,7 +149,11 @@ export class DeclarativeGameDriver implements IGameDriver {
       bridgeTargets: manifest.bridgeTargets,
       quickCommands: manifest.quickCommands,
       playerView: manifest.playerView,
-      playerPanel: manifest.playerPanel,
+      dimensions: manifest.dimensions,
+      performance: manifest.performance,
+      installer: manifest.installer,
+      motd: manifest.motd,
+      listPlayersCommand: manifest.commands?.listPlayers,
       bridgeLoaders: manifest.bridgeLoaders,
       jvmFlagPresets: manifest.jvmFlagPresets,
       modSources: manifest.modSources,
@@ -291,7 +296,7 @@ export class DeclarativeGameDriver implements IGameDriver {
       const match = pattern.exec(line);
       const username = match?.groups?.username ?? match?.[1];
       if (username) {
-        return { playerJoin: { username, dimension: this.manifest.logs?.dimension ?? 'overworld', x: 0, y: 0, z: 0 } };
+        return { playerJoin: { username, dimension: this.manifest.logs?.dimension ?? '', x: 0, y: 0, z: 0 } };
       }
     }
 

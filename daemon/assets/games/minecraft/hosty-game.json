@@ -113,7 +113,8 @@
   },
   "commands": {
     "stop": "stop",
-    "save": "save-all"
+    "save": "save-all",
+    "listPlayers": "list"
   },
   "playerQueries": [
     {
@@ -162,9 +163,109 @@
       "type": "custom",
       "label": "Installation",
       "labelKey": "create_server.steps.installation",
-      "component": "minecraft-install"
+      "component": "installer"
     }
   ],
+  "devMock": "dev-mock.json",
+  "motd": {
+    "colorCodes": true,
+    "preview": true
+  },
+  "installer": {
+    "variants": [
+      {
+        "id": "fabric",
+        "name": "Fabric",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true
+      },
+      {
+        "id": "paper",
+        "name": "PaperMC",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": true
+      },
+      {
+        "id": "purpur",
+        "name": "Purpur",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": true
+      },
+      {
+        "id": "vanilla",
+        "name": "Vanilla",
+        "group": {
+          "en": "Vanilla",
+          "es": "Vanilla"
+        },
+        "automatic": true
+      },
+      {
+        "id": "forge",
+        "name": "Forge",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true,
+        "url": "https://files.minecraftforge.net/net/minecraftforge/forge/"
+      },
+      {
+        "id": "neoforge",
+        "name": "NeoForge",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true,
+        "url": "https://neoforged.net/"
+      },
+      {
+        "id": "spigot",
+        "name": "SpigotMC",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": false,
+        "url": "https://www.spigotmc.org/wiki/buildtools/"
+      }
+    ],
+    "defaultVariant": "paper",
+    "fileTypes": [
+      ".jar"
+    ],
+    "javaRequirements": {
+      "default": 21,
+      "versions": [
+        {
+          "from": "1.0",
+          "java": 8
+        },
+        {
+          "from": "1.17",
+          "java": 16
+        },
+        {
+          "from": "1.18",
+          "java": 17
+        },
+        {
+          "from": "1.20.5",
+          "java": 21
+        }
+      ]
+    }
+  },
   "capabilities": {
     "players": true,
     "mods": true,
@@ -285,13 +386,99 @@
   },
   "logo": "logo.svg",
   "extension": "minecraft",
-  "playerPanel": "minecraft-players",
   "playerView": {
     "dimensions": true,
     "coordinates": true,
     "vitals": true,
-    "avatarUrl": "https://mc-heads.net/avatar/{{player}}/40"
+    "avatarUrl": "https://mc-heads.net/avatar/{{player}}/40",
+    "itemIconUrls": [
+      "https://assets.mcasset.cloud/1.20.4/assets/minecraft/textures/item/{{item}}.png",
+      "https://assets.mcasset.cloud/1.20.4/assets/minecraft/textures/block/{{item}}.png"
+    ],
+    "itemNamespaces": [
+      "minecraft"
+    ],
+    "inventoryClearAction": "clear"
   },
+  "performance": {
+    "tickRate": 20
+  },
+  "dimensions": [
+    {
+      "id": "overworld",
+      "label": {
+        "en": "Overworld",
+        "es": "Superficie"
+      },
+      "aliases": [
+        "minecraft:overworld",
+        "world"
+      ],
+      "icon": "icons/overworld.png",
+      "primary": true
+    },
+    {
+      "id": "the_nether",
+      "label": {
+        "en": "The Nether",
+        "es": "El Nether"
+      },
+      "aliases": [
+        "minecraft:the_nether",
+        "nether",
+        "world_nether"
+      ],
+      "icon": "icons/the_nether.png",
+      "primary": true
+    },
+    {
+      "id": "the_end",
+      "label": {
+        "en": "The End",
+        "es": "El End"
+      },
+      "aliases": [
+        "minecraft:the_end",
+        "end",
+        "world_the_end"
+      ],
+      "icon": "icons/the_end.png",
+      "primary": true
+    },
+    {
+      "id": "twilightforest:twilight_forest",
+      "label": "The Twilight Forest",
+      "icon": "icons/unknown.png"
+    },
+    {
+      "id": "aether:the_aether",
+      "label": "The Aether",
+      "icon": "icons/aether.png"
+    },
+    {
+      "id": "deeperdarker:otherside",
+      "label": "The Otherside",
+      "icon": "icons/unknown.png"
+    },
+    {
+      "id": "undergarden:undergarden",
+      "label": "The Undergarden",
+      "aliases": [
+        "the_undergarden:undergarden"
+      ],
+      "icon": "icons/unknown.png"
+    },
+    {
+      "id": "blue_skies:everdawn",
+      "label": "Everdawn",
+      "icon": "icons/unknown.png"
+    },
+    {
+      "id": "blue_skies:everbright",
+      "label": "Everbright",
+      "icon": "icons/unknown.png"
+    }
+  ],
   "quickCommands": [
     {
       "label": "weather clear",
@@ -312,11 +499,152 @@
   ],
   "playerActions": [
     {
+      "id": "heal",
+      "label": {
+        "en": "Heal",
+        "es": "Curar"
+      },
+      "icon": "heart",
+      "quick": true,
+      "bridgeAction": "HEAL",
+      "command": "effect give {{player}} minecraft:instant_health 1 {{amount}}",
+      "params": [
+        {
+          "id": "amount",
+          "label": {
+            "en": "Strength",
+            "es": "Intensidad"
+          },
+          "type": "number",
+          "default": 10
+        }
+      ]
+    },
+    {
+      "id": "feed",
+      "label": {
+        "en": "Feed",
+        "es": "Alimentar"
+      },
+      "icon": "utensils",
+      "command": "effect give {{player}} minecraft:saturation 1 20"
+    },
+    {
+      "id": "give",
+      "label": {
+        "en": "Give item",
+        "es": "Dar objeto"
+      },
+      "icon": "gift",
+      "quick": true,
+      "command": "give {{player}} {{item}} {{count}}",
+      "params": [
+        {
+          "id": "item",
+          "label": {
+            "en": "Item",
+            "es": "Objeto"
+          },
+          "type": "select",
+          "default": "minecraft:diamond",
+          "options": [
+            {
+              "value": "minecraft:diamond",
+              "label": {
+                "en": "Diamond",
+                "es": "Diamante"
+              }
+            },
+            {
+              "value": "minecraft:emerald",
+              "label": {
+                "en": "Emerald",
+                "es": "Esmeralda"
+              }
+            },
+            {
+              "value": "minecraft:golden_apple",
+              "label": {
+                "en": "Golden apple",
+                "es": "Manzana dorada"
+              }
+            },
+            {
+              "value": "minecraft:cooked_beef",
+              "label": {
+                "en": "Steak",
+                "es": "Filete"
+              }
+            },
+            {
+              "value": "minecraft:netherite_ingot",
+              "label": {
+                "en": "Netherite ingot",
+                "es": "Lingote de netherita"
+              }
+            },
+            {
+              "value": "minecraft:totem_of_undying",
+              "label": {
+                "en": "Totem of undying",
+                "es": "Tótem de la inmortalidad"
+              }
+            }
+          ]
+        },
+        {
+          "id": "count",
+          "label": {
+            "en": "Count",
+            "es": "Cantidad"
+          },
+          "type": "number",
+          "default": 5
+        }
+      ]
+    },
+    {
+      "id": "damage",
+      "label": {
+        "en": "Damage",
+        "es": "Dañar"
+      },
+      "icon": "zap",
+      "quick": true,
+      "bridgeAction": "DAMAGE",
+      "command": "damage {{player}} {{amount}} minecraft:magic",
+      "params": [
+        {
+          "id": "amount",
+          "label": {
+            "en": "Damage",
+            "es": "Daño"
+          },
+          "type": "number",
+          "default": 4
+        }
+      ]
+    },
+    {
+      "id": "kill",
+      "label": {
+        "en": "Kill",
+        "es": "Matar"
+      },
+      "icon": "skull",
+      "quick": true,
+      "danger": true,
+      "bridgeAction": "KILL",
+      "command": "kill {{player}}"
+    },
+    {
       "id": "kick",
       "label": {
         "en": "Kick",
         "es": "Expulsar"
       },
+      "icon": "user-x",
+      "bridgeAction": "KICK",
       "command": "kick {{player}} {{reason}}",
       "params": [
         {
@@ -336,8 +664,9 @@
         "en": "Ban",
         "es": "Banear"
       },
-      "command": "ban {{player}} {{reason}}",
+      "icon": "ban",
       "danger": true,
+      "command": "ban {{player}} {{reason}}",
       "params": [
         {
           "id": "reason",
@@ -356,6 +685,7 @@
         "en": "Make operator",
         "es": "Dar OP"
       },
+      "icon": "shield",
       "command": "op {{player}}"
     },
     {
@@ -364,6 +694,7 @@
         "en": "Remove operator",
         "es": "Quitar OP"
       },
+      "icon": "shield-off",
       "command": "deop {{player}}"
     },
     {
@@ -372,6 +703,7 @@
         "en": "Game mode",
         "es": "Modo de juego"
       },
+      "icon": "gamepad",
       "command": "gamemode {{mode}} {{player}}",
       "params": [
         {
@@ -418,9 +750,11 @@
     {
       "id": "tp",
       "label": {
-        "en": "Teleport",
-        "es": "Teletransportar"
+        "en": "Teleport to coordinates",
+        "es": "Teletransportar a coordenadas"
       },
+      "icon": "map-pin",
+      "bridgeAction": "TELEPORT",
       "command": "tp {{player}} {{x}} {{y}} {{z}}",
       "params": [
         {
@@ -453,49 +787,153 @@
       ]
     },
     {
-      "id": "give",
+      "id": "tp_player",
       "label": {
-        "en": "Give item",
-        "es": "Dar objeto"
+        "en": "Teleport to player",
+        "es": "Teletransportar a jugador"
       },
-      "command": "give {{player}} {{item}} {{count}}",
+      "icon": "users",
+      "bridgeAction": "TELEPORT",
+      "command": "tp {{player}} {{targetPlayer}}",
       "params": [
         {
-          "id": "item",
+          "id": "targetPlayer",
           "label": {
-            "en": "Item id",
-            "es": "ID del objeto"
+            "en": "Target player",
+            "es": "Jugador destino"
           },
           "type": "text",
-          "default": "minecraft:diamond"
-        },
-        {
-          "id": "count",
-          "label": {
-            "en": "Count",
-            "es": "Cantidad"
-          },
-          "type": "number",
-          "default": 1
+          "default": ""
         }
       ]
     },
     {
-      "id": "heal",
+      "id": "experience",
       "label": {
-        "en": "Heal",
-        "es": "Curar"
+        "en": "Experience",
+        "es": "Experiencia"
       },
-      "command": "effect give {{player}} minecraft:instant_health 1 10"
+      "icon": "sparkles",
+      "bridgeAction": "GIVE_EXP",
+      "command": "experience {{mode}} {{player}} {{amount}} {{expType}}",
+      "params": [
+        {
+          "id": "amount",
+          "label": {
+            "en": "Amount",
+            "es": "Cantidad"
+          },
+          "type": "number",
+          "default": 5
+        },
+        {
+          "id": "expType",
+          "label": {
+            "en": "Type",
+            "es": "Tipo"
+          },
+          "type": "select",
+          "default": "levels",
+          "options": [
+            {
+              "value": "levels",
+              "label": {
+                "en": "Levels",
+                "es": "Niveles"
+              }
+            },
+            {
+              "value": "points",
+              "label": {
+                "en": "Points",
+                "es": "Puntos"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mode",
+          "label": {
+            "en": "Mode",
+            "es": "Modo"
+          },
+          "type": "select",
+          "default": "add",
+          "options": [
+            {
+              "value": "add",
+              "label": {
+                "en": "Add",
+                "es": "Sumar"
+              }
+            },
+            {
+              "value": "set",
+              "label": {
+                "en": "Set",
+                "es": "Fijar"
+              }
+            }
+          ]
+        }
+      ]
     },
     {
-      "id": "kill",
+      "id": "freeze",
       "label": {
-        "en": "Kill",
-        "es": "Matar"
+        "en": "Freeze",
+        "es": "Congelar"
       },
-      "command": "kill {{player}}",
-      "danger": true
+      "icon": "snowflake",
+      "bridgeAction": "FREEZE",
+      "command": [
+        "effect give {{player}} minecraft:slowness infinite 255 true",
+        "effect give {{player}} minecraft:jump_boost infinite 250 true"
+      ]
+    },
+    {
+      "id": "unfreeze",
+      "label": {
+        "en": "Unfreeze",
+        "es": "Descongelar"
+      },
+      "icon": "sun",
+      "bridgeAction": "UNFREEZE",
+      "command": [
+        "effect clear {{player}} minecraft:slowness",
+        "effect clear {{player}} minecraft:jump_boost"
+      ]
+    },
+    {
+      "id": "mute",
+      "label": {
+        "en": "Mute",
+        "es": "Silenciar"
+      },
+      "icon": "volume-x",
+      "bridgeAction": "MUTE",
+      "command": "tag {{player}} add muted"
+    },
+    {
+      "id": "unmute",
+      "label": {
+        "en": "Unmute",
+        "es": "Quitar silencio"
+      },
+      "icon": "volume-2",
+      "bridgeAction": "UNMUTE",
+      "command": "tag {{player}} remove muted"
+    },
+    {
+      "id": "smite",
+      "label": {
+        "en": "Smite",
+        "es": "Rayo"
+      },
+      "icon": "cloud-lightning",
+      "danger": true,
+      "bridgeAction": "SMITE",
+      "command": "execute at {{player}} run summon lightning_bolt ~ ~ ~"
     },
     {
       "id": "clear",
@@ -503,8 +941,9 @@
         "en": "Clear inventory",
         "es": "Limpiar inventario"
       },
-      "command": "clear {{player}}",
-      "danger": true
+      "icon": "trash",
+      "danger": true,
+      "command": "clear {{player}}"
     }
   ],
   "creationSettings": [
@@ -598,7 +1037,10 @@
   ],
   "modLayout": {
     "modsDir": "mods",
-    "configDir": "config"
+    "configDir": "config",
+    "fileTypes": [
+      ".jar"
+    ]
   },
   "bridgeTargets": {
     "paper": {

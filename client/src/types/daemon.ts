@@ -1,74 +1,7 @@
 export const SERVER_STATUSES = ['OFFLINE', 'STARTING', 'ONLINE', 'STOPPING'] as const;
 export type ServerStatus = (typeof SERVER_STATUSES)[number];
 
-export const SERVER_LOADERS = [
-  'fabric',
-  'paper',
-  'purpur',
-  'vanilla',
-  'forge',
-  'neoforge',
-  'spigot'
-] as const;
-export type ServerLoader = (typeof SERVER_LOADERS)[number];
-
-export interface LoaderInfo {
-  id: ServerLoader;
-  name: string;
-  category: 'modded' | 'plugin' | 'vanilla';
-  isAutomatic: boolean;
-  officialUrl?: string;
-}
-
-export const LOADER_METADATA: Record<ServerLoader, LoaderInfo> = {
-  fabric: {
-    id: 'fabric',
-    name: 'Fabric',
-    category: 'modded',
-    isAutomatic: true
-  },
-  paper: {
-    id: 'paper',
-    name: 'PaperMC',
-    category: 'plugin',
-    isAutomatic: true
-  },
-  purpur: {
-    id: 'purpur',
-    name: 'Purpur',
-    category: 'plugin',
-    isAutomatic: true
-  },
-  vanilla: {
-    id: 'vanilla',
-    name: 'Vanilla',
-    category: 'vanilla',
-    isAutomatic: true
-  },
-  forge: {
-    id: 'forge',
-    name: 'Forge',
-    category: 'modded',
-    isAutomatic: true,
-    officialUrl: 'https://files.minecraftforge.net/net/minecraftforge/forge/'
-  },
-  neoforge: {
-    id: 'neoforge',
-    name: 'NeoForge',
-    category: 'modded',
-    isAutomatic: true,
-    officialUrl: 'https://neoforged.net/'
-  },
-  spigot: {
-    id: 'spigot',
-    name: 'SpigotMC',
-    category: 'plugin',
-    isAutomatic: false,
-    officialUrl: 'https://www.spigotmc.org/wiki/buildtools/'
-  }
-};
-
-export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK' | 'ACTION';
+export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK' | 'PLAYER_ACTION' | 'INVENTORY_VIEW';
 
 export interface PlayerState {
   username: string;
@@ -161,7 +94,8 @@ export interface InstanceSettings {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
-  /** Project Zomboid Steam branch chosen at creation time. */
+  /** File the server is launched from when it is not the game's default executable. */
+  launchFile?: string;
   /** Values of the game's setup schema fields chosen at creation. */
   gameConfig?: Record<string, string | number | boolean>;
 }
@@ -245,12 +179,26 @@ export interface PlayerActionParam {
   options?: Array<{ value: string; label: LocalizedText }>;
 }
 
+/** Run by the daemon (bridge or console commands); the UI only sends the action id and parameter values. */
 export interface PlayerActionSpec {
   id: string;
   label: LocalizedText;
-  command: string;
+  command?: string | string[];
+  bridgeAction?: string;
   params?: PlayerActionParam[];
   danger?: boolean;
+  /** Shown on each player card and in the Overview; the rest live in the player's menu. */
+  quick?: boolean;
+  icon?: string;
+}
+
+export interface DimensionSpec {
+  id: string;
+  label: LocalizedText;
+  aliases?: string[];
+  /** Image inside the pack folder (served by the daemon). */
+  icon?: string;
+  primary?: boolean;
 }
 
 export interface CreationSetting {
@@ -268,6 +216,11 @@ export interface PlayerView {
   coordinates?: boolean;
   vitals?: boolean;
   avatarUrl?: string;
+  /** Inventory item image URL templates (`{{item}}`, `{{namespace}}`), tried in order. */
+  itemIconUrls?: string[];
+  itemNamespaces?: string[];
+  /** Id of the player action that empties an inventory. */
+  inventoryClearAction?: string;
 }
 
 export interface JvmFlagPreset {
@@ -285,6 +238,8 @@ export interface GameDriverSummary {
   defaultPort: number;
   defaultMaxPlayers: number;
   executableName: string;
+  /** Launch arguments as declared (placeholders unrendered). */
+  launchArgs?: string[];
   supportsMods: boolean;
   modFormat: string;
   supportsCustomJava: boolean;
@@ -300,8 +255,14 @@ export interface GameDriverSummary {
   creationSettings?: CreationSetting[];
   quickCommands?: Array<{ label: string; command: string }>;
   playerView?: PlayerView;
-  /** Id of a rich players panel the app registers for this game (bundled packs only). */
-  playerPanel?: string;
+  dimensions?: DimensionSpec[];
+  listPlayersCommand?: string;
+  /** Ticks per second the server targets (enables the TPS card). */
+  performance?: { tickRate: number };
+  /** How the message of the day is shown: formatting codes and a server-list style preview. */
+  motd?: { colorCodes?: boolean; preview?: boolean };
+  /** Present when the game's extension can install its server software (variants, versions, own file). */
+  installer?: InstallerSpec;
   /** Config file kept in sync with port / motd / player limit (also marks games with those settings). */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   bridgeLoaders?: string[];
@@ -368,6 +329,7 @@ export interface InstanceInfo {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
+  launchFile?: string;
   bridgeConnected?: boolean;
   bridgeInstalled?: boolean;
   bridgeSupported?: boolean;
@@ -438,13 +400,31 @@ export interface ProvisionJobState {
   error: DaemonErrorPayload | null;
 }
 
-export type JarKind = 'server' | 'installer' | 'unknown';
+/** One flavour of server software the game's installer offers (e.g. a mod loader). */
+export interface InstallerVariant {
+  id: string;
+  name: string;
+  group?: LocalizedText;
+  /** Downloaded by Hosty; otherwise the user brings the server file (`url` says where to get it). */
+  automatic: boolean;
+  url?: string;
+}
 
-export interface JarInspection {
-  loader: ServerLoader | null;
-  mcVersion: string | null;
-  loaderVersion: string | null;
-  kind: JarKind;
+export interface InstallerSpec {
+  variants: InstallerVariant[];
+  defaultVariant?: string;
+  /** File extensions accepted for the user's own server file. */
+  fileTypes?: string[];
+  /** Java major per game version: the last entry whose `from` <= version wins. */
+  javaRequirements?: { default: number; versions: Array<{ from: string; java: number }> };
+}
+
+/** What a server file the user brought turned out to be (detected by the game's installer). */
+export interface InstallFileInfo {
+  variant: string | null;
+  gameVersion: string | null;
+  variantVersion: string | null;
+  kind: 'server' | 'installer' | 'unknown';
 }
 
 export interface FolderInspection {
@@ -453,8 +433,9 @@ export interface FolderInspection {
   launchFile?: string | null;
   suggestedName: string;
   gameId: string | null;
-  loader: string | null;
-  mcVersion: string | null;
+  /** Server variant the game's driver detected (e.g. a mod loader). */
+  variant: string | null;
+  gameVersion: string | null;
   port: number | null;
   motd: string | null;
   maxPlayers: number | null;
