@@ -2,7 +2,8 @@
   "common": {
     "cancel": "Cancel",
     "apply": "Apply",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close"
   },
   "nav": {
     "overview": "Overview",
@@ -88,7 +89,10 @@
       "clear": "Clear",
       "placeholder": "Type Minecraft command (e.g., say Hello, give @p diamond)...",
       "send": "Send"
-    }
+    },
+    "copy_ip_title": "Click to copy IP",
+    "console_source": "stdout — server.jar",
+    "console_ready": "Ready. Awaiting process output stream..."
   },
   "players": {
     "search_placeholder": "Filter players by username...",
@@ -186,7 +190,10 @@
     "bridge_installed_success": "Bridge successfully installed into server! Restart the server to activate.",
     "bridge_status_active": "Bridge Active & Streaming",
     "bridge_status_ready": "Bridge Installed (Awaiting Server Restart)",
-    "bridge_status_missing": "Not Installed"
+    "bridge_status_missing": "Not Installed",
+    "copy_path": "Copy path",
+    "icon_alt": "Server icon",
+    "engine_label": "Engine"
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -251,7 +258,18 @@
     "back_button": "Back",
     "continue_button": "Continue",
     "create_instance_button": "Create Game Instance",
-    "submit_button": "Create & Install Server"
+    "submit_button": "Create & Install Server",
+    "badge_auto": "Auto",
+    "badge_manual": "Jar",
+    "version_option": "Minecraft {{version}} ({{loader}})",
+    "detecting_jar": "Inspecting jar...",
+    "detected_installer": "Detected: {{loader}} {{version}} (installer, it will be run automatically)",
+    "detected_server": "Detected: {{loader}} {{version}}",
+    "detected_unknown": "Could not identify this jar. It will be launched as-is with java -jar.",
+    "motd_placeholder": "A Game Server",
+    "engine_custom_jar": "Custom JAR",
+    "engine_native": "Native Engine",
+    "network_summary": "Port {{port}} / Max {{max}}"
   },
   "import_server": {
     "modal_title": "Import Existing Server",
@@ -259,7 +277,8 @@
     "path_hint": "Absolute path to a folder containing server.properties or server.jar.",
     "name_label": "Display Name (optional)",
     "submit_button": "Import Server",
-    "submitting": "Importing..."
+    "submitting": "Importing...",
+    "display_name_placeholder": "Custom display name (optional)"
   },
   "properties": {
     "title": "Server Properties",
@@ -313,7 +332,18 @@
     "visit_official_site": "Official Download Site",
     "upload_jar_dropzone": "Drop .jar file here or click to browse",
     "upload_jar_hint": "Attach your server.jar or loader installer .jar",
-    "create_and_upload": "Create Server & Upload JAR"
+    "create_and_upload": "Create Server & Upload JAR",
+    "cancel_install": "Cancel installation",
+    "phase": {
+      "queued": "Waiting to start...",
+      "resolve": "Resolving the latest build...",
+      "download": "Downloading...",
+      "install": "Running the installer...",
+      "configure": "Configuring the server..."
+    },
+    "automated_setup": "Automated Setup",
+    "auto_eula": "Auto-EULA: Enabled",
+    "target_jar": "Target: server.jar"
   },
   "inventory": {
     "modal_title": "Inventory: {{player}}",
@@ -362,7 +392,8 @@
     "import_server_desc": "Add a server folder already on your PC to manage, monitor, and run it with Hosty.",
     "import_server_btn": "Import Server",
     "empty_overview_title": "No Server Selected",
-    "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game."
+    "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game.",
+    "footer_tagline": "Hosty • Multi-game Server Supervisor"
   },
   "updater": {
     "update_available_title": "Update Available",

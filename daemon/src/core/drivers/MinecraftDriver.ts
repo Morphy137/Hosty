@@ -11,6 +11,47 @@ import {
 
 const JVM_FLAGS = ['-XX:+UseG1GC'];
 
+export type MinecraftLaunchMode = 'jar' | 'argsFile';
+
+export interface MinecraftLaunchTarget {
+  mode: MinecraftLaunchMode;
+  /** Jar file name (jar mode) or args-file path relative to the instance dir (argsFile mode). */
+  target: string;
+}
+
+const ARGS_FILE_LOADER_DIRS = [
+  ['libraries', 'net', 'neoforged', 'neoforge'],
+  ['libraries', 'net', 'minecraftforge', 'forge']
+];
+
+/**
+ * Resolves how an instance is launched. Forge / NeoForge (1.17+) installers generate
+ * `libraries/.../<platform>_args.txt` and no runnable server.jar; everything else uses `-jar`.
+ */
+export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar = 'server.jar'): MinecraftLaunchTarget | null {
+  const argsName = process.platform === 'win32' ? 'win_args.txt' : 'unix_args.txt';
+  for (const segments of ARGS_FILE_LOADER_DIRS) {
+    const base = path.join(instanceDir, ...segments);
+    if (!fs.existsSync(base)) continue;
+    const versions = fs.readdirSync(base, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+    for (const version of versions) {
+      if (fs.existsSync(path.join(base, version.name, argsName))) {
+        return { mode: 'argsFile', target: [...segments, version.name, argsName].join('/') };
+      }
+    }
+  }
+
+  if (fs.existsSync(path.join(instanceDir, preferredJar))) {
+    return { mode: 'jar', target: preferredJar };
+  }
+
+  // Legacy Forge (<= 1.16) leaves a runnable forge-<version>.jar next to the libraries folder.
+  const legacy = fs
+    .readdirSync(instanceDir)
+    .find((name) => /^forge-.+\.jar$/i.test(name) && !/installer/i.test(name));
+  return legacy ? { mode: 'jar', target: legacy } : null;
+}
+
 export class MinecraftDriver implements IGameDriver {
   public readonly id = 'minecraft';
   public readonly name = 'Minecraft: Java Edition';
@@ -31,8 +72,7 @@ export class MinecraftDriver implements IGameDriver {
   };
 
   public validateInstallation(instanceDir: string): boolean {
-    const jarPath = path.join(instanceDir, 'server.jar');
-    return fs.existsSync(jarPath);
+    return resolveMinecraftLaunchTarget(instanceDir) !== null;
   }
 
   public buildLaunchPlan(config: {
@@ -45,23 +85,23 @@ export class MinecraftDriver implements IGameDriver {
   }): ProcessLaunchPlan {
     const minRam = config.minRamMb ?? 1024;
     const maxRam = config.maxRamMb ?? 4096;
-    const jar = config.jarFile || 'server.jar';
+    const cwd = path.resolve(config.workingDir);
     const customFlags = config.jvmArgs ?? [];
+    const launch = resolveMinecraftLaunchTarget(cwd, config.jarFile || 'server.jar');
 
-    const args = [
-      `-Xms${minRam}M`,
-      `-Xmx${maxRam}M`,
-      ...JVM_FLAGS,
-      ...customFlags,
-      '-jar',
-      jar,
-      'nogui'
-    ];
+    const baseArgs = [`-Xms${minRam}M`, `-Xmx${maxRam}M`, ...JVM_FLAGS, ...customFlags];
+    let args: string[];
+    if (launch?.mode === 'argsFile') {
+      const userArgs = fs.existsSync(path.join(cwd, 'user_jvm_args.txt')) ? ['@user_jvm_args.txt'] : [];
+      args = [...baseArgs, ...userArgs, `@${launch.target}`, 'nogui'];
+    } else {
+      args = [...baseArgs, '-jar', launch?.target ?? (config.jarFile || 'server.jar'), 'nogui'];
+    }
 
     return {
       executable: config.javaPath || 'java',
       args,
-      cwd: path.resolve(config.workingDir)
+      cwd
     };
   }
 

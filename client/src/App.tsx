@@ -5,7 +5,13 @@ import { useInstances } from './hooks/useInstances';
 import { useModFiles } from './hooks/useModFiles';
 import { useServerProperties } from './hooks/useServerProperties';
 import { useModConfigs } from './hooks/useModConfigs';
-import { toErrorPayload, installServer, uploadServerJar } from './api/daemonApi';
+import {
+  toErrorPayload,
+  installServer,
+  uploadServerJar,
+  waitForProvisionJob,
+  cancelProvisionJob
+} from './api/daemonApi';
 import type { DaemonErrorPayload, ServerLoader, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
 import { Header, type TabId } from './components/layout/Header';
@@ -43,6 +49,7 @@ export default function App() {
     clearInventory,
     logs,
     provisionLogs,
+    provisionJob,
     lastError,
     connectionState,
     sendAction,
@@ -126,16 +133,17 @@ export default function App() {
         `[Provisioner] Initializing ${params.loader.toUpperCase()} ${params.version} for "${params.instanceName}"...`
       ]);
       try {
-        await installServer(
+        const started = await installServer(
           params.loader,
           params.version,
           params.instanceId,
           params.instanceName,
           params.settings
         );
+        await waitForProvisionJob(started.jobId);
         await instances.refresh();
       } catch (err) {
-        handleError(err);
+        if (toErrorPayload(err).code !== 'INSTALL_CANCELLED') handleError(err);
         throw err;
       }
     },
@@ -148,23 +156,35 @@ export default function App() {
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
+      loader?: ServerLoader;
+      loaderVersion?: string;
     }) => {
       resetProvisionLogs([
         `[Provisioner] Uploading server binary "${params.file.name}" for "${params.instanceName}"...`
       ]);
       try {
-        await uploadServerJar(params.file, params.instanceId, params.instanceName);
-        if (params.settings) {
-          await instances.updateSettings(params.instanceId, params.settings);
-        }
+        const result = await uploadServerJar(
+          params.file,
+          params.instanceId,
+          params.instanceName,
+          params.settings,
+          { loader: params.loader, loaderVersion: params.loaderVersion }
+        );
+        if (result.jobId) await waitForProvisionJob(result.jobId);
         await instances.refresh();
       } catch (err) {
-        handleError(err);
+        if (toErrorPayload(err).code !== 'INSTALL_CANCELLED') handleError(err);
         throw err;
       }
     },
     [handleError, instances, resetProvisionLogs]
   );
+
+  const handleCancelInstall = useCallback(() => {
+    if (provisionJob?.status === 'running') {
+      cancelProvisionJob(provisionJob.id).catch(handleError);
+    }
+  }, [handleError, provisionJob]);
 
   const handleImportServer = useCallback(
     async (folderPath: string, name?: string) => {
@@ -275,6 +295,8 @@ export default function App() {
         onInstall={handleCreateServer}
         onUploadJar={handleUploadServerJar}
         provisionLogs={provisionLogs}
+        provisionJob={provisionJob}
+        onCancelInstall={handleCancelInstall}
       />
 
       <ImportServerModal

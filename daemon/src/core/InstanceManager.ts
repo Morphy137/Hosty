@@ -18,6 +18,8 @@ export interface InstanceSettings {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
+  /** Project Zomboid Steam branch (stable / unstable) chosen at creation. */
+  pzBranch?: string;
 }
 
 export interface InstanceInfo {
@@ -180,7 +182,8 @@ export class InstanceManager {
       autostart: customSettings?.autostart ?? false,
       loader: customSettings?.loader,
       loaderVersion: customSettings?.loaderVersion,
-      gameId
+      gameId,
+      pzBranch: customSettings?.pzBranch
     };
 
     fs.writeFileSync(
@@ -228,6 +231,27 @@ export class InstanceManager {
     }
 
     return this.getInstance(id)!;
+  }
+
+  /** Removes an instance folder created by Hosty. Imported (external) folders are only unregistered. */
+  public deleteInstance(id: string): void {
+    const instance = this.getInstance(id);
+    if (!instance) return;
+
+    if (instance.isImported) {
+      const registry = this.loadRegistry();
+      delete registry.importedInstances[id];
+      this.saveRegistry(registry);
+    } else {
+      fs.rmSync(instance.dir, { recursive: true, force: true });
+    }
+
+    if (this.activeId === id) {
+      this.activeId = this.listInstances()[0]?.id ?? '';
+      const registry = this.loadRegistry();
+      registry.activeInstanceId = this.activeId;
+      this.saveRegistry(registry);
+    }
   }
 
   public getInstanceIconPath(id: string): string | null {

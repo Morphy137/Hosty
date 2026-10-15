@@ -176,7 +176,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 type="button"
                 onClick={handleCopyIp}
                 className="inline-flex items-center gap-1 font-mono text-[#171717] dark:text-[#ededed] hover:text-[#0070f3] dark:hover:text-[#0070f3] transition cursor-pointer"
-                title="Click to copy IP"
+                title={t('overview.copy_ip_title')}
               >
                 <span>{serverAddress}</span>
                 {copiedIp ? (
@@ -556,7 +556,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-[#888888]" />
               <span className="font-mono text-[12px] text-[#f2f2f2]">
-                stdout — server.jar
+                {t('overview.console_source')}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -576,7 +576,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <div className="flex-1 p-4 overflow-y-auto font-mono text-[13px] leading-[20px] space-y-1">
             {logs.length === 0 ? (
               <div className="text-[#888888]">
-                Ready. Awaiting process output stream...
+                {t('overview.console_ready')}
               </div>
             ) : (
               logs.map((line, idx) => (

@@ -4,6 +4,18 @@ import { Readable } from 'stream';
 import { finished } from 'stream/promises';
 import { DaemonError } from '../errors';
 import { PropertiesParser } from '../parsers/PropertiesParser';
+import { runServerInstaller } from './JavaInstallerRunner';
+import {
+  FORGE_METADATA_URL,
+  NEOFORGE_METADATA_URL,
+  forgeInstallerUrl,
+  forgeMinecraftVersions,
+  latestForgeVersion,
+  latestNeoForgeVersion,
+  neoForgeInstallerUrl,
+  neoForgeMinecraftVersions,
+  parseMavenVersions
+} from './ModLoaderCatalog';
 
 export const VALID_LOADERS = [
   'paper',
@@ -16,7 +28,17 @@ export const VALID_LOADERS = [
 ] as const;
 export type LoaderType = (typeof VALID_LOADERS)[number];
 
-export const AUTOMATIC_LOADERS: readonly LoaderType[] = ['paper', 'purpur', 'fabric', 'vanilla'];
+export const AUTOMATIC_LOADERS: readonly LoaderType[] = ['paper', 'purpur', 'fabric', 'vanilla', 'forge', 'neoforge'];
+
+export type ProvisionPhase = 'resolve' | 'download' | 'install' | 'configure';
+
+export interface ProvisionHooks {
+  signal?: AbortSignal;
+  javaPath?: string;
+  onLog: (message: string) => void;
+  onPhase?: (phase: ProvisionPhase) => void;
+  onBytes?: (received: number, total: number | null) => void;
+}
 
 const USER_AGENT = 'mc-nexus/1.0.0 (contact@mc-nexus.local)';
 const DEFAULT_HEADERS = { 'User-Agent': USER_AGENT };
@@ -53,6 +75,14 @@ export class ServerInstaller {
     }
 
     try {
+      if (loader === 'forge') {
+        return forgeMinecraftVersions(await this.fetchMavenVersions(FORGE_METADATA_URL));
+      }
+
+      if (loader === 'neoforge') {
+        return neoForgeMinecraftVersions(await this.fetchMavenVersions(NEOFORGE_METADATA_URL));
+      }
+
       if (loader === 'paper') {
         return await this.getPaperVersions();
       }
@@ -75,7 +105,7 @@ export class ServerInstaller {
     workingDir: string,
     loader: LoaderType,
     mcVersion: string,
-    onProgress: (msg: string) => void
+    hooks: ProvisionHooks
   ): Promise<void> {
     if (!this.isValidLoader(loader)) {
       throw new DaemonError('INVALID_LOADER', `Invalid loader: "${loader}".`);
@@ -92,18 +122,56 @@ export class ServerInstaller {
       throw new DaemonError('INVALID_VERSION', `Invalid Minecraft version: "${mcVersion}".`);
     }
 
+    const { onLog, onPhase, signal } = hooks;
+
     fs.mkdirSync(workingDir, { recursive: true });
     fs.mkdirSync(path.join(workingDir, 'mods'), { recursive: true });
     fs.mkdirSync(path.join(workingDir, 'config'), { recursive: true });
 
-    onProgress(`[Provisioner] Resolving ${loader.toUpperCase()} build for Minecraft ${mcVersion}...`);
+    onPhase?.('resolve');
+    onLog(`[Provisioner] Resolving ${loader.toUpperCase()} build for Minecraft ${mcVersion}...`);
     const downloadUrl = await this.resolveDownloadUrl(loader, mcVersion);
 
-    onProgress(`[Provisioner] Downloading server binary...`);
+    const isInstallerLoader = loader === 'forge' || loader === 'neoforge';
+    const downloadTarget = path.join(workingDir, isInstallerLoader ? 'installer.jar' : 'server.jar');
+
+    onPhase?.('download');
+    onLog(`[Provisioner] Downloading ${isInstallerLoader ? 'installer' : 'server binary'}...`);
+    await this.downloadFile(downloadUrl, downloadTarget, hooks);
+
+    if (isInstallerLoader) {
+      onPhase?.('install');
+      onLog('[Provisioner] Running the official installer (this can take a few minutes)...');
+      try {
+        await runServerInstaller({
+          javaPath: hooks.javaPath || 'java',
+          installerJar: downloadTarget,
+          cwd: workingDir,
+          signal,
+          onLine: (line) => onLog(`[Installer] ${line}`)
+        });
+      } finally {
+        fs.rmSync(downloadTarget, { force: true });
+        fs.rmSync(path.join(workingDir, 'installer.jar.log'), { force: true });
+      }
+    }
+
+    onPhase?.('configure');
+    fs.writeFileSync(path.join(workingDir, 'eula.txt'), 'eula=true\n', 'utf-8');
+    const propsPath = path.join(workingDir, 'server.properties');
+    if (!fs.existsSync(propsPath)) {
+      PropertiesParser.createDefaultProperties(propsPath);
+    }
+    onLog('[Provisioner] Server installed & eula.txt signed automatically.');
+  }
+
+  /** Streams a URL to disk, reporting byte progress and honouring cancellation. */
+  public static async downloadFile(url: string, dest: string, hooks: ProvisionHooks): Promise<void> {
     let response: Response;
     try {
-      response = await fetch(downloadUrl, { headers: DEFAULT_HEADERS });
+      response = await fetch(url, { headers: DEFAULT_HEADERS, signal: hooks.signal });
     } catch (err: unknown) {
+      if (hooks.signal?.aborted) throw new DaemonError('INSTALL_CANCELLED', 'Installation cancelled.');
       const msg = err instanceof Error ? err.message : String(err);
       throw new DaemonError('UPSTREAM_ERROR', `Failed to reach download server: ${msg}`);
     }
@@ -111,20 +179,35 @@ export class ServerInstaller {
     if (!response.ok || !response.body) {
       throw new DaemonError(
         'UPSTREAM_ERROR',
-        `Failed to download server jar (${response.status} ${response.statusText})`
+        `Failed to download server file (${response.status} ${response.statusText})`
       );
     }
 
-    const jarDest = path.join(workingDir, 'server.jar');
-    const fileStream = fs.createWriteStream(jarDest);
-    await finished(Readable.fromWeb(response.body as any).pipe(fileStream));
+    const totalHeader = Number(response.headers.get('content-length'));
+    const total = Number.isFinite(totalHeader) && totalHeader > 0 ? totalHeader : null;
+    let received = 0;
 
-    fs.writeFileSync(path.join(workingDir, 'eula.txt'), 'eula=true\n', 'utf-8');
-    const propsPath = path.join(workingDir, 'server.properties');
-    if (!fs.existsSync(propsPath)) {
-      PropertiesParser.createDefaultProperties(propsPath);
+    const source = Readable.fromWeb(response.body as any);
+    source.on('data', (chunk: Buffer) => {
+      received += chunk.length;
+      hooks.onBytes?.(received, total);
+    });
+
+    try {
+      await finished(source.pipe(fs.createWriteStream(dest)));
+    } catch (err: unknown) {
+      fs.rmSync(dest, { force: true });
+      if (hooks.signal?.aborted) throw new DaemonError('INSTALL_CANCELLED', 'Installation cancelled.');
+      throw err;
     }
-    onProgress(`[Provisioner] server.jar installed & eula.txt signed automatically.`);
+  }
+
+  private static async fetchMavenVersions(url: string): Promise<string[]> {
+    const res = await fetch(url, { headers: DEFAULT_HEADERS });
+    if (!res.ok) {
+      throw new DaemonError('UPSTREAM_ERROR', `Maven metadata responded with status ${res.status}`);
+    }
+    return parseMavenVersions(await res.text());
   }
 
   private static async getPaperVersions(): Promise<string[]> {
@@ -177,6 +260,18 @@ export class ServerInstaller {
   }
 
   private static async resolveDownloadUrl(loader: LoaderType, mcVersion: string): Promise<string> {
+    if (loader === 'forge') {
+      const version = latestForgeVersion(await this.fetchMavenVersions(FORGE_METADATA_URL), mcVersion);
+      if (!version) throw new DaemonError('INVALID_VERSION', `No Forge build found for Minecraft ${mcVersion}`);
+      return forgeInstallerUrl(version);
+    }
+
+    if (loader === 'neoforge') {
+      const version = latestNeoForgeVersion(await this.fetchMavenVersions(NEOFORGE_METADATA_URL), mcVersion);
+      if (!version) throw new DaemonError('INVALID_VERSION', `No NeoForge build found for Minecraft ${mcVersion}`);
+      return neoForgeInstallerUrl(version);
+    }
+
     if (loader === 'paper') {
       try {
         // Paper Fill v3 latest build

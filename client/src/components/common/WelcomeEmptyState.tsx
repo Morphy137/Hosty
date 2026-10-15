@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusCircle, FolderInput, Sparkles, Server } from 'lucide-react';
+import { PlusCircle, FolderInput, Sparkles } from 'lucide-react';
 
 interface WelcomeEmptyStateProps {
   onCreateServer: () => void;
@@ -85,12 +85,6 @@ export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({
               <span className="text-[#888888] group-hover:translate-x-0.5 transition-transform">→</span>
             </div>
           </button>
-        </div>
-
-        {/* Multi-game supported footer pill */}
-        <div className="mt-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f5f5f5] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[12px] text-[#666666] dark:text-[#888888]">
-          <Server className="w-3.5 h-3.5 text-[#888888]" />
-          <span>Minecraft • Project Zomboid • Hytale</span>
         </div>
       </div>
     </div>
