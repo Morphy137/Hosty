@@ -1,3 +1,4 @@
+import path from 'path';
 import { describe, it, expect } from 'vitest';
 import { parseJavaVersionString, detectJavaEnvironment } from '../src/core/EnvironmentDetector';
 
@@ -43,5 +44,30 @@ describe('EnvironmentDetector', () => {
         expect(result.detected).toBe(false);
       }
     });
+  });
+});
+
+describe('cross-platform Java discovery', () => {
+  it('lists JAVA_HOME first and vendor folders newest first on Windows', async () => {
+    const { javaCandidates } = await import('../src/core/EnvironmentDetector');
+    const adoptium = path.join('/pf', 'Eclipse Adoptium');
+    const list = javaCandidates(
+      { JAVA_HOME: '/jdk', ProgramFiles: '/pf' },
+      'win32',
+      (dir) => (dir === adoptium ? ['jdk-17.0.9', 'jdk-21.0.4'] : [])
+    );
+    expect(list[0]).toBe(path.join('/jdk', 'bin', 'java.exe'));
+    expect(list[1]).toBe(path.join(adoptium, 'jdk-21.0.4', 'bin', 'java.exe'));
+    expect(list[2]).toBe(path.join(adoptium, 'jdk-17.0.9', 'bin', 'java.exe'));
+  });
+
+  it('knows macOS and Linux locations', async () => {
+    const { javaCandidates } = await import('../src/core/EnvironmentDetector');
+    const mac = javaCandidates({}, 'darwin', (dir) => (dir === '/Library/Java/JavaVirtualMachines' ? ['temurin-21.jdk'] : []));
+    expect(mac[0]).toBe(path.join('/Library/Java/JavaVirtualMachines', 'temurin-21.jdk', 'Contents', 'Home', 'bin', 'java'));
+    expect(mac).toContain('/opt/homebrew/opt/openjdk/bin/java');
+
+    const linux = javaCandidates({}, 'linux', (dir) => (dir === '/usr/lib/jvm' ? ['java-21-openjdk-amd64'] : []));
+    expect(linux[0]).toBe(path.join('/usr/lib/jvm', 'java-21-openjdk-amd64', 'bin', 'java'));
   });
 });

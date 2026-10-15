@@ -2,7 +2,7 @@
 // Tauri expects an `externalBin` sidecar: client/src-tauri/binaries/hosty-daemon-<triple>[.exe]
 import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -63,6 +63,10 @@ execFileSync(process.execPath, ['--experimental-sea-config', seaConfigPath], { s
 
 const target = join(binariesDir, `hosty-daemon-${triple}${exeSuffix}`);
 copyFileSync(process.execPath, target);
+if (process.platform === 'darwin') {
+  // The copied Node binary is signed; the signature must go before the blob is injected.
+  execFileSync('codesign', ['--remove-signature', target], { stdio: 'inherit' });
+}
 
 console.log(`[sidecar] injecting blob into ${target}`);
 const postjectCli = join(daemonDir, 'node_modules', 'postject', 'dist', 'cli.js');
@@ -70,5 +74,10 @@ if (!existsSync(postjectCli)) throw new Error('postject is not installed; run `n
 const injectArgs = [postjectCli, target, 'NODE_SEA_BLOB', blobPath, '--sentinel-fuse', SEA_FUSE];
 if (process.platform === 'darwin') injectArgs.push('--macho-segment-name', 'NODE_SEA');
 execFileSync(process.execPath, injectArgs, { stdio: 'inherit' });
+if (process.platform === 'darwin') {
+  // Ad-hoc re-sign so the binary runs; the app bundle signing (CI) replaces this.
+  execFileSync('codesign', ['--sign', '-', target], { stdio: 'inherit' });
+}
+if (process.platform !== 'win32') chmodSync(target, 0o755);
 
 console.log(`[sidecar] done: ${target}`);

@@ -52,3 +52,14 @@ describe('Daemon loadConfig', () => {
     expect(config.instanceDir).not.toContain('node_modules');
   });
 });
+
+describe('app data directory per platform', () => {
+  it('follows each OS convention', async () => {
+    const { resolveAppDataDir } = await import('../src/config/env');
+    expect(resolveAppDataDir({ APPDATA: '/roaming' }, 'win32', '/home/me')).toBe(path.join('/roaming', 'Hosty'));
+    expect(resolveAppDataDir({}, 'win32', '/home/me')).toBe(path.join('/home/me', 'AppData', 'Roaming', 'Hosty'));
+    expect(resolveAppDataDir({}, 'darwin', '/Users/me')).toBe(path.join('/Users/me', 'Library', 'Application Support', 'Hosty'));
+    expect(resolveAppDataDir({ XDG_DATA_HOME: '/data' }, 'linux', '/home/me')).toBe(path.join('/data', 'Hosty'));
+    expect(resolveAppDataDir({}, 'linux', '/home/me')).toBe(path.join('/home/me', '.local', 'share', 'Hosty'));
+  });
+});
