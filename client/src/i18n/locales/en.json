@@ -278,7 +278,9 @@
     "name_label": "Display Name (optional)",
     "submit_button": "Import Server",
     "submitting": "Importing...",
-    "display_name_placeholder": "Custom display name (optional)"
+    "display_name_placeholder": "Custom display name (optional)",
+    "browse": "Browse...",
+    "picker_title": "Select the server folder"
   },
   "properties": {
     "title": "Server Properties",
@@ -413,5 +415,28 @@
     "failed_desc": "The background service could not be reached. Check the service log for details.",
     "retry": "Retry",
     "view_logs": "View logs"
+  },
+  "sidebar": {
+    "servers": "Servers",
+    "new_server": "New server",
+    "language_to_es": "Cambiar a español",
+    "language_to_en": "Switch to English",
+    "version": "v{{version}}"
+  },
+  "titlebar": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "server_header": {
+    "not_installed": "Not installed",
+    "more_actions": "More actions",
+    "edit": "Server settings",
+    "address_copied": "Address copied",
+    "copy_failed": "Could not copy the address",
+    "kill_confirm_title": "Force close the server?",
+    "kill_confirm_desc": "The process is terminated immediately. Unsaved world progress may be lost.",
+    "kill_confirm_action": "Force close"
   }
 }

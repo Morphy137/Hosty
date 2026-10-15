@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Heart, Zap, Gift, Check } from 'lucide-react';
 import type { PlayerState } from '../../types/daemon';
-import { Slider } from '../common/Slider';
+import { Slider } from '../ui/Slider';
 import { ItemSlotIcon } from '../common/ItemSlotIcon';
 import { SlidingText } from '../common/SlidingText';
 
@@ -69,44 +69,44 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-md w-full p-6 shadow-2xl flex flex-col gap-5">
+      <div className="geist-card bg-surface border border-hairline max-w-md w-full p-6 shadow-2xl flex flex-col gap-5">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
+        <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">
             <img
               src={`https://mc-heads.net/avatar/${player.username}/40`}
               alt={player.username}
-              className="w-9 h-9 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
+              className="w-9 h-9 rounded-[6px] border border-hairline"
             />
             <div>
-              <h2 className="text-[15px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px] flex items-center gap-1.5">
+              <h2 className="text-[15px] font-semibold text-ink tracking-[-0.3px] flex items-center gap-1.5">
                 {actionType === 'HEAL' && (
                   <>
-                    <Heart className="w-4 h-4 text-[#0070f3] dark:text-[#50e3c2]" />
+                    <Heart className="w-4 h-4 text-accent-fg" />
                     <SlidingText>{t('players.actions.heal_title', { player: player.username })}</SlidingText>
                   </>
                 )}
                 {actionType === 'DAMAGE' && (
                   <>
-                    <Zap className="w-4 h-4 text-[#ee0000] dark:text-[#ff4d4d]" />
+                    <Zap className="w-4 h-4 text-danger-fg" />
                     <SlidingText>{t('players.actions.damage_title', { player: player.username })}</SlidingText>
                   </>
                 )}
                 {actionType === 'GIFT' && (
                   <>
-                    <Gift className="w-4 h-4 text-[#0070f3] dark:text-[#3291ff]" />
+                    <Gift className="w-4 h-4 text-accent-fg" />
                     <SlidingText>{t('players.actions.gift_title', { player: player.username })}</SlidingText>
                   </>
                 )}
               </h2>
-              <p className="text-[12px] text-[#888888] dark:text-[#a1a1a1]">{player.username}</p>
+              <p className="text-[12px] text-mute">{player.username}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-[6px] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition-colors cursor-pointer"
+            className="p-1.5 rounded-[6px] hover:bg-surface-2 text-mute hover:text-ink transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -119,11 +119,11 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#888888] dark:text-[#a1a1a1]">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
                     {t('players.actions.heal_amount')}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-semibold bg-[#e6f7ff] dark:bg-[#071f38] text-[#0070f3] dark:text-[#3291ff] border border-[#0070f3]/25 shadow-2xs">
-                    <Heart className="w-3 h-3 fill-[#0070f3] dark:fill-[#3291ff]" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-semibold bg-info-soft text-accent-fg border border-accent/25 shadow-2xs">
+                    <Heart className="w-3 h-3 fill-accent-fg" />
                     <span>{healHearts} {t('players.actions.hearts_label')}</span>
                   </span>
                 </div>
@@ -138,7 +138,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                 />
 
                 {/* Heal Presets (Shadcn Segmented Control) */}
-                <div className="flex p-1 rounded-[8px] bg-[#f5f5f5] dark:bg-[#171717] border border-[#ebebeb] dark:border-[#262626] gap-1">
+                <div className="flex p-1 rounded-[8px] bg-surface-3 border border-hairline gap-1">
                   {[2, 6, 10, 20].map((h) => (
                     <button
                       key={h}
@@ -146,8 +146,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                       onClick={() => setHealHearts(h)}
                       className={`flex-1 py-1 rounded-[6px] font-mono text-[11px] transition-all cursor-pointer text-center ${
                         healHearts === h
-                          ? 'bg-white dark:bg-[#262626] text-[#171717] dark:text-[#ededed] shadow-xs border border-[#e5e5e5] dark:border-[#383838] font-semibold'
-                          : 'text-[#666666] dark:text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] hover:bg-white/60 dark:hover:bg-[#262626]/50 border border-transparent'
+                          ? 'bg-surface-3 text-ink shadow-xs border border-hairline-strong font-semibold'
+                          : 'text-soft hover:text-ink hover:bg-white/60 dark:hover:bg-surface-3/50 border border-transparent'
                       }`}
                     >
                       {h} {t('players.actions.hearts_label')}
@@ -156,12 +156,12 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                 </div>
               </div>
 
-              <label className="flex items-center gap-2.5 pt-1 text-[13px] text-[#171717] dark:text-[#ededed] cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 pt-1 text-[13px] text-ink cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={healFeed}
                   onChange={(e) => setHealFeed(e.target.checked)}
-                  className="w-4 h-4 rounded-[4px] border-[#d4d4d4] dark:border-[#383838] accent-[#171717] dark:accent-[#ededed] cursor-pointer"
+                  className="w-4 h-4 rounded-[4px] border-hairline-strong accent-ink cursor-pointer"
                 />
                 <span>{t('players.actions.feed_checkbox')}</span>
               </label>
@@ -173,11 +173,11 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#888888] dark:text-[#a1a1a1]">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
                     {t('players.actions.damage_amount')}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-semibold bg-[#fff0f0] dark:bg-[#2b1114] text-[#ee0000] dark:text-[#ff6b6b] border border-[#ee0000]/25 shadow-2xs">
-                    <Zap className="w-3 h-3 fill-[#ee0000] text-[#ee0000]" />
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-semibold bg-danger-soft text-danger-fg border border-danger/25 shadow-2xs">
+                    <Zap className="w-3 h-3 fill-danger-fg text-danger-fg" />
                     <span>{damageAmount} HP ({damageAmount / 2} {t('players.actions.hearts_label')})</span>
                   </span>
                 </div>
@@ -192,7 +192,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                 />
 
                 {/* Damage Presets (Shadcn Segmented Control) */}
-                <div className="flex p-1 rounded-[8px] bg-[#f5f5f5] dark:bg-[#171717] border border-[#ebebeb] dark:border-[#262626] gap-1">
+                <div className="flex p-1 rounded-[8px] bg-surface-3 border border-hairline gap-1">
                   {[2, 4, 10, 19].map((hp) => (
                     <button
                       key={hp}
@@ -200,8 +200,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                       onClick={() => setDamageAmount(hp)}
                       className={`flex-1 py-1 rounded-[6px] font-mono text-[11px] transition-all cursor-pointer text-center ${
                         damageAmount === hp
-                          ? 'bg-white dark:bg-[#262626] text-[#171717] dark:text-[#ededed] shadow-xs border border-[#e5e5e5] dark:border-[#383838] font-semibold'
-                          : 'text-[#666666] dark:text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] hover:bg-white/60 dark:hover:bg-[#262626]/50 border border-transparent'
+                          ? 'bg-surface-3 text-ink shadow-xs border border-hairline-strong font-semibold'
+                          : 'text-soft hover:text-ink hover:bg-white/60 dark:hover:bg-surface-3/50 border border-transparent'
                       }`}
                     >
                       {hp} HP
@@ -216,7 +216,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           {actionType === 'GIFT' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="font-mono text-[11px] uppercase tracking-wider text-[#888888] dark:text-[#a1a1a1]">
+                <label className="font-mono text-[11px] uppercase tracking-wider text-mute">
                   {t('players.actions.gift_select_item')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -230,8 +230,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                       }}
                       className={`flex items-center gap-2 p-2 rounded-[6px] border text-left text-[12px] font-medium transition-all cursor-pointer ${
                         giftItem === item.id && !giftCustomItem
-                          ? 'bg-white dark:bg-[#1a1a1a] text-[#171717] dark:text-[#ededed] border-[#0070f3] dark:border-[#3291ff] ring-1 ring-[#0070f3] dark:ring-[#3291ff] shadow-xs'
-                          : 'bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f0f0f0] dark:hover:bg-[#1f1f1f] text-[#666666] dark:text-[#a1a1a1] border-[#ebebeb] dark:border-[#262626]'
+                          ? 'bg-surface text-ink border-accent ring-1 ring-accent shadow-xs'
+                          : 'bg-surface-2 hover:bg-surface-3 text-soft border-hairline'
                       }`}
                     >
                       <ItemSlotIcon id={item.id} fallbackText={item.label} className="w-5 h-5 shrink-0" />
@@ -242,7 +242,7 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[11px] uppercase tracking-wider text-[#888888] dark:text-[#a1a1a1]">
+                <label className="font-mono text-[11px] uppercase tracking-wider text-mute">
                   {t('players.actions.gift_custom_item')}
                 </label>
                 <input
@@ -250,16 +250,16 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                   placeholder={t('players.actions.custom_item_placeholder')}
                   value={giftCustomItem}
                   onChange={(e) => setGiftCustomItem(e.target.value)}
-                  className="w-full h-8.5 px-3 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#0070f3] dark:focus:border-[#3291ff] transition-colors"
+                  className="w-full h-8.5 px-3 rounded-[6px] bg-surface border border-hairline font-mono text-[12px] text-ink placeholder-mute focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-[#888888] dark:text-[#a1a1a1]">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
                     {t('players.actions.gift_quantity')}
                   </span>
-                  <span className="font-mono text-[12px] text-[#171717] dark:text-[#ededed] font-semibold">
+                  <span className="font-mono text-[12px] text-ink font-semibold">
                     {giftQuantity}
                   </span>
                 </div>
@@ -270,10 +270,10 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                     max="64"
                     value={giftQuantity}
                     onChange={(e) => setGiftQuantity(Number(e.target.value))}
-                    className="w-20 h-8.5 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#0070f3] dark:focus:border-[#3291ff] text-center"
+                    className="w-20 h-8.5 px-2.5 rounded-[6px] bg-surface border border-hairline font-mono text-[12px] text-ink focus:outline-none focus:border-accent text-center"
                   />
                   {/* Quantity Presets (Shadcn Segmented Control) */}
-                  <div className="flex p-1 rounded-[8px] bg-[#f5f5f5] dark:bg-[#171717] border border-[#ebebeb] dark:border-[#262626] gap-1 flex-1">
+                  <div className="flex p-1 rounded-[8px] bg-surface-3 border border-hairline gap-1 flex-1">
                     {[1, 16, 32, 64].map((qty) => (
                       <button
                         key={qty}
@@ -281,8 +281,8 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
                         onClick={() => setGiftQuantity(qty)}
                         className={`flex-1 py-1 rounded-[6px] font-mono text-[11px] transition-all cursor-pointer text-center ${
                           giftQuantity === qty
-                            ? 'bg-white dark:bg-[#262626] text-[#171717] dark:text-[#ededed] shadow-xs border border-[#e5e5e5] dark:border-[#383838] font-semibold'
-                            : 'text-[#666666] dark:text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] hover:bg-white/60 dark:hover:bg-[#262626]/50 border border-transparent'
+                            ? 'bg-surface-3 text-ink shadow-xs border border-hairline-strong font-semibold'
+                            : 'text-soft hover:text-ink hover:bg-white/60 dark:hover:bg-surface-3/50 border border-transparent'
                         }`}
                       >
                         {qty}x
@@ -295,17 +295,17 @@ export const PlayerActionModal: React.FC<PlayerActionModalProps> = ({
           )}
 
           {/* Action Footer Buttons */}
-          <div className="flex gap-2.5 pt-3 border-t border-[#ebebeb] dark:border-[#262626]">
+          <div className="flex gap-2.5 pt-3 border-t border-hairline">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-9 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[13px] font-medium text-[#666666] hover:text-[#171717] dark:text-[#a1a1a1] dark:hover:text-[#ededed] transition-colors cursor-pointer"
+              className="flex-1 h-9 rounded-[6px] bg-surface hover:bg-surface-2 border border-hairline text-[13px] font-medium text-soft hover:text-ink transition-colors cursor-pointer"
             >
               <SlidingText>{t('common.cancel')}</SlidingText>
             </button>
             <button
               type="submit"
-              className="flex-1 h-9 rounded-[6px] bg-[#171717] hover:bg-[#262626] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              className="flex-1 h-9 rounded-[6px] bg-ink hover:bg-ink-hover text-on-ink text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Check className="w-3.5 h-3.5" />
               <SlidingText>{t('players.actions.execute_button')}</SlidingText>

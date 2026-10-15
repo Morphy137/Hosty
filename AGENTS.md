@@ -37,6 +37,7 @@ hosty/
 - `App.tsx` root; `components/{layout,tabs,modals,common}`; tabs: Overview, Players, Mods, Mod Configs, server.properties (+ Provisioning).
 - `hooks/` (data + socket + theme), `state/daemonSocketReducer.ts`, `api/daemonApi.ts`, `types/daemon.ts`, `utils/`.
 - **i18n**: `i18n/locales/en.json` and `es.json`; parity enforced by `test/i18nParity.test.ts`.
+- **Design system**: colours are semantic tokens defined once in `src/index.css` (`bg-surface`, `text-ink`, `border-hairline`, ...; dark mode only swaps the variable values, so no `dark:` colour pairs). Hex colours outside `index.css` and native `<select>` fail `test/designSystem.test.ts`. Reusable primitives live in `components/ui/` (Button, IconButton, Input, Select, Dialog, Tabs, Badge, Tooltip, DropdownMenu, Toast, Skeleton, Stepper, Slider, Dropzone; Radix-based). Shell: `layout/TitleBar` (frameless window, Tauri only), `layout/Sidebar` (server list + settings), `layout/ServerHeader` (single Start/Stop button + menu); tabs come from driver capabilities (`utils/tabs.ts`).
 - Game logos in `public/logos` and `src/assets/logos`.
 
 ### Bridge (`bridge/`)
