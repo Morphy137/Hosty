@@ -179,7 +179,6 @@
     "java_path_label": "Local Java Path Override",
     "java_path_hint": "Overrides the global Java executable path. Leave blank to use system default.",
     "jvm_args_label": "Custom JVM Arguments",
-    "apply_aikar_preset": "Apply Aikar's Flags",
     "startup_preview_label": "Startup Line Preview",
     "running_warning": "Turn the server off to apply port or JVM changes.",
     "tab_bridge": "Telemetry Bridge",
@@ -195,7 +194,28 @@
     "bridge_status_missing": "Not Installed",
     "copy_path": "Copy path",
     "icon_alt": "Server icon",
-    "engine_label": "Engine"
+    "engine_label": "Engine",
+    "presets_hint": "Recommended flag sets for this game. Applying one merges its flags into the field below.",
+    "preset_recommended": "Recommended",
+    "preset_apply": "Apply",
+    "preset": {
+      "aikar": {
+        "label": "Aikar's flags",
+        "desc": "Tuned G1GC set for Paper-family servers with 4 GB or more. Best for Paper, Purpur and Spigot."
+      },
+      "g1-basic": {
+        "label": "G1GC basic",
+        "desc": "Light, safe G1 tuning for modded and vanilla servers (Fabric, Forge, NeoForge, Vanilla)."
+      },
+      "zgc": {
+        "label": "Generational ZGC",
+        "desc": "Very low pause times on large heaps. Needs Java 21 or newer."
+      },
+      "java23-unsafe": {
+        "label": "Silence Unsafe warning",
+        "desc": "Hides the sun.misc.Unsafe deprecation warning printed by JOML on Java 23+. Do not use on older Java: the server will not start."
+      }
+    }
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -512,7 +532,6 @@
     "motd_hint": "Use § or & codes for colours (e.g. §aGreen §lBold).",
     "ram_system": "This PC has {{total}} GB of RAM",
     "ram_system_unknown": "System memory unknown",
-    "ram_recommended": "Use recommended ({{value}} GB)",
     "ram_min_hint": "Initial heap (-Xms): {{min}} MB",
     "gamemode": "Game mode",
     "difficulty": "Difficulty",
@@ -541,7 +560,13 @@
     "done_desc": "Your server was created. You can start it now or open its panel to keep configuring.",
     "start_now": "Start server now",
     "open_panel": "Open panel",
-    "import_wrong_game": "This folder looks like a \"{{detected}}\" server, not \"{{selected}}\". Go back and choose the right game."
+    "import_wrong_game": "This folder looks like a \"{{detected}}\" server, not \"{{selected}}\". Go back and choose the right game.",
+    "ram_default": "Default: {{value}} GB",
+    "bridge_title": "Hosty Telemetry Bridge",
+    "bridge_recommended": "Recommended",
+    "bridge_desc": "Adds real-time TPS, MSPT, loaded chunks and per-player health and coordinates to the dashboard, and enables in-game player actions, without polling the console.",
+    "bridge_later": "You can also install or check it later from Edit server > Telemetry Bridge.",
+    "warn_bridge": "The server was created, but the Telemetry Bridge could not be installed. You can retry from Edit server."
   },
   "config": {
     "no_files": "This game has no editable configuration files.",

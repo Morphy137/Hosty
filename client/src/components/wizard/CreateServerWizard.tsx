@@ -9,8 +9,13 @@ import type {
   ProvisionJobState,
   ServerLoader
 } from '../../types/daemon';
-import { fetchSystemEnvironment, saveServerProperties, uploadInstanceIcon } from '../../api/daemonApi';
-import { recommendedRamMb } from '../../utils/ram';
+import {
+  fetchSystemEnvironment,
+  installInstanceBridge,
+  saveServerProperties,
+  uploadInstanceIcon
+} from '../../api/daemonApi';
+import { maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Stepper } from '../ui/Stepper';
@@ -21,7 +26,7 @@ import { SetupStep } from './steps/SetupStep';
 import { CustomizeStep } from './steps/CustomizeStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { DoneStep } from './steps/DoneStep';
-import { buildCreationPlan } from './wizardPlan';
+import { bridgeEligible, buildCreationPlan } from './wizardPlan';
 import {
   CREATE_STEPS,
   IMPORT_STEPS,
@@ -146,7 +151,6 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
         setJavaMajor(env.java.detected ? env.java.majorVersion : null);
         if (env.totalMemMb) {
           setSystemRamMb(env.totalMemMb);
-          setDraft((current) => ({ ...current, ramMb: recommendedRamMb(env.totalMemMb) }));
         }
       })
       .catch(() => {
@@ -172,7 +176,11 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       idTouched: false,
       motd: t('wizard.default_motd', { game: shortName }),
       port: nextFreePort(selected.defaultPort, instances),
-      maxPlayers: selected.defaultMaxPlayers
+      maxPlayers: selected.defaultMaxPlayers,
+      ramMb: Math.min(
+        selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
+        maxAllocatableRamMb(systemRamMb)
+      )
     });
   };
 
@@ -262,6 +270,14 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           ]);
         } catch {
           problems.push(t('wizard.warn_properties'));
+        }
+      }
+
+      if (draft.installBridge && bridgeEligible(draft, game)) {
+        try {
+          await installInstanceBridge(instanceId);
+        } catch {
+          problems.push(t('wizard.warn_bridge'));
         }
       }
 
@@ -410,6 +426,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
                   logs={provisionLogs}
                   error={error}
                   onCancel={onCancelInstall}
+                  update={update}
                 />
               )}
               {isDone && <DoneStep name={draft.name} warning={warning} />}

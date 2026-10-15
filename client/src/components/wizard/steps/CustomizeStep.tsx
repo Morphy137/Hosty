@@ -34,6 +34,8 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
   const isMinecraftLike = game?.configFileName === 'server.properties';
   const takenByInstance = instances.some((instance) => instance.port === draft.port);
   const ramLimit = maxAllocatableRamMb(systemRamMb);
+  // The game's declared default wins; otherwise fall back to a size derived from system memory.
+  const defaultRamMb = Math.min(game?.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb), ramLimit);
 
   useEffect(() => {
     if (isImport || draft.port < 1 || draft.port > 65535) return;
@@ -171,9 +173,9 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
               <button
                 type="button"
                 className="cursor-pointer text-accent-fg hover:underline"
-                onClick={() => update({ ramMb: recommendedRamMb(systemRamMb) })}
+                onClick={() => update({ ramMb: defaultRamMb })}
               >
-                {t('wizard.ram_recommended', { value: Math.round(recommendedRamMb(systemRamMb) / 1024) })}
+                {t('wizard.ram_default', { value: Math.round(defaultRamMb / 1024) })}
               </button>
             </div>
             <p className="text-[11px] text-mute">

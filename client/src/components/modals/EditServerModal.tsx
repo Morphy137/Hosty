@@ -14,7 +14,7 @@ import {
   Check,
   Activity
 } from 'lucide-react';
-import type { InstanceInfo, InstanceSettings, ServerStatus } from '../../types/daemon';
+import type { InstanceInfo, InstanceSettings, JvmFlagPreset, ServerStatus } from '../../types/daemon';
 import {
   getInstanceIconUrl,
   uploadInstanceIcon,
@@ -29,29 +29,11 @@ interface EditServerModalProps {
   serverStatus: ServerStatus;
   onSaveSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   onRefreshInstances: () => Promise<void>;
+  jvmFlagPresets?: JvmFlagPreset[];
 }
 
 type TabKey = 'general' | 'advanced' | 'bridge';
 
-const AIKAR_FLAGS = [
-  '-XX:+UseG1GC',
-  '-XX:+ParallelRefProcEnabled',
-  '-XX:MaxGCPauseMillis=200',
-  '-XX:+UnlockExperimentalVMOptions',
-  '-XX:+DisableExplicitGC',
-  '-XX:+AlwaysPreTouch',
-  '-XX:G1NewSizePercent=30',
-  '-XX:G1MaxNewSizePercent=40',
-  '-XX:G1ReservePercent=20',
-  '-XX:G1HeapWastePercent=5',
-  '-XX:G1MixedGCCountTarget=4',
-  '-XX:InitiatingHeapOccupancyPercent=15',
-  '-XX:G1MixedGCLiveThresholdPercent=90',
-  '-XX:G1RSetUpdatingPauseTimePercent=5',
-  '-XX:SurvivorRatio=32',
-  '-XX:+PerfDisableSharedMem',
-  '-XX:MaxTenuringThreshold=1'
-];
 
 interface EditModalContentProps {
   instance: InstanceInfo;
@@ -59,6 +41,7 @@ interface EditModalContentProps {
   onClose: () => void;
   onSaveSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   onRefreshInstances: () => Promise<void>;
+  jvmFlagPresets: JvmFlagPreset[];
 }
 
 const EditServerModalContent: React.FC<EditModalContentProps> = ({
@@ -66,7 +49,8 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   serverStatus,
   onClose,
   onSaveSettings,
-  onRefreshInstances
+  onRefreshInstances,
+  jvmFlagPresets
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,13 +138,15 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
     }
   };
 
-  const handleApplyAikarFlags = () => {
+  const applyFlagPreset = (flags: string[]) => {
     const existing = jvmArgsString
       .split(/\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
-    const combined = Array.from(new Set([...existing, ...AIKAR_FLAGS])).join(' ');
-    setJvmArgsString(combined);
+    // A preset that picks a garbage collector replaces any collector already present.
+    const picksCollector = flags.some((flag) => /^-XX:\+Use\w+GC$/.test(flag));
+    const kept = picksCollector ? existing.filter((flag) => !/^-XX:\+Use\w+GC$/.test(flag)) : existing;
+    setJvmArgsString(Array.from(new Set([...kept, ...flags])).join(' '));
   };
 
   const calculatedMaxRamMb = ramUnit === 'GB' ? ramValue * 1024 : ramValue;
@@ -500,15 +486,43 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   <label className="font-mono text-[11px] uppercase text-mute">
                     {t('edit_server.jvm_args_label')}
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleApplyAikarFlags}
-                    className="text-[11px] text-accent-fg hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3 text-accent-fg" />
-                    {t('edit_server.apply_aikar_preset')}
-                  </button>
                 </div>
+                {jvmFlagPresets.length > 0 && (
+                  <div className="space-y-1.5 pb-1">
+                    <p className="text-[11px] text-mute">{t('edit_server.presets_hint')}</p>
+                    {jvmFlagPresets.map((preset) => {
+                      const recommended = Boolean(instance.loader && preset.recommendedFor?.includes(instance.loader));
+                      return (
+                        <div
+                          key={preset.id}
+                          className="flex items-start justify-between gap-3 rounded-[6px] border border-hairline bg-surface-2 p-2.5"
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-2 text-[12px] font-medium text-ink">
+                              {t(`edit_server.preset.${preset.id}.label`, { defaultValue: preset.label })}
+                              {recommended && (
+                                <span className="rounded-[4px] bg-success/10 px-1.5 py-0.5 font-mono text-[10px] text-success-fg">
+                                  {t('edit_server.preset_recommended')}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-soft">
+                              {t(`edit_server.preset.${preset.id}.desc`, { defaultValue: preset.description })}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => applyFlagPreset(preset.flags)}
+                            className="flex shrink-0 cursor-pointer items-center gap-1 text-[11px] text-accent-fg hover:underline"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {t('edit_server.preset_apply')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <textarea
                   value={jvmArgsString}
                   onChange={(e) => setJvmArgsString(e.target.value)}
@@ -647,7 +661,8 @@ export const EditServerModal: React.FC<EditServerModalProps> = ({
   instance,
   serverStatus,
   onSaveSettings,
-  onRefreshInstances
+  onRefreshInstances,
+  jvmFlagPresets
 }) => {
   if (!isOpen || !instance) return null;
 
@@ -659,6 +674,7 @@ export const EditServerModal: React.FC<EditServerModalProps> = ({
       onClose={onClose}
       onSaveSettings={onSaveSettings}
       onRefreshInstances={onRefreshInstances}
+      jvmFlagPresets={jvmFlagPresets ?? []}
     />
   );
 };

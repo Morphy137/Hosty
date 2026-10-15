@@ -187,6 +187,14 @@ export interface SetupField {
   component?: string;
 }
 
+export interface JvmFlagPreset {
+  id: string;
+  label: string;
+  description: string;
+  flags: string[];
+  recommendedFor?: string[];
+}
+
 export interface GameDriverSummary {
   id: string;
   name: string;
@@ -204,6 +212,8 @@ export interface GameDriverSummary {
   setupSchema: SetupField[];
   capabilities: GameCapabilities;
   configFiles: ConfigFileInfo[];
+  launchDefaults?: { memoryMb?: number };
+  jvmFlagPresets?: JvmFlagPreset[];
   source: 'builtin' | 'pack';
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */

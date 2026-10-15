@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { IGameDriver, GameDriverSummary, ProcessLaunchPlan, ParsedLogEvent } from './IGameDriver';
+import type { IGameDriver, GameDriverSummary, ProcessLaunchPlan, ParsedLogEvent, JvmFlagPreset } from './IGameDriver';
 import {
   isServerReadyLine,
   parseDimensionResponse,
@@ -52,6 +52,36 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
   return legacy ? { mode: 'jar', target: legacy } : null;
 }
 
+const JVM_FLAG_PRESETS: JvmFlagPreset[] = [
+  {
+    id: 'aikar',
+    label: "Aikar's flags",
+    description: 'Tuned G1GC set for Paper-family servers with 4 GB or more. Best for Paper, Purpur and Spigot.',
+    flags: ["-XX:+UseG1GC", "-XX:+ParallelRefProcEnabled", "-XX:MaxGCPauseMillis=200", "-XX:+UnlockExperimentalVMOptions", "-XX:+DisableExplicitGC", "-XX:+AlwaysPreTouch", "-XX:G1NewSizePercent=30", "-XX:G1MaxNewSizePercent=40", "-XX:G1HeapRegionSize=8M", "-XX:G1ReservePercent=20", "-XX:G1HeapWastePercent=5", "-XX:G1MixedGCCountTarget=4", "-XX:InitiatingHeapOccupancyPercent=15", "-XX:G1MixedGCLiveThresholdPercent=90", "-XX:G1RSetUpdatingPauseTimePercent=5", "-XX:SurvivorRatio=32", "-XX:+PerfDisableSharedMem", "-XX:MaxTenuringThreshold=1"],
+    recommendedFor: ['paper', 'purpur', 'spigot']
+  },
+  {
+    id: 'g1-basic',
+    label: 'G1GC basic',
+    description: 'Light, safe G1 tuning for modded and vanilla servers (Fabric, Forge, NeoForge, Vanilla).',
+    flags: ['-XX:+UseG1GC', '-XX:+ParallelRefProcEnabled', '-XX:MaxGCPauseMillis=200', '-XX:+DisableExplicitGC'],
+    recommendedFor: ['fabric', 'forge', 'neoforge', 'vanilla']
+  },
+  {
+    id: 'zgc',
+    label: 'Generational ZGC',
+    description: 'Very low pause times on large heaps. Needs Java 21 or newer.',
+    flags: ['-XX:+UseZGC', '-XX:+ZGenerational']
+  },
+  {
+    id: 'java23-unsafe',
+    label: 'Silence Unsafe warning',
+    description:
+      'Hides the "sun.misc.Unsafe::objectFieldOffset" deprecation warning printed by JOML on Java 23+. Do not use on older Java: it will not start.',
+    flags: ['--sun-misc-unsafe-memory-access=allow']
+  }
+];
+
 export class MinecraftDriver implements IGameDriver {
   public readonly id = 'minecraft';
   public readonly name = 'Minecraft: Java Edition';
@@ -75,6 +105,8 @@ export class MinecraftDriver implements IGameDriver {
     ],
     capabilities: { players: true, mods: true, configEditor: true, bridge: true },
     configFiles: [{ path: 'server.properties', format: 'properties' }],
+    launchDefaults: { memoryMb: 4096 },
+    jvmFlagPresets: JVM_FLAG_PRESETS,
     source: 'builtin',
     hasLogo: false
   };
@@ -97,7 +129,15 @@ export class MinecraftDriver implements IGameDriver {
     const customFlags = config.jvmArgs ?? [];
     const launch = resolveMinecraftLaunchTarget(cwd, config.jarFile || 'server.jar');
 
-    const baseArgs = [`-Xms${minRam}M`, `-Xmx${maxRam}M`, ...JVM_FLAGS, ...customFlags];
+    // Only add the default collector when the user did not choose one (two GCs abort the JVM).
+    const choosesCollector = customFlags.some((flag) => /^-XX:\+Use\w+GC$/.test(flag));
+    const defaultFlags = choosesCollector ? [] : JVM_FLAGS;
+    const baseArgs = [
+      `-Xms${minRam}M`,
+      `-Xmx${maxRam}M`,
+      ...defaultFlags,
+      ...customFlags.filter((flag, index) => customFlags.indexOf(flag) === index)
+    ];
     let args: string[];
     if (launch?.mode === 'argsFile') {
       const userArgs = fs.existsSync(path.join(cwd, 'user_jvm_args.txt')) ? ['@user_jvm_args.txt'] : [];

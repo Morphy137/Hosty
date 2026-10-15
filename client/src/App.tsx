@@ -418,6 +418,7 @@ export default function App() {
         serverStatus={status}
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
+        jvmFlagPresets={activeGame?.jvmFlagPresets}
       />
 
       {/* Auto-updater Notification Banner */}

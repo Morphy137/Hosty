@@ -84,3 +84,12 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
 
   return { kind: 'create', instanceId: draft.instanceId, name, settings };
 }
+
+const BRIDGE_LOADERS = ['paper', 'purpur', 'spigot', 'fabric'];
+
+/** True when a Telemetry Bridge can be installed for what this wizard run will produce. */
+export const bridgeEligible = (draft: WizardDraft, game: GameDriverSummary | undefined): boolean => {
+  if (!game?.capabilities.bridge) return false;
+  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.minecraft.loader : null;
+  return Boolean(loader && BRIDGE_LOADERS.includes(loader));
+};

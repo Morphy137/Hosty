@@ -29,6 +29,22 @@ export interface ConfigFileSummary {
   label?: string | Record<string, string>;
 }
 
+/** A named set of JVM flags a driver recommends (shown in the server editor). */
+export interface JvmFlagPreset {
+  id: string;
+  /** English label/description; clients may override through `edit_server.preset.<id>.*` keys. */
+  label: string;
+  description: string;
+  flags: string[];
+  /** Loaders (or game variants) this preset is tuned for; it is badged "recommended" for them. */
+  recommendedFor?: string[];
+}
+
+export interface LaunchDefaults {
+  /** Default heap size in MB offered when creating a server. */
+  memoryMb?: number;
+}
+
 export interface GameDriverSummary {
   id: string;
   name: string;
@@ -46,6 +62,8 @@ export interface GameDriverSummary {
   setupSchema: SetupField[];
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
+  launchDefaults?: LaunchDefaults;
+  jvmFlagPresets?: JvmFlagPreset[];
   /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
   source: 'builtin' | 'pack';
   hasLogo: boolean;
