@@ -54,6 +54,35 @@ jobs:
           cd daemon
           npm run build
 
+      - name: Build Daemon Sidecar (Node SEA)
+        run: |
+          cd daemon
+          npm run build:sidecar
+
+      - name: Smoke Test Daemon Sidecar
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem client/src-tauri/binaries/hosty-daemon-*.exe | Select-Object -First 1
+          $env:NODE_ENV = 'production'
+          $env:MC_NEXUS_PORT = '4871'
+          $env:MC_NEXUS_INSTANCE_DIR = Join-Path $env:RUNNER_TEMP 'hosty-smoke/instances/default'
+          $env:MC_NEXUS_ASSETS_DIR = (Resolve-Path daemon/assets/bridge).Path
+          $proc = Start-Process -FilePath $exe.FullName -PassThru -WindowStyle Hidden
+          try {
+            $ok = $false
+            for ($i = 0; $i -lt 30 -and -not $ok; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:4871/api/health' -TimeoutSec 2
+                $ok = $health.status -eq 'ok'
+              } catch { }
+            }
+            if (-not $ok) { throw 'Daemon sidecar did not answer /api/health' }
+            Write-Host 'Daemon sidecar healthy'
+          } finally {
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          }
+
       - name: Build Tauri Desktop Bundle & Publish Release
         uses: tauri-apps/tauri-action@v0
         env:

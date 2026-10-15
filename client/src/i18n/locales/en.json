@@ -373,5 +373,14 @@
     "check_for_updates": "Check for Updates",
     "up_to_date": "Hosty is up to date",
     "check_failed": "Could not check for updates"
+  },
+  "startup": {
+    "title": "Starting Hosty",
+    "starting": "Starting background service...",
+    "attempt": "Attempt {{current}} of {{max}}",
+    "failed_title": "The Hosty service did not start",
+    "failed_desc": "The background service could not be reached. Check the service log for details.",
+    "retry": "Retry",
+    "view_logs": "View logs"
   }
 }

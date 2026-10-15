@@ -21,3 +21,11 @@ describe('Daemon URL config', () => {
     expect(toWebSocketUrl('https://nexus.example.com')).toBe('wss://nexus.example.com');
   });
 });
+
+describe('Runtime daemon URL', () => {
+  it('keeps the configured URL when not running inside the desktop shell', async () => {
+    const { resolveRuntimeDaemonUrl, getDaemonHttpUrl, getDaemonWsUrl } = await import('../src/config/daemon');
+    expect(await resolveRuntimeDaemonUrl()).toBe(getDaemonHttpUrl());
+    expect(getDaemonWsUrl()).toBe(toWebSocketUrl(getDaemonHttpUrl()));
+  });
+});

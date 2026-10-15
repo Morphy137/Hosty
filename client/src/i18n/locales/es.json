@@ -373,5 +373,14 @@
     "check_for_updates": "Buscar actualizaciones",
     "up_to_date": "Hosty está actualizado",
     "check_failed": "No se pudo verificar actualizaciones"
+  },
+  "startup": {
+    "title": "Iniciando Hosty",
+    "starting": "Iniciando servicio en segundo plano...",
+    "attempt": "Intento {{current}} de {{max}}",
+    "failed_title": "El servicio de Hosty no arrancó",
+    "failed_desc": "No se pudo contactar con el servicio en segundo plano. Revisa el registro del servicio para ver los detalles.",
+    "retry": "Reintentar",
+    "view_logs": "Ver logs"
   }
 }

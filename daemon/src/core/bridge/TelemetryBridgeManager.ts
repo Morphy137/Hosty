@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import type { WebSocket } from 'ws';
 import fs from 'fs';
 import path from 'path';
+import { loadConfig } from '../../config/env';
 import type {
   BridgeIncomingMessage,
   BridgeActionMessage,
@@ -26,7 +27,7 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
 
   constructor(assetsDir?: string) {
     super();
-    this.baseAssetsDir = assetsDir || path.resolve(__dirname, '../../../assets/bridge');
+    this.baseAssetsDir = assetsDir || loadConfig().assetsDir;
     this.bridgeJarPath = path.join(this.baseAssetsDir, 'mc-nexus-bridge.jar');
   }
 
