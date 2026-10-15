@@ -499,6 +499,11 @@
     "stop_first": "Pare o servidor para restaurar um backup.",
     "created": "Backup criado",
     "restored": "Backup restaurado",
-    "deleted": "Backup excluído"
+    "deleted": "Backup excluído",
+    "version_title": "Versão do servidor",
+    "version_hint": "Troque o loader ou a versão. Um backup é criado antes.",
+    "version_confirm": "Atualizar a versão do servidor? Um backup é criado antes.",
+    "version_update": "Atualizar",
+    "version_started": "Atualização iniciada"
   }
 }

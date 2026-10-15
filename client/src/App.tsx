@@ -419,7 +419,13 @@ export default function App() {
                 )}
 
                 {currentTab === 'backups' && instances.activeInstance && (
-                  <BackupsTab instanceId={instances.activeInstance.id} isRunning={status !== 'OFFLINE'} />
+                  <BackupsTab
+                    instanceId={instances.activeInstance.id}
+                    isRunning={status !== 'OFFLINE'}
+                    game={activeGame}
+                    currentVariant={instances.activeInstance.loader}
+                    currentVersion={instances.activeInstance.loaderVersion}
+                  />
                 )}
 
                 {currentTab === 'properties' && (

@@ -499,6 +499,11 @@
     "stop_first": "请先停止服务器再恢复备份。",
     "created": "备份已创建",
     "restored": "备份已恢复",
-    "deleted": "备份已删除"
+    "deleted": "备份已删除",
+    "version_title": "服务器版本",
+    "version_hint": "切换加载器或版本。会先创建备份。",
+    "version_confirm": "更新服务器版本？会先创建备份。",
+    "version_update": "更新",
+    "version_started": "更新已开始"
   }
 }

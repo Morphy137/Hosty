@@ -1311,6 +1311,12 @@ app.post('/api/provisioning/install', async (req, res, next) => {
       });
       createdInstanceId = target.id;
     } else if (target) {
+      // Changing the version of an existing server: keep a restorable copy first.
+      try {
+        new BackupManager(target.dir).create(driverRegistry.getDriver(gameId).backupPaths?.(), target.backupsKept + 1, 'preupdate');
+      } catch (error) {
+        throw new DaemonError('INVALID_PAYLOAD', `Could not back up before updating: ${error instanceof Error ? error.message : String(error)}`);
+      }
       instanceManager.updateInstanceSettings(target.id, { loader: variant, loaderVersion: version });
     }
     if (!target) {

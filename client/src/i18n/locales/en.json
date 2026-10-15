@@ -496,6 +496,11 @@
     "stop_first": "Stop the server to restore a backup.",
     "created": "Backup created",
     "restored": "Backup restored",
-    "deleted": "Backup deleted"
+    "deleted": "Backup deleted",
+    "version_title": "Server version",
+    "version_hint": "Switch loader or version. A backup is created first.",
+    "version_confirm": "Update the server version? A backup is created first.",
+    "version_update": "Update",
+    "version_started": "Update started"
   }
 }

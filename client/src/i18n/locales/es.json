@@ -496,6 +496,11 @@
     "stop_first": "Detén el servidor para restaurar una copia.",
     "created": "Copia creada",
     "restored": "Copia restaurada",
-    "deleted": "Copia eliminada"
+    "deleted": "Copia eliminada",
+    "version_title": "Versión del servidor",
+    "version_hint": "Cambia el motor o la versión. Antes se crea una copia.",
+    "version_confirm": "¿Actualizar la versión del servidor? Antes se crea una copia.",
+    "version_update": "Actualizar",
+    "version_started": "Actualización iniciada"
   }
 }
