@@ -307,6 +307,8 @@ export interface GameDriverSummary {
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSourceInfo[];
+  /** Icon the game itself shows (square PNG of `size` px at `file`); absent = only shown inside Hosty. */
+  serverIcon?: { file: string; size: number };
   source: 'builtin' | 'pack';
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */

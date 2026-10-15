@@ -550,6 +550,16 @@
         }
       }
     },
+    "serverIcon": {
+      "type": "object",
+      "description": "Icon the game itself shows (e.g. its server list). Omit it when the game has none: the icon is then only shown inside Hosty.",
+      "required": ["file", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "pattern": "\\.png$", "description": "PNG path relative to the instance folder." },
+        "size": { "type": "integer", "minimum": 16, "maximum": 1024, "description": "Exact width and height in pixels." }
+      }
+    },
     "modSources": {
       "type": "array",
       "items": {

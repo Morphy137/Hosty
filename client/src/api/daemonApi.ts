@@ -326,8 +326,15 @@ export function restartInstance(id: string): Promise<{ ok: boolean }> {
   return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/restart`, {});
 }
 
-export function uploadInstanceIcon(id: string, imageBase64: string): Promise<{ ok: boolean }> {
-  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`, { imageBase64 });
+/** `gameIcon`: whether the game's own icon file was written too (`unsupported` = the game has none). */
+export function uploadInstanceIcon(
+  id: string,
+  imageBase64: string
+): Promise<{ ok: boolean; gameIcon: 'written' | 'unsupported' | 'wrong-size' }> {
+  return postJson<{ ok: boolean; gameIcon: 'written' | 'unsupported' | 'wrong-size' }>(
+    `/api/instances/${encodeURIComponent(id)}/icon`,
+    { imageBase64 }
+  );
 }
 
 export function deleteInstanceIcon(id: string): Promise<{ ok: boolean }> {

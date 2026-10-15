@@ -172,7 +172,6 @@
     "icon_label": "Ícono del Servidor",
     "upload_icon": "Subir Ícono",
     "remove_icon": "Eliminar Ícono",
-    "icon_hint": "La imagen debe ser .png y de 64x64.",
     "ram_label": "Asignación de Memoria RAM",
     "port_label": "Puerto del Servidor",
     "max_players_label": "Jugadores Máximos",
@@ -454,6 +453,10 @@
     "delete_created_desc": "\"{{name}}\" y todos sus archivos (mundos, mods, configuraciones) se eliminarán permanentemente del disco.",
     "language": "Idioma"
   },
+  "server_icon": {
+    "hint_game": "También se usa como icono del servidor dentro de {{game}} ({{file}}). Debe ser un PNG de {{size}}×{{size}}: cualquier imagen se recorta y redimensiona automáticamente.",
+    "hint_app": "Solo se muestra dentro de Hosty: {{game}} no tiene icono de servidor propio. Sirve cualquier imagen; se recorta a un cuadrado automáticamente."
+  },
   "titlebar": {
     "minimize": "Minimizar",
     "maximize": "Maximizar",
@@ -510,7 +513,6 @@
     "java_download": "Descargar Java {{version}}",
     "java_ok": "Java {{installed}} detectado (necesita {{required}}+)",
     "icon_choose": "Elegir un icono",
-    "icon_hint": "Sirve cualquier imagen: se recorta y redimensiona a 64×64 automáticamente.",
     "motd_hint": "Usa códigos § o & para colores (p. ej. §aVerde §lNegrita).",
     "ram_system": "Este PC tiene {{total}} GB de RAM",
     "ram_system_unknown": "Memoria del sistema desconocida",

@@ -189,6 +189,8 @@ export interface GameManifest {
   bridgeLoaders?: string[];
   jvmFlagPresets?: ManifestJvmFlagPreset[];
   modSources?: ManifestModSource[];
+  /** Icon file the game itself shows (e.g. a server list); absent = the icon is only shown inside Hosty. */
+  serverIcon?: ServerIconSpec;
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */
   detect?: string[];
   logs?: {
@@ -206,6 +208,14 @@ export interface GameManifest {
   modFormat?: string;
   /** Extra translations merged into the UI: `{ en: { "my.key": "..." } }`. */
   i18n?: Record<string, Record<string, string>>;
+}
+
+/** A square PNG the game reads from the instance folder. */
+export interface ServerIconSpec {
+  /** Path relative to the instance folder, e.g. `server-icon.png`. */
+  file: string;
+  /** Exact width and height in pixels the game accepts. */
+  size: number;
 }
 
 export interface ManifestValidation {
@@ -436,6 +446,19 @@ export function validateManifest(raw: unknown): ManifestValidation {
     }
   }
 
+  if (raw.serverIcon !== undefined) {
+    const icon = raw.serverIcon;
+    if (
+      !isObject(icon) ||
+      !isSafeRelativePath(icon.file) ||
+      !String(icon.file).toLowerCase().endsWith('.png') ||
+      !Number.isInteger(icon.size) ||
+      (icon.size as number) < 16 ||
+      (icon.size as number) > 1024
+    ) {
+      errors.push('serverIcon must be { file (relative .png), size (16-1024) }');
+    }
+  }
   if (raw.bridgeLoaders !== undefined && !isStringList(raw.bridgeLoaders)) {
     errors.push('bridgeLoaders must be a list of strings');
   }

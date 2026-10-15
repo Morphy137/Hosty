@@ -14,7 +14,9 @@ import {
   Check,
   Activity
 } from 'lucide-react';
-import type { InstanceInfo, InstanceSettings, JvmFlagPreset, ServerStatus } from '../../types/daemon';
+import type { GameDriverSummary, InstanceInfo, InstanceSettings, JvmFlagPreset, ServerStatus } from '../../types/daemon';
+import { iconSizeFor, resizeToServerIcon } from '../../utils/serverIcon';
+import { ServerIconHint } from '../common/ServerIconHint';
 import {
   getInstanceIconUrl,
   uploadInstanceIcon,
@@ -30,6 +32,8 @@ interface EditServerModalProps {
   onSaveSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   onRefreshInstances: () => Promise<void>;
   jvmFlagPresets?: JvmFlagPreset[];
+  /** Game of the instance: decides the icon size and whether the game shows it too. */
+  game?: GameDriverSummary;
 }
 
 type TabKey = 'general' | 'advanced' | 'bridge';
@@ -42,6 +46,7 @@ interface EditModalContentProps {
   onSaveSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   onRefreshInstances: () => Promise<void>;
   jvmFlagPresets: JvmFlagPreset[];
+  game?: GameDriverSummary;
 }
 
 const EditServerModalContent: React.FC<EditModalContentProps> = ({
@@ -50,7 +55,8 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   onClose,
   onSaveSettings,
   onRefreshInstances,
-  jvmFlagPresets
+  jvmFlagPresets,
+  game
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +87,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   );
   const [pendingIconBase64, setPendingIconBase64] = useState<string | null>(null);
   const [removeIconPending, setRemoveIconPending] = useState(false);
+  const [iconError, setIconError] = useState<string | null>(null);
 
   // Bridge installation state
   const [isInstallingBridge, setIsInstallingBridge] = useState(false);
@@ -115,18 +122,16 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
   const handleIconSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
+    setIconError(null);
+    resizeToServerIcon(file, iconSizeFor(game))
+      .then((base64) => {
         setPendingIconBase64(base64);
         setIconPreview(base64);
         setRemoveIconPending(false);
-      }
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch((error: unknown) => setIconError(error instanceof Error ? error.message : String(error)));
   };
 
   const handleRemoveIcon = () => {
@@ -363,7 +368,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/png"
+                        accept="image/*"
                         onChange={handleIconSelected}
                         className="hidden"
                       />
@@ -388,9 +393,8 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       )}
                     </div>
                   </div>
-                  <p className="text-[10px] text-mute">
-                    {t('edit_server.icon_hint')}
-                  </p>
+                  {iconError && <p className="text-[11px] text-danger-fg">{iconError}</p>}
+                  <ServerIconHint game={game} />
                 </div>
 
                 {/* RAM Allocation */}
@@ -662,7 +666,8 @@ export const EditServerModal: React.FC<EditServerModalProps> = ({
   serverStatus,
   onSaveSettings,
   onRefreshInstances,
-  jvmFlagPresets
+  jvmFlagPresets,
+  game
 }) => {
   if (!isOpen || !instance) return null;
 
@@ -675,6 +680,7 @@ export const EditServerModal: React.FC<EditServerModalProps> = ({
       onSaveSettings={onSaveSettings}
       onRefreshInstances={onRefreshInstances}
       jvmFlagPresets={jvmFlagPresets ?? []}
+      game={game}
     />
   );
 };

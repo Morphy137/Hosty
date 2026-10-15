@@ -118,6 +118,8 @@ export interface GameDriverSummary {
   /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
   bridgeLoaders?: string[];
   modSources?: ModSourceSummary[];
+  /** Icon the game itself shows (square PNG of `size` px at `file`); absent = only shown inside Hosty. */
+  serverIcon?: { file: string; size: number };
   jvmFlagPresets?: JvmFlagPreset[];
   /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
   source: 'builtin' | 'pack';

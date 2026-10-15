@@ -368,7 +368,8 @@ app.get('/api/instances/:id/icon', (req, res, next) => {
       res.status(404).send('Icon not found');
       return;
     }
-    res.sendFile(iconPath);
+    // Hosty's own copy lives in `<instance>/.hosty/`, which sendFile refuses by default.
+    res.sendFile(iconPath, { dotfiles: 'allow' });
   } catch (err) {
     next(err);
   }
@@ -382,9 +383,9 @@ app.post('/api/instances/:id/icon', (req, res, next) => {
     }
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
-    instanceManager.saveInstanceIcon(req.params.id, buffer);
+    const gameIcon = instanceManager.saveInstanceIcon(req.params.id, buffer);
     broadcast('CONSOLE', `[Hypervisor] Server icon updated for "${req.params.id}".\r\n`);
-    res.json({ ok: true });
+    res.json({ ok: true, gameIcon });
   } catch (err) {
     next(err);
   }

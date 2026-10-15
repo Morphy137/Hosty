@@ -24,7 +24,6 @@
     "give_exp": "Dar experiência"
   },
   "edit_server": {
-    "icon_hint": "A imagem tem de ser um .png de 64x64.",
     "force_save_label": "Forçar 'save-all' ao parar o servidor",
     "bridge_description": "Instala a bridge nativa de alta frequência (plugin Paper ou mod Fabric) para mostrar TPS, MSPT, chunks carregados e vida e coordenadas de cada jogador em tempo real, sem consultar a consola.",
     "bridge_installing": "A instalar a Bridge...",
@@ -71,7 +70,6 @@
   },
   "wizard": {
     "warn_icon": "O servidor foi criado, mas não foi possível guardar o ícone.",
-    "icon_hint": "Qualquer imagem serve: é recortada e redimensionada para 64×64 automaticamente.",
     "version_search": "Pesquisar versões...",
     "default_name": "O meu servidor de {{game}}"
   },

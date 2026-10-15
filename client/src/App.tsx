@@ -471,6 +471,7 @@ export default function App() {
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
         jvmFlagPresets={activeGame?.jvmFlagPresets}
+        game={activeGame}
       />
 
       {/* Auto-updater Notification Banner */}
