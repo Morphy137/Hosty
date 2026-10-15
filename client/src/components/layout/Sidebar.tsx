@@ -17,7 +17,7 @@ import {
   Trash2
 } from 'lucide-react';
 import type { InstanceInfo, ServerStatus } from '../../types/daemon';
-import { changeLanguage, type SupportedLanguage } from '../../i18n';
+import type { LanguageOption } from '../../hooks/useLocales';
 import type { Theme } from '../../hooks/useTheme';
 import { GameLogo } from '../common/GameIcons';
 import { StatusDot } from '../common/StatusDot';
@@ -38,6 +38,9 @@ interface SidebarProps {
   onCreate: () => void;
   onImport: () => void;
   onOpenGamePacks: () => void;
+  languages: LanguageOption[];
+  currentLanguage: string;
+  onChangeLanguage: (code: string) => void;
   onEditInstance: (id: string) => void;
   onRenameInstance: (id: string, name: string) => Promise<void> | void;
   onToggleFavorite: (id: string, favorite: boolean) => Promise<void> | void;
@@ -59,6 +62,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreate,
   onImport,
   onOpenGamePacks,
+  languages,
+  currentLanguage,
+  onChangeLanguage,
   onEditInstance,
   onRenameInstance,
   onToggleFavorite,
@@ -70,8 +76,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCheckingUpdates,
   onMock
 }) => {
-  const { t, i18n } = useTranslation();
-  const currentLang = (i18n.language?.startsWith('es') ? 'es' : 'en') as SupportedLanguage;
+  const { t } = useTranslation();
+  const currentLang = currentLanguage;
+  const languageItems: MenuItem[] = languages.map((language) => ({
+    id: language.code,
+    label: `${language.name}${language.code === currentLanguage ? '  ✓' : ''}`,
+    onSelect: () => onChangeLanguage(language.code)
+  }));
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState<InstanceInfo | null>(null);
@@ -203,13 +214,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="space-y-2 border-t border-hairline p-3">
         <div className="flex items-center gap-1.5">
-          <IconButton
-            label={currentLang === 'en' ? t('sidebar.language_to_es') : t('sidebar.language_to_en')}
-            variant="secondary"
-            onClick={() => changeLanguage(currentLang === 'en' ? 'es' : 'en')}
-          >
-            <Globe className="h-3.5 w-3.5 text-mute" />
-          </IconButton>
+          <DropdownMenu
+            align="start"
+            items={languageItems}
+            trigger={
+              <IconButton label={t('sidebar.language')} variant="secondary">
+                <Globe className="h-3.5 w-3.5 text-mute" />
+              </IconButton>
+            }
+          />
           <span className="font-mono text-[11px] uppercase text-mute">{currentLang}</span>
           <div className="flex-1" />
           <IconButton label={t('sidebar.game_packs')} variant="secondary" onClick={onOpenGamePacks}>

@@ -112,7 +112,17 @@ test('detects joins', () => {
 | `GET /api/games` | Driver summaries (capabilities, setup schema, config files, status). |
 | `GET /api/games/:id/logo` | Pack logo image. |
 | `GET /api/games/:id/setup-schema` | Setup fields of a game. |
-| `GET /api/game-packs`, `POST /api/game-packs/reload` | List / rescan packs. |
+| `GET /api/game-packs`, `POST /api/game-packs/reload` | List (built-ins first, read-only) / rescan packs. |
+| `POST /api/game-packs/install` `{ path }` | Validate and copy a pack folder into the games folder (code is never auto-trusted). |
+| `DELETE /api/game-packs/:id` | Uninstall an installed pack (refused while servers use it). |
+| `GET /api/locales`, `GET /api/locales/:code` | UI translation packs: `<localesDir>/<code>.json` with optional `_meta.name`; partial packs fall back to English. |
 | `POST /api/game-packs/:id/trust` | Approve the current `driver.js`. |
 | `GET/POST /api/config-files[/entries?path=]` | Read and edit the declared config files. |
 | `POST /api/instances/:id/provision` | SteamCMD install job for the instance. |
+
+## UI translation packs
+
+Drop `<code>.json` files (e.g. `pt-BR.json`, `es-419.json`) into the `locales` folder next to the games
+folder (`MC_NEXUS_LOCALES_DIR`). Copy `client/src/i18n/locales/en.json` as the template, add
+`"_meta": { "name": "Português (Brasil)" }` and translate the keys you want; missing keys fall back to English.
+The language picker (globe icon) lists them automatically.

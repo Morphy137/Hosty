@@ -465,7 +465,8 @@
     "remove_title": "Remove from Hosty?",
     "remove_imported_desc": "\"{{name}}\" will disappear from Hosty. Its folder and files are NOT deleted, so you can import it again later.",
     "delete_title": "Delete server?",
-    "delete_created_desc": "\"{{name}}\" and all of its files (worlds, mods, configs) will be permanently deleted from disk."
+    "delete_created_desc": "\"{{name}}\" and all of its files (worlds, mods, configs) will be permanently deleted from disk.",
+    "language": "Language"
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -575,7 +576,7 @@
   },
   "packs": {
     "title": "Game packs",
-    "description": "Add games to Hosty by dropping a game pack folder into the games directory.",
+    "description": "Games are add-ons. Built-in games are listed for reference; install more by choosing a pack folder.",
     "folder_hint": "Games folder:",
     "empty": "No game packs installed yet.",
     "reload": "Reload packs",
@@ -584,6 +585,11 @@
     "code_trusted": "Code trusted",
     "code_untrusted": "Code not trusted",
     "trust_warning": "This pack includes code (driver.js) that would run with the same permissions as Hosty. Only trust packs from authors you know.",
-    "trust_button": "Trust and enable code"
+    "trust_button": "Trust and enable code",
+    "install_placeholder": "Path to a game pack folder (contains hosty-game.json)",
+    "install_title": "Select a game pack folder",
+    "install_button": "Install",
+    "builtin": "Built-in",
+    "uninstall": "Uninstall pack"
   }
 }

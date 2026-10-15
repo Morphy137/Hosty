@@ -24,6 +24,7 @@ import { ServerHeader } from './components/layout/ServerHeader';
 import { Skeleton } from './components/ui/Skeleton';
 import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
 import { useGames } from './hooks/useGames';
+import { useLocales } from './hooks/useLocales';
 import { useAppVersion } from './hooks/useAppVersion';
 import { useMetricsHistory } from './hooks/useMetricsHistory';
 import { useToast } from './components/ui/toastContext';
@@ -98,6 +99,7 @@ export default function App() {
   const { toast } = useToast();
   const appVersion = useAppVersion();
   const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
+  const locales = useLocales(connectionState);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
@@ -270,6 +272,9 @@ export default function App() {
           onCreate={() => openWizard('create')}
           onImport={() => openWizard('import')}
           onOpenGamePacks={() => setIsPacksOpen(true)}
+          languages={locales.options}
+          currentLanguage={locales.current}
+          onChangeLanguage={(code) => void locales.select(code)}
           onEditInstance={(id) => {
             void instances.selectInstance(id).then(() => setIsEditModalOpen(true));
           }}

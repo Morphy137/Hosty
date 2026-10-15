@@ -62,8 +62,42 @@ export class GameDriverRegistry {
     return infos;
   }
 
+  /** Built-in games first (read-only, shown as reference), then the packs found on disk. */
   public getPackInfos(): PackInfo[] {
-    return this.packInfos;
+    const builtin: PackInfo[] = [...this.builtinIds].map((id) => {
+      const driver = this.drivers.get(id);
+      const manifest = driver ? this.getManifest(id) : null;
+      return {
+        id,
+        name: driver?.summary.name ?? id,
+        version: manifest?.version ?? null,
+        dir: 'built-in',
+        source: 'builtin',
+        hasCode: manifest === null,
+        trusted: true,
+        loaded: true,
+        errors: []
+      };
+    });
+    return [...builtin, ...this.packInfos];
+  }
+
+  /** Installs a pack folder into the games folder and reloads. Throws a readable message on failure. */
+  public installPack(sourceDir: string): PackInfo[] {
+    if (!this.loader) throw new Error('Game packs are not enabled.');
+    const { id } = this.loader.install(sourceDir);
+    if (this.builtinIds.has(id.toLowerCase())) {
+      this.loader.uninstall(id);
+      throw new Error(`"${id}" is a built-in game and cannot be replaced by a pack.`);
+    }
+    return this.reloadPacks();
+  }
+
+  public uninstallPack(packId: string): boolean {
+    if (!this.loader || this.builtinIds.has(packId.toLowerCase())) return false;
+    const ok = this.loader.uninstall(packId);
+    if (ok) this.reloadPacks();
+    return ok;
   }
 
   public trustPack(packId: string): boolean {

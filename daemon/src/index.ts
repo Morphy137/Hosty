@@ -800,6 +800,73 @@ app.post('/api/game-packs/reload', (_req, res) => {
   res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadPacks() });
 });
 
+app.post('/api/game-packs/install', (req, res, next) => {
+  try {
+    const { path: sourcePath } = req.body as { path?: string };
+    if (!sourcePath) throw new DaemonError('INVALID_PAYLOAD', 'Pack folder path is required.');
+    try {
+      const packs = driverRegistry.installPack(sourcePath);
+      res.json({ ok: true, gamesDir: config.gamesDir, packs });
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/game-packs/:packId', (req, res, next) => {
+  try {
+    const packId = req.params.packId;
+    const inUse = instanceManager.listInstances().some((instance) => instance.gameId === packId);
+    if (inUse) {
+      throw new DaemonError('SERVER_RUNNING', `Remove the "${packId}" servers before uninstalling this game pack.`);
+    }
+    if (!driverRegistry.uninstallPack(packId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game pack "${packId}" is not an installed pack.`);
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir, packs: driverRegistry.getPackInfos() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- UI translation packs: <localesDir>/<code>.json, optional `_meta.name` -----------------------
+const LOCALE_CODE = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+
+app.get('/api/locales', (_req, res) => {
+  const locales: Array<{ code: string; name: string }> = [];
+  if (fs.existsSync(config.localesDir)) {
+    for (const file of fs.readdirSync(config.localesDir)) {
+      if (!file.endsWith('.json')) continue;
+      const code = file.slice(0, -5);
+      if (!LOCALE_CODE.test(code)) continue;
+      try {
+        const parsed = JSON.parse(fs.readFileSync(path.join(config.localesDir, file), 'utf-8')) as {
+          _meta?: { name?: string };
+        };
+        locales.push({ code, name: parsed._meta?.name ?? code });
+      } catch {
+        // Unreadable translation files are ignored.
+      }
+    }
+  }
+  res.json({ localesDir: config.localesDir, locales });
+});
+
+app.get('/api/locales/:code', (req, res, next) => {
+  try {
+    const { code } = req.params;
+    const file = path.join(config.localesDir, `${code}.json`);
+    if (!LOCALE_CODE.test(code) || !fs.existsSync(file)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Locale "${code}" not found.`);
+    }
+    res.type('application/json').send(fs.readFileSync(file, 'utf-8'));
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/game-packs/:packId/trust', (req, res, next) => {
   try {
     if (!driverRegistry.trustPack(req.params.packId)) {

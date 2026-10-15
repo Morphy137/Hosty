@@ -145,17 +145,17 @@ describe('pack loading and trust', () => {
     const registry = new GameDriverRegistry();
     registry.loadPacks(gamesDir);
     expect(fs.existsSync(marker)).toBe(false);
-    expect(registry.getPackInfos()[0]).toMatchObject({ hasCode: true, trusted: false, loaded: true });
+    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0]).toMatchObject({ hasCode: true, trusted: false, loaded: true });
     expect(registry.getDriver('valheim').buildStopCommand()).toBe('\u0003');
 
     expect(registry.trustPack('valheim')).toBe(true);
-    expect(registry.getPackInfos()[0].trusted).toBe(true);
+    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0].trusted).toBe(true);
     expect(registry.getDriver('valheim').buildStopCommand()).toBe('custom-stop\n');
 
     // Editing the code invalidates the approval.
     fs.appendFileSync(path.join(gamesDir, 'valheim', 'driver.js'), '\n// changed');
     registry.reloadPacks();
-    expect(registry.getPackInfos()[0].trusted).toBe(false);
+    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0].trusted).toBe(false);
   });
 });
 
@@ -206,5 +206,35 @@ describe('SteamCMD', () => {
       '+force_install_dir', 'C:/pz', '+login', 'anonymous', '+app_update', '380870', 'validate', '+quit'
     ]);
     expect(buildSteamCmdArgs({ appId: 380870, branch: 'unstable', installDir: 'C:/pz' })).toContain('-beta');
+  });
+});
+
+describe('pack install, uninstall and built-in listing', () => {
+  it('lists built-in games as read-only entries', () => {
+    const registry = new GameDriverRegistry();
+    const ids = registry.getPackInfos().filter((pack) => pack.source === 'builtin').map((pack) => pack.id);
+    expect(ids).toEqual(expect.arrayContaining(['minecraft', 'project-zomboid', 'hytale']));
+  });
+
+  it('installs a valid pack folder, never trusts its code, and uninstalls it', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-install-'));
+    const games = path.join(root, 'games');
+    const source = path.join(root, 'src-pack');
+    fs.mkdirSync(source, { recursive: true });
+    fs.writeFileSync(
+      path.join(source, 'hosty-game.json'),
+      JSON.stringify({ ...validManifest, id: 'demo-game', name: 'Demo Game' })
+    );
+
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(games);
+    registry.installPack(source);
+    expect(registry.hasDriver('demo-game')).toBe(true);
+    expect(fs.existsSync(path.join(games, 'demo-game', 'hosty-game.json'))).toBe(true);
+
+    expect(registry.uninstallPack('demo-game')).toBe(true);
+    expect(registry.hasDriver('demo-game')).toBe(false);
+    expect(registry.uninstallPack('minecraft')).toBe(false);
+    fs.rmSync(root, { recursive: true, force: true });
   });
 });

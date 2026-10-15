@@ -166,6 +166,31 @@ export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: Gam
   return postJson<{ ok: boolean; packs: GamePackInfo[] }>(`/api/game-packs/${encodeURIComponent(packId)}/trust`, {});
 }
 
+export function installGamePack(sourcePath: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/install', {
+    path: sourcePath
+  });
+}
+
+export function uninstallGamePack(packId: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return deleteRequest<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>(
+    `/api/game-packs/${encodeURIComponent(packId)}`
+  );
+}
+
+export interface LocaleInfo {
+  code: string;
+  name: string;
+}
+
+export function fetchLocales(): Promise<{ localesDir: string; locales: LocaleInfo[] }> {
+  return request<{ localesDir: string; locales: LocaleInfo[] }>('/api/locales');
+}
+
+export function fetchLocale(code: string): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/api/locales/${encodeURIComponent(code)}`);
+}
+
 export function getGameLogoUrl(gameId: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }

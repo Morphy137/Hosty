@@ -465,7 +465,8 @@
     "remove_title": "¿Quitar de Hosty?",
     "remove_imported_desc": "\"{{name}}\" desaparecerá de Hosty. Su carpeta y archivos NO se borran, así que puedes importarlo de nuevo más tarde.",
     "delete_title": "¿Eliminar servidor?",
-    "delete_created_desc": "\"{{name}}\" y todos sus archivos (mundos, mods, configuraciones) se eliminarán permanentemente del disco."
+    "delete_created_desc": "\"{{name}}\" y todos sus archivos (mundos, mods, configuraciones) se eliminarán permanentemente del disco.",
+    "language": "Idioma"
   },
   "titlebar": {
     "minimize": "Minimizar",
@@ -575,7 +576,7 @@
   },
   "packs": {
     "title": "Paquetes de juegos",
-    "description": "Añade juegos a Hosty soltando la carpeta de un paquete en el directorio de juegos.",
+    "description": "Los juegos son complementos. Los juegos integrados se listan como referencia; instala más eligiendo una carpeta de pack.",
     "folder_hint": "Carpeta de juegos:",
     "empty": "Todavía no hay paquetes de juegos instalados.",
     "reload": "Recargar paquetes",
@@ -584,6 +585,11 @@
     "code_trusted": "Código de confianza",
     "code_untrusted": "Código sin confianza",
     "trust_warning": "Este paquete incluye código (driver.js) que se ejecutaría con los mismos permisos que Hosty. Confía solo en paquetes de autores que conozcas.",
-    "trust_button": "Confiar y activar el código"
+    "trust_button": "Confiar y activar el código",
+    "install_placeholder": "Ruta a una carpeta de game pack (contiene hosty-game.json)",
+    "install_title": "Selecciona una carpeta de game pack",
+    "install_button": "Instalar",
+    "builtin": "Integrado",
+    "uninstall": "Desinstalar pack"
   }
 }
