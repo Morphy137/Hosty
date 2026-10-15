@@ -1,6 +1,9 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  CatalogFilters,
+  ModFacets,
   ModSearchHit,
+  ModVersionInfo,
   ConfigEntry,
   ConfigPayload,
   DaemonErrorPayload,
@@ -132,8 +135,8 @@ export async function isPortInUse(port: number): Promise<boolean> {
 }
 
 /** Identifies the game and loader of an existing server folder. */
-export function inspectFolder(folderPath: string): Promise<FolderInspection> {
-  return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath });
+export function inspectFolder(folderPath: string, gameId?: string): Promise<FolderInspection> {
+  return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath, gameId });
 }
 
 // Generic config files (declared by the game's driver)
@@ -179,26 +182,77 @@ export function uninstallGamePack(packId: string): Promise<{ ok: boolean; gamesD
   );
 }
 
+function catalogFilterParams(filters?: CatalogFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (!filters) return params;
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.environment) params.set('environment', filters.environment);
+  if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
+  // 'instance' = the server's own loader / version, which is what the daemon assumes when omitted.
+  if (filters.loader !== 'instance') params.set('loader', filters.loader);
+  if (filters.gameVersion !== 'instance') params.set('gameVersion', filters.gameVersion);
+  return params;
+}
+
+export function fetchCatalogFacets(
+  instanceId: string,
+  sourceId: string
+): Promise<ModFacets & { instance: { loader: string | null; gameVersion: string | null } }> {
+  const params = new URLSearchParams({ source: sourceId });
+  return request(`/api/instances/${encodeURIComponent(instanceId)}/mods/facets?${params.toString()}`);
+}
+
 export function searchCatalogMods(
   instanceId: string,
   sourceId: string,
   query: string,
-  offset = 0
+  offset = 0,
+  filters?: CatalogFilters
 ): Promise<{ hits: ModSearchHit[]; total: number; offset: number }> {
-  const params = new URLSearchParams({ source: sourceId, q: query, offset: String(offset) });
+  const params = catalogFilterParams(filters);
+  params.set('source', sourceId);
+  params.set('q', query);
+  params.set('offset', String(offset));
   return request<{ hits: ModSearchHit[]; total: number; offset: number }>(
     `/api/instances/${encodeURIComponent(instanceId)}/mods/search?${params.toString()}`
+  );
+}
+
+export async function fetchCatalogVersions(
+  instanceId: string,
+  sourceId: string,
+  projectId: string,
+  filters?: CatalogFilters
+): Promise<ModVersionInfo[]> {
+  const params = catalogFilterParams(filters);
+  params.delete('sort');
+  params.delete('categories');
+  params.delete('environment');
+  params.set('source', sourceId);
+  params.set('project', projectId);
+  const result = await request<{ versions: ModVersionInfo[] }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/mods/versions?${params.toString()}`
+  );
+  return result.versions;
+}
+
+/** Catalog images go through the daemon (the app's CSP does not allow third-party image hosts). */
+export function getCatalogIconUrl(instanceId: string, sourceId: string, imageUrl: string): string {
+  const params = new URLSearchParams({ source: sourceId, url: imageUrl });
+  return withDaemonToken(
+    `${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(instanceId)}/mods/icon?${params.toString()}`
   );
 }
 
 export function installCatalogMod(
   instanceId: string,
   sourceId: string,
-  projectId: string
+  projectId: string,
+  versionId?: string
 ): Promise<{ ok: boolean; filename: string; restartRequired: boolean }> {
   return postJson<{ ok: boolean; filename: string; restartRequired: boolean }>(
     `/api/instances/${encodeURIComponent(instanceId)}/mods/install`,
-    { source: sourceId, projectId }
+    { source: sourceId, projectId, versionId }
   );
 }
 

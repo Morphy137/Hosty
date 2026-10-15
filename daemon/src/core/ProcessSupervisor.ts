@@ -195,7 +195,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     }
 
     const workingDir = path.resolve(this.config.workingDir);
-    if (!this.driver.validateInstallation(workingDir)) {
+    if (!this.driver.validateInstallation(workingDir, this.config.jarFile)) {
       this.fail('JAR_MISSING', `Server executable or valid installation not found at ${workingDir}.`);
       return;
     }

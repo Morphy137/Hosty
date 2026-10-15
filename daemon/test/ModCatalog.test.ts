@@ -50,3 +50,108 @@ describe('ModCatalog.search', () => {
     await expect(ModCatalog.search(source, { dir: '.' }, 'x')).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });
   });
 });
+
+describe('ModCatalog.fetchIcon', () => {
+  it('serves images from the catalog domain only', async () => {
+    await expect(ModCatalog.fetchIcon(source, 'https://evil.example.com/a.png')).rejects.toMatchObject({
+      code: 'INVALID_PAYLOAD'
+    });
+    await expect(ModCatalog.fetchIcon(source, 'http://cdn.modrinth.com/a.png')).rejects.toMatchObject({
+      code: 'INVALID_PAYLOAD'
+    });
+  });
+
+  it('returns the image bytes and refuses non-image answers', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(new Response('PNGDATA', { headers: { 'content-type': 'image/png' } }))
+    );
+    const icon = await ModCatalog.fetchIcon(source, 'https://cdn.modrinth.com/data/x/icon.png');
+    expect(icon.type).toBe('image/png');
+    expect(icon.data.toString()).toBe('PNGDATA');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(new Response('<html>', { headers: { 'content-type': 'text/html' } }))
+    );
+    await expect(ModCatalog.fetchIcon(source, 'https://cdn.modrinth.com/data/x/icon.png')).rejects.toMatchObject({
+      code: 'UPSTREAM_ERROR'
+    });
+  });
+});
+
+describe('ModCatalog filters and versions', () => {
+  const searchResponse = { total_hits: 0, offset: 0, hits: [] };
+  const lastUrl = (mock: ReturnType<typeof vi.fn>) => new URL(mock.mock.calls[mock.mock.calls.length - 1][0] as string);
+
+  it('applies sort, categories, environment and explicit loader / version overrides', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => searchResponse });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await ModCatalog.search(source, { dir: '.', loader: 'fabric', gameVersion: '1.21.1' }, 'map', 20, {
+      sort: 'downloads',
+      categories: ['utility', 'optimization'],
+      environment: 'server',
+      gameVersion: '1.20.4',
+      loader: 'paper'
+    });
+
+    const url = lastUrl(fetchMock);
+    expect(url.searchParams.get('index')).toBe('downloads');
+    expect(url.searchParams.get('offset')).toBe('20');
+    expect(JSON.parse(url.searchParams.get('facets') as string)).toEqual([
+      ['categories:paper', 'categories:spigot'],
+      ['versions:1.20.4'],
+      ['categories:utility'],
+      ['categories:optimization'],
+      ['server_side:required', 'server_side:optional']
+    ]);
+  });
+
+  it('treats null as "any" and omits those facets', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => searchResponse });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await ModCatalog.search(source, { dir: '.', loader: 'fabric', gameVersion: '1.21.1' }, '', 0, {
+      gameVersion: null,
+      loader: null
+    });
+    expect(lastUrl(fetchMock).searchParams.get('facets')).toBeNull();
+    expect(lastUrl(fetchMock).searchParams.get('index')).toBe('downloads');
+  });
+
+  it('lists versions filtered by the instance loader and version', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          id: 'v1',
+          name: 'Sodium 0.6',
+          version_number: '0.6.0',
+          version_type: 'beta',
+          game_versions: ['1.21.1'],
+          loaders: ['fabric'],
+          date_published: '2024-09-01T00:00:00Z',
+          downloads: 12,
+          files: [{ url: 'https://cdn.modrinth.com/a.jar', filename: 'sodium.jar', primary: true, size: 100 }]
+        },
+        { id: 'empty', files: [] }
+      ]
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const versions = await ModCatalog.listVersions(source, { dir: '.', loader: 'fabric', gameVersion: '1.21.1' }, 'AANobbMI');
+    expect(JSON.parse(lastUrl(fetchMock).searchParams.get('loaders') as string)).toEqual(['fabric']);
+    expect(JSON.parse(lastUrl(fetchMock).searchParams.get('game_versions') as string)).toEqual(['1.21.1']);
+    expect(versions).toHaveLength(1);
+    expect(versions[0]).toMatchObject({ id: 'v1', type: 'beta', filename: 'sodium.jar', versionNumber: '0.6.0' });
+  });
+
+  it('rejects malformed project and version ids', async () => {
+    await expect(ModCatalog.listVersions(source, { dir: '.' }, '../x')).rejects.toMatchObject({ code: 'INVALID_PAYLOAD' });
+    await expect(ModCatalog.install(source, { dir: '.' }, 'AANobbMI', '../../etc')).rejects.toMatchObject({
+      code: 'INVALID_PAYLOAD'
+    });
+  });
+});
+

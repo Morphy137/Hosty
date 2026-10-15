@@ -279,14 +279,14 @@
   },
   "import_server": {
     "modal_title": "Importar Servidor Existente",
-    "path_label": "Ruta de la Carpeta del Servidor",
-    "path_hint": "Ruta absoluta a una carpeta que contenga server.properties o server.jar.",
+    "path_label": "Ruta del archivo del servidor",
+    "path_hint": "Elige el archivo que inicia el servidor (por ejemplo server.jar, aunque tenga otro nombre). También puedes escribir la ruta de una carpeta.",
     "name_label": "Nombre del Servidor (opcional)",
     "submit_button": "Importar Servidor",
     "submitting": "Importando...",
     "display_name_placeholder": "Nombre personalizado (opcional)",
     "browse": "Examinar...",
-    "picker_title": "Selecciona la carpeta del servidor"
+    "picker_title": "Selecciona el archivo del servidor"
   },
   "properties": {
     "title": "Propiedades del Servidor",
@@ -585,6 +585,40 @@
     "load_more": "Cargar más",
     "installed": "{{name}} instalado",
     "install_failed": "No se pudo instalar {{name}}",
-    "restart_required": "Reinicia el servidor para cargarlo."
+    "restart_required": "Reinicia el servidor para cargarlo.",
+    "filters": "Filtros",
+    "reset": "Restablecer",
+    "sort_label": "Ordenar por",
+    "sort_default": "Por defecto",
+    "sort": {
+      "relevance": "Relevancia",
+      "downloads": "Descargas",
+      "follows": "Seguidores",
+      "newest": "Más recientes",
+      "updated": "Actualizados"
+    },
+    "loader": "Loader",
+    "game_version": "Versión del juego",
+    "any": "Cualquiera",
+    "server_default": "Este servidor ({{value}})",
+    "environment": "Entorno",
+    "env_any": "Cualquiera",
+    "env_server": "Servidor",
+    "env_client": "Cliente",
+    "categories": "Categorías",
+    "results": "{{count}} resultados",
+    "downloads": "descargas",
+    "updated": "actualizado {{date}}",
+    "install_latest": "Instalar última",
+    "versions": "Versiones",
+    "open_page": "Abrir página",
+    "loading_versions": "Cargando versiones...",
+    "versions_failed": "No se pudieron cargar las versiones.",
+    "no_versions": "Ninguna versión coincide con el loader y la versión del juego actuales.",
+    "type": {
+      "release": "Estable",
+      "beta": "Beta",
+      "alpha": "Alfa"
+    }
   }
 }

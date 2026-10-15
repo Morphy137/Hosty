@@ -279,14 +279,14 @@
   },
   "import_server": {
     "modal_title": "Import Existing Server",
-    "path_label": "Server Folder Path",
-    "path_hint": "Absolute path to a folder containing server.properties or server.jar.",
+    "path_label": "Server File Path",
+    "path_hint": "Choose the file that starts the server (for example server.jar, even if it was renamed). You can also type a folder path.",
     "name_label": "Display Name (optional)",
     "submit_button": "Import Server",
     "submitting": "Importing...",
     "display_name_placeholder": "Custom display name (optional)",
     "browse": "Browse...",
-    "picker_title": "Select the server folder"
+    "picker_title": "Select the server file"
   },
   "properties": {
     "title": "Server Properties",
@@ -585,6 +585,40 @@
     "load_more": "Load more",
     "installed": "{{name}} installed",
     "install_failed": "Could not install {{name}}",
-    "restart_required": "Restart the server to load it."
+    "restart_required": "Restart the server to load it.",
+    "filters": "Filters",
+    "reset": "Reset",
+    "sort_label": "Sort by",
+    "sort_default": "Default",
+    "sort": {
+      "relevance": "Relevance",
+      "downloads": "Downloads",
+      "follows": "Follows",
+      "newest": "Newest",
+      "updated": "Recently updated"
+    },
+    "loader": "Loader",
+    "game_version": "Game version",
+    "any": "Any",
+    "server_default": "This server ({{value}})",
+    "environment": "Environment",
+    "env_any": "Any",
+    "env_server": "Server",
+    "env_client": "Client",
+    "categories": "Categories",
+    "results": "{{count}} results",
+    "downloads": "downloads",
+    "updated": "updated {{date}}",
+    "install_latest": "Install latest",
+    "versions": "Versions",
+    "open_page": "Open page",
+    "loading_versions": "Loading versions...",
+    "versions_failed": "Could not load the versions.",
+    "no_versions": "No versions match the current loader and game version.",
+    "type": {
+      "release": "Release",
+      "beta": "Beta",
+      "alpha": "Alpha"
+    }
   }
 }

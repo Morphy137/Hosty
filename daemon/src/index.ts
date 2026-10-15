@@ -10,7 +10,7 @@ import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSupervisor';
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
-import { ModCatalog } from './provisioning/ModCatalog';
+import { ModCatalog, type ModSort } from './provisioning/ModCatalog';
 import { buildProvisionRunner } from './provisioning/InstallProviders';
 import { ModJarManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
@@ -438,19 +438,78 @@ app.get('/api/instances/:id/mods/sources', (req, res, next) => {
   }
 });
 
+const modContextOf = (instance: { dir: string; loader?: string; loaderVersion?: string }) => ({
+  dir: instance.dir,
+  loader: instance.loader,
+  gameVersion: instance.loaderVersion
+});
+
+/** `any` clears the filter (null); missing falls back to the instance's own loader / version. */
+const parseAnyFilter = (value: unknown): string | null | undefined => {
+  if (typeof value !== 'string' || value === '') return undefined;
+  return value === 'any' ? null : value;
+};
+
+app.get('/api/instances/:id/mods/facets', async (req, res, next) => {
+  try {
+    const { instance, source } = resolveModSource(req.params.id, req.query.source);
+    res.json({
+      ...(await ModCatalog.getFacets(source)),
+      instance: { loader: instance.loader ?? null, gameVersion: instance.loaderVersion ?? null }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/api/instances/:id/mods/search', async (req, res, next) => {
   try {
     const { instance, source } = resolveModSource(req.params.id, req.query.source);
     const query = typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '';
     const offset = Number(req.query.offset) || 0;
+    const sort = typeof req.query.sort === 'string' ? (req.query.sort as ModSort) : undefined;
+    const categories =
+      typeof req.query.categories === 'string'
+        ? req.query.categories.split(',').filter((entry) => /^[a-z0-9_-]{1,40}$/i.test(entry)).slice(0, 8)
+        : [];
+    const environment = req.query.environment === 'client' || req.query.environment === 'server' ? req.query.environment : undefined;
     res.json(
-      await ModCatalog.search(
-        source,
-        { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
-        query,
-        offset
-      )
+      await ModCatalog.search(source, modContextOf(instance), query, offset, {
+        sort,
+        categories,
+        environment,
+        gameVersion: parseAnyFilter(req.query.gameVersion),
+        loader: parseAnyFilter(req.query.loader)
+      })
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/instances/:id/mods/versions', async (req, res, next) => {
+  try {
+    const { instance, source } = resolveModSource(req.params.id, req.query.source);
+    const project = typeof req.query.project === 'string' ? req.query.project : '';
+    if (!project) throw new DaemonError('INVALID_PAYLOAD', 'project is required.');
+    res.json({
+      versions: await ModCatalog.listVersions(source, modContextOf(instance), project, {
+        gameVersion: parseAnyFilter(req.query.gameVersion),
+        loader: parseAnyFilter(req.query.loader)
+      })
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/instances/:id/mods/icon', async (req, res, next) => {
+  try {
+    const { source } = resolveModSource(req.params.id, req.query.source);
+    const url = typeof req.query.url === 'string' ? req.query.url : '';
+    const icon = await ModCatalog.fetchIcon(source, url);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.type(icon.type).send(icon.data);
   } catch (err) {
     next(err);
   }
@@ -458,14 +517,14 @@ app.get('/api/instances/:id/mods/search', async (req, res, next) => {
 
 app.post('/api/instances/:id/mods/install', async (req, res, next) => {
   try {
-    const { source: sourceId, projectId } = req.body as { source?: string; projectId?: string };
+    const { source: sourceId, projectId, versionId } = req.body as {
+      source?: string;
+      projectId?: string;
+      versionId?: string;
+    };
     if (!projectId) throw new DaemonError('INVALID_PAYLOAD', 'projectId is required.');
     const { instance, source } = resolveModSource(req.params.id, sourceId);
-    const installed = await ModCatalog.install(
-      source,
-      { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
-      projectId
-    );
+    const installed = await ModCatalog.install(source, modContextOf(instance), projectId, versionId);
     res.json({ ok: true, ...installed, restartRequired: registry.getSupervisor(instance.id)?.isRunning() ?? false });
   } catch (err) {
     next(err);
@@ -515,9 +574,9 @@ app.post('/api/instances/create', (req, res, next) => {
 
 app.post('/api/instances/inspect-folder', (req, res, next) => {
   try {
-    const { path: folderPath } = req.body as { path?: string };
+    const { path: folderPath, gameId } = req.body as { path?: string; gameId?: string };
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
-    res.json(inspectServerFolder(folderPath));
+    res.json(inspectServerFolder(folderPath, gameId));
   } catch (err) {
     next(err);
   }
@@ -529,7 +588,7 @@ app.post('/api/instances/import', (req, res, next) => {
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
 
     // Only folders a driver recognises can be imported: anything else would never start.
-    const inspection = inspectServerFolder(folderPath);
+    const inspection = inspectServerFolder(folderPath, gameId);
     if (!inspection.gameId) {
       throw new DaemonError('INVALID_FOLDER', 'This folder does not look like a supported game server.');
     }
@@ -540,9 +599,10 @@ app.post('/api/instances/import', (req, res, next) => {
       );
     }
 
-    const imported = instanceManager.importInstance(folderPath, name, inspection.gameId);
+    const imported = instanceManager.importInstance(inspection.path, name, inspection.gameId);
     const detected: Partial<InstanceSettings> = {
       gameId: inspection.gameId,
+      ...(inspection.launchFile ? { launchFile: inspection.launchFile } : {}),
       ...(inspection.loader ? { loader: inspection.loader } : {}),
       ...(inspection.mcVersion ? { loaderVersion: inspection.mcVersion } : {})
     };

@@ -33,6 +33,8 @@ export interface InstanceSettings {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
+  /** File the user chose to start the server (renamed jar, custom script); default launch otherwise. */
+  launchFile?: string;
   /** Values of the game's setup schema fields chosen at creation. */
   gameConfig?: Record<string, string | number | boolean>;
 }
@@ -58,6 +60,7 @@ export interface InstanceInfo {
   loader?: string;
   loaderVersion?: string;
   gameId: string;
+  launchFile?: string;
   gameConfig?: Record<string, string | number | boolean>;
   /** A bridge jar exists in plugins/ or mods/ (independent of a live connection). */
   bridgeInstalled?: boolean;
@@ -353,7 +356,7 @@ export class InstanceManager {
     }
 
     const stat = fs.statSync(dir);
-    const hasJar = driver.validateInstallation(dir);
+    const hasJar = driver.validateInstallation(dir, settings.launchFile);
     const hasIcon = fs.existsSync(path.join(dir, SERVER_ICON_FILE));
 
     return {
@@ -377,6 +380,7 @@ export class InstanceManager {
       loader: settings.loader,
       loaderVersion: settings.loaderVersion,
       gameId,
+      launchFile: settings.launchFile,
       // Instances created before `gameConfig` stored the Steam branch in a dedicated key.
       gameConfig: settings.gameConfig ?? legacyGameConfig(settings),
       bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(

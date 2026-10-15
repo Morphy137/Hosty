@@ -200,8 +200,41 @@ export interface ModSearchHit {
   description: string;
   author: string;
   downloads: number;
+  follows: number;
+  categories: string[];
   iconUrl: string | null;
   url: string | null;
+  updatedAt: string | null;
+}
+
+export interface ModVersionInfo {
+  id: string;
+  name: string;
+  versionNumber: string;
+  type: 'release' | 'beta' | 'alpha';
+  gameVersions: string[];
+  loaders: string[];
+  publishedAt: string;
+  downloads: number;
+  filename: string | null;
+  size: number | null;
+}
+
+export interface ModFacets {
+  sorts: Array<'relevance' | 'downloads' | 'follows' | 'newest' | 'updated'>;
+  categories: Array<{ id: string; name: string }>;
+  environments: Array<'client' | 'server'>;
+  gameVersions: string[];
+  loaders: string[];
+}
+
+/** Catalog filters; `loader` / `gameVersion` use 'instance' (server's own) or 'any'. */
+export interface CatalogFilters {
+  sort: '' | 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated';
+  loader: string;
+  gameVersion: string;
+  environment: '' | 'client' | 'server';
+  categories: string[];
 }
 
 export interface PlayerActionParam {
@@ -412,6 +445,8 @@ export interface JarInspection {
 
 export interface FolderInspection {
   path: string;
+  /** File picked to start the server (relative to `path`), null when a folder was chosen. */
+  launchFile?: string | null;
   suggestedName: string;
   gameId: string | null;
   loader: string | null;

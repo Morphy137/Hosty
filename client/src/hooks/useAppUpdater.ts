@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Update } from '@tauri-apps/plugin-updater';
 
+export type UpdateCheckResult =
+  | { status: 'available'; version: string }
+  | { status: 'up_to_date' }
+  | { status: 'error'; message: string };
+
 export interface AppUpdaterState {
   isChecking: boolean;
   updateAvailable: boolean;
@@ -10,7 +15,8 @@ export interface AppUpdaterState {
   downloadProgress: number; // 0 to 100
   downloadComplete: boolean;
   error: string | null;
-  checkForUpdates: () => Promise<void>;
+  /** Resolves with the outcome so a manual check can tell the user what happened. */
+  checkForUpdates: () => Promise<UpdateCheckResult>;
   installUpdate: () => Promise<void>;
   dismissUpdate: () => void;
 }
@@ -27,8 +33,8 @@ export function useAppUpdater(): AppUpdaterState {
 
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-  const checkForUpdates = useCallback(async () => {
-    if (!isTauri) return;
+  const checkForUpdates = useCallback(async (): Promise<UpdateCheckResult> => {
+    if (!isTauri) return { status: 'up_to_date' };
     setIsChecking(true);
     setError(null);
     try {
@@ -38,14 +44,16 @@ export function useAppUpdater(): AppUpdaterState {
         setAvailableUpdate(update);
         setUpdateVersion(update.version);
         setUpdateNotes(update.body ?? null);
-      } else {
-        setAvailableUpdate(null);
-        setUpdateVersion(null);
+        return { status: 'available', version: update.version };
       }
+      setAvailableUpdate(null);
+      setUpdateVersion(null);
+      return { status: 'up_to_date' };
     } catch (err: unknown) {
-      // In private repos or offline mode, check() might fail; catch silently on auto-check
+      // Offline, or the release feed is not reachable (e.g. a private repository).
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
+      return { status: 'error', message: msg };
     } finally {
       setIsChecking(false);
     }

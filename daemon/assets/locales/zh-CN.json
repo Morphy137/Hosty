@@ -282,14 +282,14 @@
   },
   "import_server": {
     "modal_title": "导入现有服务器",
-    "path_label": "服务器文件夹路径",
-    "path_hint": "包含 server.properties 或 server.jar 的文件夹的绝对路径。",
+    "path_label": "服务器文件路径",
+    "path_hint": "选择启动服务器的文件（例如 server.jar，即使已重命名）。也可以直接输入文件夹路径。",
     "name_label": "显示名称（可选）",
     "submit_button": "导入服务器",
     "submitting": "正在导入...",
     "display_name_placeholder": "自定义显示名称（可选）",
     "browse": "浏览...",
-    "picker_title": "选择服务器文件夹"
+    "picker_title": "选择服务器文件"
   },
   "properties": {
     "title": "服务器属性",
@@ -588,6 +588,40 @@
     "load_more": "加载更多",
     "installed": "{{name}} 已安装",
     "install_failed": "无法安装 {{name}}",
-    "restart_required": "重启服务器以加载。"
+    "restart_required": "重启服务器以加载。",
+    "filters": "筛选",
+    "reset": "重置",
+    "sort_label": "排序方式",
+    "sort_default": "默认",
+    "sort": {
+      "relevance": "相关度",
+      "downloads": "下载量",
+      "follows": "关注数",
+      "newest": "最新发布",
+      "updated": "最近更新"
+    },
+    "loader": "加载器",
+    "game_version": "游戏版本",
+    "any": "任意",
+    "server_default": "此服务器（{{value}}）",
+    "environment": "运行环境",
+    "env_any": "任意",
+    "env_server": "服务端",
+    "env_client": "客户端",
+    "categories": "分类",
+    "results": "{{count}} 个结果",
+    "downloads": "次下载",
+    "updated": "更新于 {{date}}",
+    "install_latest": "安装最新版",
+    "versions": "版本",
+    "open_page": "打开页面",
+    "loading_versions": "正在加载版本...",
+    "versions_failed": "无法加载版本列表。",
+    "no_versions": "没有与当前加载器和游戏版本匹配的版本。",
+    "type": {
+      "release": "正式版",
+      "beta": "测试版",
+      "alpha": "内测版"
+    }
   }
 }
