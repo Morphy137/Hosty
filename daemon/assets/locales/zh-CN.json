@@ -90,11 +90,11 @@
     "console": {
       "title": "实时终端",
       "clear": "清除",
-      "placeholder": "输入命令（例如 say 你好、give @p diamond）...",
+      "placeholder": "输入控制台命令...",
       "send": "发送"
     },
     "copy_ip_title": "点击复制 IP",
-    "console_source": "stdout — server.jar",
+    "console_source": "stdout",
     "console_ready": "就绪。正在等待进程输出..."
   },
   "players": {
@@ -256,22 +256,6 @@
       "review": "检查配置参数并创建服务器。"
     },
     "game_engine_label": "游戏服务器引擎",
-    "game_minecraft_desc": "Mojang、Fabric、Paper、Purpur、Forge、NeoForge",
-    "game_zomboid_desc": "SteamCMD 专用服务器 (AppID 380870)",
-    "game_hytale_desc": "即将推出的体素冒险沙盒",
-    "zomboid_info_title": "Project Zomboid 专用服务器",
-    "zomboid_info_desc": "通过 SteamCMD AppID 380870 和 servertest.ini 管理。默认端口 16261 (UDP/TCP)。",
-    "hytale_info_title": "Hytale 专用服务器",
-    "hytale_info_desc": "已按 Hytale 运行时配置，端口 25565。服务端程序发布后即可启动。",
-    "install_method_label": "安装方式",
-    "install_auto": "自动下载",
-    "install_auto_desc": "自动获取并配置服务端程序",
-    "install_custom": "自定义安装",
-    "install_custom_desc": "附加自定义 jar、安装器或手动可执行文件",
-    "zomboid_branch_label": "SteamCMD 分支",
-    "zomboid_branch_stable": "公开版本 (Build 41+)",
-    "zomboid_branch_unstable": "不稳定 / 测试分支",
-    "hytale_mode_notice": "Hypixel Studios 发布公开服务端工具后，服务端程序将自动关联。你也可以指定自定义路径。",
     "summary_title": "配置摘要",
     "summary_game": "游戏引擎",
     "summary_engine": "服务端软件",
@@ -517,11 +501,6 @@
       "available": "可用",
       "beta": "测试版",
       "coming_soon": "即将推出"
-    },
-    "game_desc": {
-      "minecraft": "Mojang、Fabric、Paper、Purpur、Forge、NeoForge",
-      "project-zomboid": "SteamCMD 专用服务器 (AppID 380870)",
-      "hytale": "即将推出的体素冒险沙盒"
     },
     "setup_nothing": "{{game}} 无需额外设置。",
     "use_own_jar": "使用我自己的 .jar（自动识别加载器）",

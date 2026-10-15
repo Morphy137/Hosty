@@ -50,6 +50,11 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `defaults.memoryMb` | | Default heap offered when creating a server ("Default: X GB"). |
 | `jvmFlagPresets` | | Recommended JVM flag sets shown in the server editor (`id`, `label`, `description`, `flags`, `recommendedFor`). |
 | `modSources` | | Mod catalogs the server can search and install from (Modrinth-compatible API). |
+| `playerActions` | | Actions an operator can run on an online player: `{ id, label, command, params?, danger? }`. `{{player}}` and `{{paramId}}` are replaced; params render as a form. |
+| `creationSettings` | | Choices shown when creating a server and written to a config file: `{ id, label, type, options?, default?, file, key }`. |
+| `quickCommands` | | `{ label, command }` shortcuts shown above the console. |
+| `playerView` | | What the player list shows: `dimensions`, `coordinates`, `vitals` and an `avatarUrl` template. |
+| `playerPanel` | | Bundled packs only: id of a rich players panel registered by the app; packs without it get the generic list built from `playerActions`. |
 | `setup[].type: "custom"` | | Renders a component registered by the app (`component` id); used by the Minecraft loader installer. |
 
 ### Launch placeholders

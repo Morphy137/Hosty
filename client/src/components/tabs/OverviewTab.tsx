@@ -24,7 +24,17 @@ import {
   VolumeX,
   Package
 } from 'lucide-react';
-import type { DaemonAction, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
+import type {
+  DaemonAction,
+  InstanceInfo,
+  Metrics,
+  PlayerActionSpec,
+  PlayerState,
+  PlayerView,
+  ServerStatus
+} from '../../types/daemon';
+import { PlayerActionButtons } from '../players/PlayerActionButtons';
+import { playerAvatarUrl } from '../../utils/playerActions';
 import { calculateRamPercent, formatDimensionName } from '../../utils/format';
 import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
 import { DimensionIcon } from '../common/DimensionIcon';
@@ -50,14 +60,13 @@ interface OverviewTabProps {
   history?: MetricsHistory;
   /** Display name of the instance's game (from the driver summary). */
   gameName?: string;
+  /** Console shortcuts declared by the game. */
+  quickCommands?: Array<{ label: string; command: string }>;
+  /** The game registered a rich players panel (otherwise declared `playerActions` are used). */
+  richPlayers?: boolean;
+  playerActions?: PlayerActionSpec[];
+  playerView?: PlayerView;
 }
-
-const QUICK_COMMANDS = [
-  { label: 'weather clear', cmd: 'weather clear' },
-  { label: 'time set day', cmd: 'time set day' },
-  { label: 'save-all', cmd: 'save-all' },
-  { label: 'list', cmd: 'list' }
-];
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   metrics,
@@ -71,7 +80,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onRestart,
   onInspectInventory,
   history,
-  gameName
+  gameName,
+  quickCommands = [],
+  richPlayers = false,
+  playerActions = [],
+  playerView
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
@@ -424,6 +437,39 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               filteredOverviewPlayers.map((p) => {
                 const dimLabel = formatDimensionName(p.dimension, t);
 
+                if (!richPlayers) {
+                  const avatar = playerAvatarUrl(playerView?.avatarUrl, p.username);
+                  return (
+                    <div key={p.username} className="animate-in space-y-2 p-4 transition hover:bg-surface-2">
+                      <div className="flex items-center gap-3">
+                        {avatar ? (
+                          <img src={avatar} alt="" className="h-9 w-9 rounded-[6px] border border-hairline" />
+                        ) : (
+                          <span className="flex h-9 w-9 items-center justify-center rounded-[6px] bg-surface-3 text-[13px] font-semibold text-ink">
+                            {p.username.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <div className="truncate text-[14px] font-medium text-ink">{p.username}</div>
+                          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-mute">
+                            {playerView?.dimensions && <span>{dimLabel}</span>}
+                            {playerView?.coordinates && (
+                              <span>
+                                {p.x}, {p.y}, {p.z}
+                              </span>
+                            )}
+                            {playerView?.vitals && p.health !== undefined && <span>{p.health} HP</span>}
+                            {p.ping !== undefined && <span>{p.ping}ms</span>}
+                          </div>
+                        </div>
+                      </div>
+                      {playerActions.length > 0 && (
+                        <PlayerActionButtons player={p} actions={playerActions} onExecute={onSendCommand} />
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={p.username}
@@ -564,11 +610,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              {QUICK_COMMANDS.map((item) => (
+              {quickCommands.map((item) => (
                 <button
-                  key={item.cmd}
+                  key={item.command}
                   type="button"
-                  onClick={() => onSendCommand(item.cmd)}
+                  onClick={() => onSendCommand(item.command)}
                   className="px-2 py-0.5 rounded-[4px] bg-white/10 hover:bg-white/20 font-mono text-[11px] text-white/50 hover:text-white transition cursor-pointer"
                 >
                   {item.label}

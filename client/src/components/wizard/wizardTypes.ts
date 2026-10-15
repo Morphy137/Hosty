@@ -31,8 +31,8 @@ export interface WizardDraft {
   maxPlayers: number;
   port: number;
   ramMb: number;
-  gamemode: 'survival' | 'creative' | 'adventure' | 'spectator';
-  difficulty: 'peaceful' | 'easy' | 'normal' | 'hard';
+  /** Values of the game's `creationSettings`, written to its config files after creation. */
+  creationValues: Record<string, string>;
   iconBase64: string | null;
   /** Install the Telemetry Bridge right after creation (when the loader supports it). */
   installBridge: boolean;
@@ -52,8 +52,7 @@ export const INITIAL_DRAFT: WizardDraft = {
   maxPlayers: 20,
   port: 25565,
   ramMb: 4096,
-  gamemode: 'survival',
-  difficulty: 'normal',
+  creationValues: {},
   iconBase64: null,
   installBridge: true
 };

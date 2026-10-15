@@ -7,6 +7,12 @@ import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 
 const defaultGameId = (): string => driverRegistry.getDefaultGameId();
 
+/** Pre-0.2.1 instances kept the Steam branch in `pzBranch`; it now lives in `gameConfig`. */
+const legacyGameConfig = (settings: object): Record<string, string> | undefined => {
+  const legacy = (settings as { pzBranch?: unknown }).pzBranch;
+  return typeof legacy === 'string' ? { pzBranch: legacy } : undefined;
+};
+
 export interface InstanceSettings {
   name?: string;
   motd?: string;
@@ -23,8 +29,6 @@ export interface InstanceSettings {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
-  /** Project Zomboid Steam branch (stable / unstable) chosen at creation. */
-  pzBranch?: string;
   /** Values of the game's setup schema fields chosen at creation. */
   gameConfig?: Record<string, string | number | boolean>;
 }
@@ -50,7 +54,6 @@ export interface InstanceInfo {
   loader?: string;
   loaderVersion?: string;
   gameId: string;
-  pzBranch?: string;
   gameConfig?: Record<string, string | number | boolean>;
   /** A bridge jar exists in plugins/ or mods/ (independent of a live connection). */
   bridgeInstalled?: boolean;
@@ -193,7 +196,6 @@ export class InstanceManager {
       loader: customSettings?.loader,
       loaderVersion: customSettings?.loaderVersion,
       gameId,
-      pzBranch: customSettings?.pzBranch,
       gameConfig: customSettings?.gameConfig
     };
 
@@ -369,8 +371,8 @@ export class InstanceManager {
       loader: settings.loader,
       loaderVersion: settings.loaderVersion,
       gameId,
-      pzBranch: settings.pzBranch,
-      gameConfig: settings.gameConfig,
+      // Instances created before `gameConfig` stored the Steam branch in a dedicated key.
+      gameConfig: settings.gameConfig ?? legacyGameConfig(settings),
       bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(dir),
       bridgeSupported: (driver.summary.bridgeLoaders ?? []).length > 0 && (!settings.loader || (driver.summary.bridgeLoaders ?? []).includes(settings.loader))
     };

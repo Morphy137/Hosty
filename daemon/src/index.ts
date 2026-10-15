@@ -746,27 +746,6 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
   }
 });
 
-// Server Properties API
-app.get('/api/properties', (_req, res, next) => {
-  try {
-    res.json(hasActiveInstance() ? PropertiesParser.parseFile(getActiveDir()) : []);
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.post('/api/properties', (req, res, next) => {
-  try {
-    const updates = parseConfigUpdates(req.body);
-    PropertiesParser.saveFile(getActiveDir(), updates);
-    broadcast('CONSOLE', '[Hypervisor] server.properties updated on disk.\r\n');
-    res.json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Physical Mods .jar Files API
 app.get('/api/mods/files', (_req, res, next) => {
   try {
     res.json(hasActiveInstance() ? ModJarManager.listModFiles(getActiveDir()) : []);
@@ -1037,7 +1016,9 @@ app.post('/api/instances/:id/provision', (req, res, next) => {
     if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" does not exist.`);
 
     const provision = driverRegistry.getDriver(instance.gameId).summary.provision;
-    const branch = (instance.gameConfig?.pzBranch as string | undefined) ?? instance.pzBranch;
+    const branchField = provision?.type === 'steamcmd' ? provision.branchField : undefined;
+    const branchValue = branchField ? instance.gameConfig?.[branchField] : undefined;
+    const branch = typeof branchValue === 'string' ? branchValue : undefined;
     // The game declares how its server files are obtained (steamcmd, download...); core only dispatches.
     const runner = buildProvisionRunner(provision, {
       instanceDir: instance.dir,

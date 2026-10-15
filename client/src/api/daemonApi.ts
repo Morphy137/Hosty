@@ -274,13 +274,6 @@ export function getInstanceIconUrl(id: string): string {
 }
 
 // Properties
-export function fetchServerProperties(): Promise<ConfigEntry[]> {
-  return request<ConfigEntry[]>('/api/properties');
-}
-
-export async function saveServerProperties(entries: ConfigEntry[]): Promise<void> {
-  await postJson<unknown>('/api/properties', toConfigPayload(entries));
-}
 
 // Physical Mods .jar Files
 export function fetchModFiles(): Promise<ModFileInfo[]> {

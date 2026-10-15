@@ -31,9 +31,7 @@ export const usesLoaderInstall = (game: GameDriverSummary | undefined): boolean 
 /** Derives the instance settings shared by every creation path from the wizard draft. */
 export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummary | undefined): Partial<InstanceSettings> {
   const isMinecraftLike = Boolean(game?.configSync);
-  const isProvisioned = game?.provision?.type === 'steamcmd';
   const gameConfig = Object.keys(draft.setupValues).length > 0 ? { ...draft.setupValues } : undefined;
-  const branch = draft.setupValues.pzBranch;
 
   return {
     gameId: draft.gameId,
@@ -42,8 +40,7 @@ export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummar
     minRamMb: defaultMinRamMb(draft.ramMb),
     maxRamMb: draft.ramMb,
     ...(isMinecraftLike && draft.motd.trim() ? { motd: draft.motd.trim() } : {}),
-    ...(gameConfig ? { gameConfig } : {}),
-    ...(isProvisioned && (branch === 'stable' || branch === 'unstable') ? { pzBranch: branch } : {})
+    ...(gameConfig ? { gameConfig } : {})
   };
 }
 

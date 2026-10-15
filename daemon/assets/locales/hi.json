@@ -90,11 +90,11 @@
     "console": {
       "title": "लाइव टर्मिनल",
       "clear": "साफ़ करें",
-      "placeholder": "कमांड लिखें (जैसे say नमस्ते, give @p diamond)...",
+      "placeholder": "कंसोल कमांड लिखें...",
       "send": "भेजें"
     },
     "copy_ip_title": "IP कॉपी करने के लिए क्लिक करें",
-    "console_source": "stdout — server.jar",
+    "console_source": "stdout",
     "console_ready": "तैयार। प्रोसेस आउटपुट की प्रतीक्षा है..."
   },
   "players": {
@@ -256,22 +256,6 @@
       "review": "कॉन्फ़िगरेशन जाँचें और सर्वर बनाएँ।"
     },
     "game_engine_label": "गेम सर्वर इंजन",
-    "game_minecraft_desc": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-    "game_zomboid_desc": "SteamCMD डेडिकेटेड सर्वर (AppID 380870)",
-    "game_hytale_desc": "आने वाला वॉक्सेल एडवेंचर सैंडबॉक्स",
-    "zomboid_info_title": "Project Zomboid डेडिकेटेड सर्वर",
-    "zomboid_info_desc": "SteamCMD AppID 380870 और servertest.ini से प्रबंधित। डिफ़ॉल्ट पोर्ट 16261 (UDP/TCP)।",
-    "hytale_info_title": "Hytale डेडिकेटेड सर्वर",
-    "hytale_info_desc": "Hytale रनटाइम के लिए पोर्ट 25565 के साथ कॉन्फ़िगर। सर्वर बाइनरी जारी होते ही शुरू करने के लिए तैयार।",
-    "install_method_label": "इंस्टॉलेशन का तरीका",
-    "install_auto": "स्वचालित डाउनलोड",
-    "install_auto_desc": "सर्वर बाइनरी अपने आप डाउनलोड और सेट अप करें",
-    "install_custom": "कस्टम इंस्टॉलेशन",
-    "install_custom_desc": "कस्टम jar, इंस्टॉलर या मैनुअल एक्ज़ीक्यूटेबल जोड़ें",
-    "zomboid_branch_label": "SteamCMD ब्रांच",
-    "zomboid_branch_stable": "सार्वजनिक रिलीज़ (Build 41+)",
-    "zomboid_branch_unstable": "अस्थिर / बीटा ब्रांच",
-    "hytale_mode_notice": "Hypixel Studios द्वारा सार्वजनिक सर्वर टूल जारी करने पर सर्वर बाइनरी अपने आप जुड़ जाएँगी। आप कस्टम पथ भी दे सकते हैं।",
     "summary_title": "कॉन्फ़िगरेशन सारांश",
     "summary_game": "गेम इंजन",
     "summary_engine": "सर्वर सॉफ़्टवेयर",
@@ -517,11 +501,6 @@
       "available": "उपलब्ध",
       "beta": "बीटा",
       "coming_soon": "जल्द आ रहा है"
-    },
-    "game_desc": {
-      "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-      "project-zomboid": "SteamCMD डेडिकेटेड सर्वर (AppID 380870)",
-      "hytale": "आने वाला वॉक्सेल एडवेंचर सैंडबॉक्स"
     },
     "setup_nothing": "{{game}} के लिए किसी अतिरिक्त सेटअप की ज़रूरत नहीं है।",
     "use_own_jar": "मेरी अपनी .jar इस्तेमाल करें (लोडर अपने आप पहचाना जाता है)",

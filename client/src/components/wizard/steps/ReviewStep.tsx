@@ -21,6 +21,15 @@ interface ReviewStepProps {
   update: (patch: Partial<WizardDraft>) => void;
 }
 
+/** Short description of how a provisioned game is installed (e.g. "SteamCMD (unstable)"). */
+const provisionLabel = (game: GameDriverSummary | undefined, draft: WizardDraft): string | null => {
+  const provision = game?.provision;
+  if (!provision || provision.type === 'none') return null;
+  if (provision.type === 'download') return 'Download';
+  const branch = provision.branchField ? draft.setupValues[provision.branchField] : undefined;
+  return branch ? `SteamCMD (${String(branch)})` : 'SteamCMD';
+};
+
 const PHASES: ProvisionPhase[] = ['resolve', 'download', 'install', 'configure'];
 
 export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job, logs, error, onCancel, update }) => {
@@ -35,9 +44,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job
       ? usesJar
         ? install.jarFile?.name ?? t('create_server.engine_custom_jar')
         : `${LOADER_METADATA[install.loader].name} ${install.version}`
-      : (draft.setupValues.pzBranch as string | undefined)
-        ? `SteamCMD (${String(draft.setupValues.pzBranch)})`
-        : t('create_server.engine_native');
+      : provisionLabel(game, draft) ?? t('create_server.engine_native');
 
   const rows: Array<[string, string]> = [
     [t('create_server.summary_game'), game?.name ?? draft.gameId],

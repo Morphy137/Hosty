@@ -82,7 +82,7 @@ describe('buildCreationPlan', () => {
     );
     expect(plan.kind).toBe('create');
     if (plan.kind === 'create') {
-      expect(plan.settings).toMatchObject({ pzBranch: 'unstable', gameConfig: { pzBranch: 'unstable' } });
+      expect(plan.settings).toMatchObject({ gameConfig: { pzBranch: 'unstable' } });
       expect(plan.settings.motd).toBeUndefined();
     }
   });

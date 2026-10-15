@@ -16,7 +16,8 @@
   },
   "provision": {
     "type": "steamcmd",
-    "appId": 380870
+    "appId": 380870,
+    "branchField": "pzBranch"
   },
   "launch": {
     "runtime": "native",

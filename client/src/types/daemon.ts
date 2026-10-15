@@ -162,7 +162,6 @@ export interface InstanceSettings {
   loaderVersion?: string;
   gameId?: string;
   /** Project Zomboid Steam branch chosen at creation time. */
-  pzBranch?: 'stable' | 'unstable';
   /** Values of the game's setup schema fields chosen at creation. */
   gameConfig?: Record<string, string | number | boolean>;
 }
@@ -205,6 +204,39 @@ export interface ModSearchHit {
   url: string | null;
 }
 
+export interface PlayerActionParam {
+  id: string;
+  label: LocalizedText;
+  type: 'text' | 'number' | 'select';
+  default?: string | number;
+  options?: Array<{ value: string; label: LocalizedText }>;
+}
+
+export interface PlayerActionSpec {
+  id: string;
+  label: LocalizedText;
+  command: string;
+  params?: PlayerActionParam[];
+  danger?: boolean;
+}
+
+export interface CreationSetting {
+  id: string;
+  label: LocalizedText;
+  type: 'select' | 'text' | 'number';
+  options?: Array<{ value: string; label: LocalizedText }>;
+  default?: string | number;
+  file: string;
+  key: string;
+}
+
+export interface PlayerView {
+  dimensions?: boolean;
+  coordinates?: boolean;
+  vitals?: boolean;
+  avatarUrl?: string;
+}
+
 export interface JvmFlagPreset {
   id: string;
   label: string;
@@ -231,6 +263,12 @@ export interface GameDriverSummary {
   capabilities: GameCapabilities;
   configFiles: ConfigFileInfo[];
   launchDefaults?: { memoryMb?: number };
+  playerActions?: PlayerActionSpec[];
+  creationSettings?: CreationSetting[];
+  quickCommands?: Array<{ label: string; command: string }>;
+  playerView?: PlayerView;
+  /** Id of a rich players panel the app registers for this game (bundled packs only). */
+  playerPanel?: string;
   /** Config file kept in sync with port / motd / player limit (also marks games with those settings). */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   bridgeLoaders?: string[];
@@ -241,7 +279,7 @@ export interface GameDriverSummary {
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;
   descriptionI18n?: Record<string, string>;
-  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number } | { type: 'download'; url: string; filename?: string; sha256?: string };
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number; branchField?: string } | { type: 'download'; url: string; filename?: string; sha256?: string };
 }
 
 export interface GameCapabilities {
