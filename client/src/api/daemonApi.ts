@@ -11,6 +11,7 @@ import type {
   InstanceSettings,
   GameDriverSummary,
   JarInspection,
+  FolderInspection,
   ProvisionJobState
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
@@ -116,6 +117,17 @@ export function createInstance(
 
 export function fetchSupportedGames(): Promise<{ games: GameDriverSummary[] }> {
   return request<{ games: GameDriverSummary[] }>('/api/games');
+}
+
+/** Whether a TCP port is already bound on this machine. */
+export async function isPortInUse(port: number): Promise<boolean> {
+  const response = await request<{ port: number; inUse: boolean }>(`/api/system/ports/${port}`);
+  return response.inUse;
+}
+
+/** Identifies the game and loader of an existing server folder. */
+export function inspectFolder(folderPath: string): Promise<FolderInspection> {
+  return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath });
 }
 
 export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {

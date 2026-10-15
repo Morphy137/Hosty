@@ -158,6 +158,23 @@ export interface InstanceSettings {
   gameId?: string;
   /** Project Zomboid Steam branch chosen at creation time. */
   pzBranch?: 'stable' | 'unstable';
+  /** Values of the game's setup schema fields chosen at creation. */
+  gameConfig?: Record<string, string | number | boolean>;
+}
+
+export type GameAvailability = 'available' | 'beta' | 'coming_soon';
+
+/** One input of a game's setup step, rendered from data. */
+export interface SetupField {
+  id: string;
+  type: 'select' | 'text' | 'secret' | 'number' | 'toggle' | 'custom';
+  labelKey: string;
+  descriptionKey?: string;
+  options?: Array<{ value: string; labelKey: string }>;
+  default?: string | number | boolean;
+  required?: boolean;
+  /** For `custom` fields: key of a client-registered component. */
+  component?: string;
 }
 
 export interface GameDriverSummary {
@@ -173,6 +190,8 @@ export interface GameDriverSummary {
   configFileName: string;
   badge: string;
   description: string;
+  status: GameAvailability;
+  setupSchema: SetupField[];
 }
 
 export interface InstanceInfo {
@@ -272,4 +291,15 @@ export interface JarInspection {
   mcVersion: string | null;
   loaderVersion: string | null;
   kind: JarKind;
+}
+
+export interface FolderInspection {
+  path: string;
+  suggestedName: string;
+  gameId: string | null;
+  loader: string | null;
+  mcVersion: string | null;
+  port: number | null;
+  motd: string | null;
+  maxPlayers: number | null;
 }

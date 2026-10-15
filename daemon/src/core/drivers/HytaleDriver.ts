@@ -37,7 +37,9 @@ export class HytaleDriver implements IGameDriver {
     supportsCustomJava: true,
     configFileName: 'config.json',
     badge: 'HY',
-    description: 'Hytale Dedicated Server (Engine Spec & Preview)'
+    description: 'Hytale Dedicated Server (Engine Spec & Preview)',
+    status: 'coming_soon',
+    setupSchema: []
   };
 
   public validateInstallation(instanceDir: string): boolean {

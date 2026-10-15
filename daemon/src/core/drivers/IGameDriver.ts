@@ -1,3 +1,19 @@
+export type GameAvailability = 'available' | 'beta' | 'coming_soon';
+
+/** One input of a game's setup step, rendered by the client from data (no per-game UI code). */
+export interface SetupField {
+  id: string;
+  type: 'select' | 'text' | 'secret' | 'number' | 'toggle' | 'custom';
+  /** i18n key (client) for the label. */
+  labelKey: string;
+  descriptionKey?: string;
+  options?: Array<{ value: string; labelKey: string }>;
+  default?: string | number | boolean;
+  required?: boolean;
+  /** For `custom` fields: key of a client-registered component that renders the field. */
+  component?: string;
+}
+
 export interface GameDriverSummary {
   id: string;
   name: string;
@@ -11,6 +27,8 @@ export interface GameDriverSummary {
   configFileName: string;
   badge: string;
   description: string;
+  status: GameAvailability;
+  setupSchema: SetupField[];
 }
 
 export interface ParsedLogEvent {

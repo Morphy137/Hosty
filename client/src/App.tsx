@@ -31,8 +31,8 @@ import { PlayersTab } from './components/tabs/PlayersTab';
 import { ModFilesTab } from './components/tabs/ModFilesTab';
 import { PropertiesTab } from './components/tabs/PropertiesTab';
 import { ModsTab } from './components/tabs/ModsTab';
-import { CreateServerModal } from './components/modals/CreateServerModal';
-import { ImportServerModal } from './components/modals/ImportServerModal';
+import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
+import type { WizardOrigin } from './components/wizard/wizardTypes';
 import { EditServerModal } from './components/modals/EditServerModal';
 import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
 import { WelcomeEmptyState } from './components/common/WelcomeEmptyState';
@@ -45,8 +45,9 @@ export default function App() {
   const updater = useAppUpdater();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [wizard, setWizard] = useState<{ open: boolean; origin: WizardOrigin }>({ open: false, origin: 'create' });
+  const openWizard = useCallback((origin: WizardOrigin) => setWizard({ open: true, origin }), []);
+  const closeWizard = useCallback(() => setWizard((current) => ({ ...current, open: false })), []);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [inspectingPlayer, setInspectingPlayer] = useState<PlayerState | null>(null);
 
@@ -209,18 +210,36 @@ export default function App() {
     }
   }, [handleError, provisionJob]);
 
-  const handleImportServer = useCallback(
-    async (folderPath: string, name?: string) => {
+  const wizardActions: WizardActions = {
+    install: async (params) => handleCreateServer(params),
+    uploadJar: async (params) => handleUploadServerJar(params),
+    createInstance: async (id, name, settings) => {
       try {
-        const imported = await instances.importInstance(folderPath, name);
-        await instances.selectInstance(imported.id);
+        const created = await instances.createInstance(id, name, settings);
+        await instances.selectInstance(created.id);
+        return created.id;
       } catch (err) {
         handleError(err);
         throw err;
       }
     },
-    [handleError, instances]
-  );
+    importInstance: async (folderPath, name) => {
+      try {
+        const imported = await instances.importInstance(folderPath, name);
+        await instances.selectInstance(imported.id);
+        return imported.id;
+      } catch (err) {
+        handleError(err);
+        throw err;
+      }
+    }
+  };
+
+  const handleWizardFinish = (instanceId: string, start: boolean) => {
+    void instances.selectInstance(instanceId).then(() => {
+      if (start) sendAction('START');
+    });
+  };
 
   return (
     <div className="h-screen w-screen flex flex-col bg-canvas text-ink select-none overflow-hidden transition-colors">
@@ -234,8 +253,8 @@ export default function App() {
           onSelectInstance={(id) => {
             void instances.selectInstance(id);
           }}
-          onCreate={() => setIsCreateModalOpen(true)}
-          onImport={() => setIsImportModalOpen(true)}
+          onCreate={() => openWizard('create')}
+          onImport={() => openWizard('import')}
           theme={theme}
           onToggleTheme={toggleTheme}
           appVersion={appVersion}
@@ -270,8 +289,8 @@ export default function App() {
                 </div>
               ) : (
                 <WelcomeEmptyState
-                  onCreateServer={() => setIsCreateModalOpen(true)}
-                  onImportServer={() => setIsImportModalOpen(true)}
+                  onCreateServer={() => openWizard('create')}
+                  onImportServer={() => openWizard('import')}
                 />
               )
             ) : (
@@ -346,21 +365,18 @@ export default function App() {
         </div>
       </div>
 
-      {/* Creation, Import, and Edit Modals */}
-      <CreateServerModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onInstall={handleCreateServer}
-        onUploadJar={handleUploadServerJar}
+      {/* Creation wizard (create + import) and edit modal */}
+      <CreateServerWizard
+        isOpen={wizard.open}
+        initialOrigin={wizard.origin}
+        onClose={closeWizard}
+        games={games}
+        instances={instances.instances}
+        actions={wizardActions}
         provisionLogs={provisionLogs}
         provisionJob={provisionJob}
         onCancelInstall={handleCancelInstall}
-      />
-
-      <ImportServerModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImport={handleImportServer}
+        onFinish={handleWizardFinish}
       />
 
       <EditServerModal

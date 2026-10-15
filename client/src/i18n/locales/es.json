@@ -442,5 +442,80 @@
   "toast": {
     "saved": "Cambios guardados",
     "command_sent": "Comando enviado"
+  },
+  "wizard": {
+    "steps": {
+      "origin": "Origen",
+      "game": "Juego",
+      "setup": "Configuración",
+      "customize": "Personalizar",
+      "review": "Instalar"
+    },
+    "step_desc": {
+      "origin": "Crea un servidor nuevo o importa uno que ya tengas.",
+      "game": "Elige el juego que ejecutará este servidor.",
+      "setup": "Configura el software del servidor para este juego.",
+      "customize": "Ponle nombre, ajusta los recursos y hazlo tuyo.",
+      "review": "Revisa la configuración e instala."
+    },
+    "origin_create_title": "Crear un servidor nuevo",
+    "origin_create_desc": "Elige un juego, descarga los archivos del servidor automáticamente y personaliza todo.",
+    "origin_import_title": "Importar un servidor existente",
+    "origin_import_desc": "Añade una carpeta de servidor que ya está en este PC. El juego y el loader se detectan solos.",
+    "import_detecting": "Analizando la carpeta...",
+    "import_detected": "Detectado: {{game}} · {{loader}} · {{version}}",
+    "import_unknown": "Carpeta encontrada, pero no se pudo identificar el juego. Se importará como Minecraft.",
+    "game_status": {
+      "available": "Disponible",
+      "beta": "Beta",
+      "coming_soon": "Próximamente"
+    },
+    "game_desc": {
+      "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
+      "project-zomboid": "Servidor dedicado por SteamCMD (AppID 380870)",
+      "hytale": "Próximo sandbox de aventura voxel"
+    },
+    "setup_nothing": "{{game}} no necesita configuración adicional.",
+    "use_own_jar": "Usar mi propio .jar (el loader se detecta automáticamente)",
+    "version_search": "Buscar versiones...",
+    "version_none": "No hay versiones disponibles.",
+    "java_outdated_title": "Java {{installed}} es demasiado antiguo",
+    "java_required_desc": "Esta versión de Minecraft necesita Java {{required}} o superior.",
+    "java_download": "Descargar Java {{version}}",
+    "java_ok": "Java {{installed}} detectado (necesita {{required}}+)",
+    "icon_choose": "Elegir un icono",
+    "icon_hint": "Sirve cualquier imagen: se recorta y redimensiona a 64×64 automáticamente.",
+    "motd_hint": "Usa códigos § o & para colores (p. ej. §aVerde §lNegrita).",
+    "ram_system": "Este PC tiene {{total}} GB de RAM",
+    "ram_system_unknown": "Memoria del sistema desconocida",
+    "ram_recommended": "Usar la recomendada ({{value}} GB)",
+    "ram_min_hint": "Memoria inicial (-Xms): {{min}} MB",
+    "gamemode": "Modo de juego",
+    "difficulty": "Dificultad",
+    "gamemodes": {
+      "survival": "Supervivencia",
+      "creative": "Creativo",
+      "adventure": "Aventura",
+      "spectator": "Espectador"
+    },
+    "difficulties": {
+      "peaceful": "Pacífico",
+      "easy": "Fácil",
+      "normal": "Normal",
+      "hard": "Difícil"
+    },
+    "advanced": "Avanzado",
+    "port_taken_instance": "Otro de tus servidores ya usa este puerto.",
+    "port_in_use": "Este puerto está en uso por otro programa de este PC.",
+    "default_name": "Mi servidor de {{game}}",
+    "default_motd": "Un servidor de {{game}}",
+    "summary_source": "Carpeta de origen",
+    "warn_icon": "El servidor se creó, pero no se pudo guardar el icono.",
+    "warn_properties": "El servidor se creó, pero no se pudieron aplicar el modo de juego y la dificultad.",
+    "cancelled": "Instalación cancelada",
+    "done_title": "{{name}} está listo",
+    "done_desc": "Tu servidor fue creado. Puedes iniciarlo ahora o abrir su panel para seguir configurándolo.",
+    "start_now": "Iniciar servidor ahora",
+    "open_panel": "Abrir panel"
   }
 }
