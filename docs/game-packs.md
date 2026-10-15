@@ -45,7 +45,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `i18n` | | Extra UI strings `{ "en": { "key": "text" } }`. |
 | `launch.discover` | | Entry points only known after installation: `{ glob, platform?, exclude?, mode?, args? }`. First match wins; `{{match}}` is the matched relative path; an arg `{ "arg", "ifExists" }` is included only when that file exists. |
 | `playerQueries` | | Commands sent per online player: `{ id, command, pattern, fields }`. The answer's named groups (`username` + `fields`) update the player (e.g. position). |
-| `configSync` | | `{ file, format: "properties", map: { port, motd, maxPlayers } }` keeps those instance settings in a game config file and reads them back when importing. |
+| `configSync` | | `{ file, format: "properties"\|"ini"\|"json"\|"toml", map: { port, motd, maxPlayers } }` keeps those instance settings in a game config file and reads them back when importing. JSON/TOML keys are dotted paths (`server.port`), INI keys are `section.key`. |
 | `bridgeLoaders` | | Loaders a Telemetry Bridge exists for; enables the bridge install flow. |
 | `defaults.memoryMb` | | Default heap offered when creating a server ("Default: X GB"). |
 | `jvmFlagPresets` | | Recommended JVM flag sets shown in the server editor (`id`, `label`, `description`, `flags`, `recommendedFor`). |

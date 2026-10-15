@@ -86,7 +86,7 @@ export interface GameDriverSummary {
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
   /** Config file kept in sync with the instance's port / motd / player limit. */
-  configSync?: { file: string; format: 'properties'; map: { port?: string; motd?: string; maxPlayers?: string } };
+  configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
   bridgeLoaders?: string[];
   modSources?: ModSourceSummary[];

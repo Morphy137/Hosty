@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { driverRegistry } from './drivers/GameDriverRegistry';
+import { readSyncedValues } from './ConfigSync';
 import { DaemonError } from '../errors';
 
 export interface FolderInspection {
@@ -15,18 +16,6 @@ export interface FolderInspection {
   motd: string | null;
   maxPlayers: number | null;
 }
-
-const readProperties = (file: string): Record<string, string> => {
-  const result: Record<string, string> = {};
-  if (!fs.existsSync(file)) return result;
-  for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const index = trimmed.indexOf('=');
-    if (index > 0) result[trimmed.slice(0, index).trim()] = trimmed.slice(index + 1).trim();
-  }
-  return result;
-};
 
 const readInstanceSettings = (dir: string): { gameId?: string; loader?: string; loaderVersion?: string } => {
   try {
@@ -70,11 +59,7 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
   }
 
   const sync = gameId ? driverRegistry.getDriver(gameId).summary.configSync : undefined;
-  const properties = sync ? readProperties(path.join(dir, sync.file)) : {};
-  const toNumber = (value: string | undefined) => {
-    const parsed = Number(value);
-    return value !== undefined && Number.isFinite(parsed) ? parsed : null;
-  };
+  const synced = sync ? readSyncedValues(dir, sync) : {};
 
   return {
     path: dir,
@@ -82,8 +67,8 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
     gameId,
     loader,
     mcVersion,
-    port: toNumber(sync?.map.port ? properties[sync.map.port] : undefined),
-    motd: (sync?.map.motd ? properties[sync.map.motd] : undefined) ?? null,
-    maxPlayers: toNumber(sync?.map.maxPlayers ? properties[sync.map.maxPlayers] : undefined)
+    port: synced.port ?? null,
+    motd: synced.motd ?? null,
+    maxPlayers: synced.maxPlayers ?? null
   };
 }

@@ -458,7 +458,10 @@
         },
         "format": {
           "enum": [
-            "properties"
+            "properties",
+            "ini",
+            "json",
+            "toml"
           ]
         },
         "map": {

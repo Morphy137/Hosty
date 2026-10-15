@@ -232,7 +232,7 @@ export interface GameDriverSummary {
   configFiles: ConfigFileInfo[];
   launchDefaults?: { memoryMb?: number };
   /** Config file kept in sync with port / motd / player limit (also marks games with those settings). */
-  configSync?: { file: string; format: 'properties'; map: { port?: string; motd?: string; maxPlayers?: string } };
+  configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSourceInfo[];

@@ -61,7 +61,7 @@ export interface PlayerQuery {
 /** Keeps port / description / player limit of the instance in sync with a game config file. */
 export interface ConfigSync {
   file: string;
-  format: 'properties';
+  format: 'properties' | 'ini' | 'json' | 'toml';
   map: { port?: string; motd?: string; maxPlayers?: string };
 }
 
@@ -275,8 +275,8 @@ export function validateManifest(raw: unknown): ManifestValidation {
 
   if (raw.configSync !== undefined) {
     const sync = raw.configSync;
-    if (!isObject(sync) || !isSafeRelativePath(sync.file) || sync.format !== 'properties' || !isObject(sync.map)) {
-      errors.push('configSync must be { file (relative), format: "properties", map }');
+    if (!isObject(sync) || !isSafeRelativePath(sync.file) || !['properties', 'ini', 'json', 'toml'].includes(String(sync.format)) || !isObject(sync.map)) {
+      errors.push('configSync must be { file (relative), format (properties|ini|json|toml), map }');
     }
   }
 

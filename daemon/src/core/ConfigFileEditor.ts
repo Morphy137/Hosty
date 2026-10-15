@@ -105,16 +105,21 @@ function flatten(value: unknown, prefix = ''): ConfigEntry[] {
   return entries;
 }
 
-function setByPath(target: Record<string, unknown>, dotted: string, value: ConfigScalar): void {
+/** Sets a dotted path. Editing never creates structure; `createMissing` (config sync) does. */
+function setByPath(target: Record<string, unknown>, dotted: string, value: ConfigScalar, createMissing = false): void {
   const parts = dotted.split('.');
   let cursor: Record<string, unknown> = target;
   for (let i = 0; i < parts.length - 1; i += 1) {
-    const next = cursor[parts[i]];
-    if (next === null || typeof next !== 'object' || Array.isArray(next)) return; // never create structure
+    let next = cursor[parts[i]];
+    if (next === undefined && createMissing) {
+      next = {};
+      cursor[parts[i]] = next;
+    }
+    if (next === null || typeof next !== 'object' || Array.isArray(next)) return;
     cursor = next as Record<string, unknown>;
   }
   const leaf = parts[parts.length - 1];
-  if (leaf in cursor) cursor[leaf] = value;
+  if (leaf in cursor || createMissing) cursor[leaf] = value;
 }
 
 // ---- public API ----------------------------------------------------------------------------------
@@ -144,7 +149,12 @@ export function readConfigFile(file: string, format: EditableFormat): ConfigEntr
   }
 }
 
-export function writeConfigFile(file: string, format: EditableFormat, updates: Record<string, ConfigScalar>): void {
+export function writeConfigFile(
+  file: string,
+  format: EditableFormat,
+  updates: Record<string, ConfigScalar>,
+  options: { createMissing?: boolean } = {}
+): void {
   if (!fs.existsSync(file)) throw new DaemonError('CONFIG_NOT_FOUND', `Config file "${path.basename(file)}" does not exist yet.`);
   const content = fs.readFileSync(file, 'utf-8');
 
@@ -155,13 +165,13 @@ export function writeConfigFile(file: string, format: EditableFormat, updates: R
       return;
     case 'json': {
       const data = JSON.parse(content) as Record<string, unknown>;
-      for (const [key, value] of Object.entries(updates)) setByPath(data, key, value);
+      for (const [key, value] of Object.entries(updates)) setByPath(data, key, value, options.createMissing);
       fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
       return;
     }
     case 'toml': {
       const data = TOML.parse(content) as unknown as Record<string, unknown>;
-      for (const [key, value] of Object.entries(updates)) setByPath(data, key, value);
+      for (const [key, value] of Object.entries(updates)) setByPath(data, key, value, options.createMissing);
       fs.writeFileSync(file, TOML.stringify(data as TOML.JsonMap), 'utf-8');
       return;
     }

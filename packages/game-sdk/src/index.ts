@@ -65,7 +65,7 @@ export interface PlayerQuery {
 /** Keeps port / description / player limit in sync with a game config file. */
 export interface ConfigSync {
   file: string;
-  format: 'properties';
+  format: 'properties' | 'ini' | 'json' | 'toml';
   map: { port?: string; motd?: string; maxPlayers?: string };
 }
 
