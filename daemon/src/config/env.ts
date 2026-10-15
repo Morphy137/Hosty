@@ -6,7 +6,8 @@ dotenv.config({ quiet: true });
 const DEFAULTS = {
   port: 4000,
   host: '127.0.0.1',
-  allowedOrigins: 'http://localhost:5173,http://127.0.0.1:5173',
+  allowedOrigins:
+    'http://localhost:5173,http://127.0.0.1:5173,http://localhost:1420,http://127.0.0.1:1420,http://tauri.localhost,https://tauri.localhost,tauri://localhost',
   instanceDir: path.join(__dirname, '../../../instances/default'),
   instanceId: 'default',
   jarFile: 'server.jar',

@@ -176,7 +176,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         status={status}
-        mockEnabled={health?.mockEnabled ?? true}
+        mockEnabled={import.meta.env.DEV && (health?.mockEnabled ?? false)}
         onSendAction={sendAction}
         onRestart={handleRestartServer}
         instances={instances.instances}

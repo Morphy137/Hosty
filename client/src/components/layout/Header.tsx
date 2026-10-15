@@ -124,8 +124,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mock Button (Icon only, compact) */}
-          {mockEnabled && (
+          {/* Mock Button (Dev mode only) */}
+          {import.meta.env.DEV && mockEnabled && (
             <button
               type="button"
               onClick={() => onSendAction('MOCK')}

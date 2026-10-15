@@ -190,9 +190,53 @@ export async function saveModConfig(filename: string, entries: ConfigEntry[]): P
   await postJson<unknown>(`/api/mods/configs/${encodeURIComponent(filename)}`, payload);
 }
 
+const FALLBACK_MC_VERSIONS = [
+  '1.21.4',
+  '1.21.3',
+  '1.21.1',
+  '1.21',
+  '1.20.6',
+  '1.20.4',
+  '1.20.2',
+  '1.20.1',
+  '1.19.4',
+  '1.19.2',
+  '1.18.2',
+  '1.16.5'
+];
+
 // Provisioning
-export function fetchLoaderVersions(loader: ServerLoader): Promise<string[]> {
-  return request<string[]>(`/api/provisioning/versions/${encodeURIComponent(loader)}`);
+export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[]> {
+  try {
+    const data = await request<string[]>(`/api/provisioning/versions/${encodeURIComponent(loader)}`);
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch {
+    // Daemon offline or request failed; try direct upstream fetch
+  }
+
+  try {
+    if (loader === 'fabric') {
+      const res = await fetch('https://meta.fabricmc.net/v2/versions/game');
+      if (res.ok) {
+        const data = (await res.json()) as Array<{ version: string; stable: boolean }>;
+        const stable = data.filter((v) => v.stable).map((v) => v.version).slice(0, 15);
+        if (stable.length > 0) return stable;
+      }
+    } else if (loader === 'vanilla') {
+      const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
+      if (res.ok) {
+        const data = (await res.json()) as { versions: Array<{ id: string; type: string }> };
+        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id).slice(0, 15);
+        if (releases.length > 0) return releases;
+      }
+    }
+  } catch {
+    // Direct upstream failed; fall back to static list
+  }
+
+  return [...FALLBACK_MC_VERSIONS];
 }
 
 export async function installServer(

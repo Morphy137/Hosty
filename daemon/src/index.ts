@@ -26,7 +26,15 @@ const app = express();
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || config.allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        config.allowedOrigins.includes(origin) ||
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('tauri://') ||
+        origin.startsWith('http://tauri.localhost') ||
+        origin.startsWith('https://tauri.localhost')
+      ) {
         callback(null, true);
       } else {
         callback(new DaemonError('INVALID_PAYLOAD', `Origin ${origin} not allowed by CORS`));
