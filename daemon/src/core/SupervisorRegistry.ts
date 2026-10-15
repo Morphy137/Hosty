@@ -133,6 +133,19 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
     }
   }
 
+  /** Requests a stop on every running server and resolves once all exited or the timeout elapsed. */
+  public async stopAllAndWait(timeoutMs: number, pollMs = 200): Promise<void> {
+    this.stopAll();
+    const deadline = Date.now() + timeoutMs;
+    const anyRunning = () => [...this.supervisors.values()].some((sup) => sup.isRunning());
+    while (anyRunning() && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+    for (const sup of this.supervisors.values()) {
+      if (sup.isRunning()) sup.kill();
+    }
+  }
+
   public isBridgeConnected(instanceId: string): boolean {
     return telemetryBridge.isBridgeConnected(instanceId);
   }

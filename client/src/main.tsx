@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './i18n'
 import App from './App.tsx'
+import { DaemonGate } from './components/common/DaemonGate'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <DaemonGate>
+      <App />
+    </DaemonGate>
   </StrictMode>,
 )

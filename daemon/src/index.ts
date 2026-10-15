@@ -789,3 +789,37 @@ wss.on('connection', (ws, req) => {
 server.listen(config.port, config.host, () => {
   console.log(`[MC-Nexus Daemon] Listening on http://${config.host}:${config.port}`);
 });
+
+let isShuttingDown = false;
+
+/** Stops every managed game server gracefully, then exits the daemon process. */
+const shutdown = async (reason: string): Promise<void> => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`[MC-Nexus Daemon] Shutting down (${reason})...`);
+  try {
+    await registry.stopAllAndWait(config.stopTimeoutMs + 5_000);
+  } catch (err) {
+    console.error('Error while stopping servers:', err);
+  }
+  wss.clients.forEach((client) => client.close());
+  server.close();
+  process.exit(0);
+};
+
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+
+// When supervised by the desktop shell, the parent asks for a graceful stop through stdin
+// (Windows has no portable SIGTERM). A closed stdin means the parent is gone.
+// Opt-in via MC_NEXUS_PARENT_SUPERVISED so detached/CI runs are not affected.
+if (process.env.MC_NEXUS_PARENT_SUPERVISED === '1') {
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk: string) => {
+    if (chunk.split('\n').some((line) => line.trim() === 'shutdown')) {
+      void shutdown('parent request');
+    }
+  });
+  process.stdin.on('end', () => void shutdown('parent exited'));
+  process.stdin.resume();
+}

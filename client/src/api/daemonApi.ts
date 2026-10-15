@@ -1,4 +1,4 @@
-import { DAEMON_HTTP_URL } from '../config/daemon';
+import { getDaemonHttpUrl } from '../config/daemon';
 import type {
   ConfigEntry,
   ConfigPayload,
@@ -71,7 +71,7 @@ export function toErrorPayload(error: unknown): DaemonErrorPayload {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${DAEMON_HTTP_URL}${path}`, init);
+    response = await fetch(`${getDaemonHttpUrl()}${path}`, init);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new DaemonApiError(NETWORK_ERROR_CODE, message, NETWORK_ERROR_STATUS);
@@ -151,7 +151,7 @@ export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
 }
 
 export function getInstanceIconUrl(id: string): string {
-  return `${DAEMON_HTTP_URL}/api/instances/${encodeURIComponent(id)}/icon`;
+  return `${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon`;
 }
 
 // Properties
