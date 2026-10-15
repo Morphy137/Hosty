@@ -481,6 +481,8 @@
     "command_sent": "कमांड भेज दी गई"
   },
   "wizard": {
+    "no_games_title": "कोई गेम सक्षम नहीं है",
+    "no_games_desc": "सर्वर बनाने के लिए Game packs (साइडबार) में कोई गेम सक्षम करें।",
     "steps": {
       "origin": "स्रोत",
       "game": "गेम",

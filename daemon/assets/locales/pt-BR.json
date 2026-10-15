@@ -481,6 +481,8 @@
     "command_sent": "Comando enviado"
   },
   "wizard": {
+    "no_games_title": "Nenhum jogo ativado",
+    "no_games_desc": "Ative um jogo em Game packs (barra lateral) para criar um servidor.",
     "steps": {
       "origin": "Origem",
       "game": "Jogo",

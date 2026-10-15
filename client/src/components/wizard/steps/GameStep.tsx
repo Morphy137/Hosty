@@ -25,6 +25,12 @@ export const GameStep: React.FC<GameStepProps> = ({ draft, disabled, games, onSe
   return (
     <div className="space-y-3">
       <p className="font-mono text-[11px] uppercase text-mute">{t('create_server.game_engine_label')}</p>
+      {games.length === 0 && (
+        <div className="rounded-[8px] border border-dashed border-hairline-strong bg-surface-2 p-6 text-center">
+          <p className="text-[13px] font-medium text-ink">{t('wizard.no_games_title')}</p>
+          <p className="mt-1 text-[12px] text-soft">{t('wizard.no_games_desc')}</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3">
         {games.map((game) => {
           const isSelected = draft.gameId === game.id;
