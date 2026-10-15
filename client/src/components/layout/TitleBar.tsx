@@ -6,7 +6,8 @@ import { cn } from '../../utils/cn';
 type AppWindow = import('@tauri-apps/api/window').Window;
 
 const CONTROL_CLASSES =
-  'flex h-full w-11 items-center justify-center text-body transition-colors duration-[var(--duration-fast)] cursor-pointer';
+  'flex h-full w-11 items-center justify-center text-body transition-colors duration-[var(--duration-fast)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hairline';
+const HOVER_CLASSES = 'hover:bg-hairline hover:text-ink active:bg-surface-3';
 
 /**
  * Custom window chrome for the desktop shell (the native frame is disabled in tauri.conf.json).
@@ -49,19 +50,14 @@ export const TitleBar: React.FC = () => {
       data-tauri-drag-region
       className="flex h-9 shrink-0 select-none items-center justify-between border-b border-hairline bg-surface"
     >
-      <div data-tauri-drag-region className="flex min-w-0 items-center gap-2 pl-3">
-        <img src="/logo.svg" alt="" className="pointer-events-none h-4 w-4 object-contain" />
-        <span data-tauri-drag-region className="text-[12px] font-medium tracking-[-0.2px] text-body">
-          {t('header.title')}
-        </span>
-      </div>
+      <div data-tauri-drag-region className="min-w-0 flex-1 self-stretch" />
 
       <div className="flex h-full items-center">
         <button
           type="button"
           aria-label={t('titlebar.minimize')}
           onClick={minimize}
-          className={cn(CONTROL_CLASSES, 'hover:bg-surface-3')}
+          className={cn(CONTROL_CLASSES, HOVER_CLASSES)}
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
@@ -69,7 +65,7 @@ export const TitleBar: React.FC = () => {
           type="button"
           aria-label={isMaximized ? t('titlebar.restore') : t('titlebar.maximize')}
           onClick={toggleMaximize}
-          className={cn(CONTROL_CLASSES, 'hover:bg-surface-3')}
+          className={cn(CONTROL_CLASSES, HOVER_CLASSES)}
         >
           {isMaximized ? <Copy className="h-3 w-3" /> : <Square className="h-3 w-3" />}
         </button>

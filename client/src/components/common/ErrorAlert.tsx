@@ -41,9 +41,6 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
           <AlertCircle className="w-4 h-4 shrink-0 text-danger-fg mt-0.5" />
           <div className="space-y-1.5 min-w-0">
             <div>
-              <span className="inline-block font-mono text-[11px] font-semibold uppercase bg-danger-soft px-1.5 py-0.5 rounded-[4px] border border-danger-soft dark:border-danger/30 mr-1.5">
-                {error.code}
-              </span>
               <span className="text-ink leading-snug break-words">
                 {translatedMessage}
               </span>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react';
 import { fetchGamePacks, reloadGamePacks, trustGamePack } from '../../api/daemonApi';
@@ -20,6 +20,13 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
   const [gamesDir, setGamesDir] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  // Kept in a ref so a new parent callback identity never retriggers the fetch effect.
+  const onChangedRef = useRef(onChanged);
+  useEffect(() => {
+    onChangedRef.current = onChanged;
+  }, [onChanged]);
 
   const run = useCallback(
     async (operation: () => Promise<{ gamesDir?: string; packs: GamePackInfo[] }>, notify: boolean) => {
@@ -29,14 +36,15 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
         const result = await operation();
         setPacks(result.packs);
         if (result.gamesDir) setGamesDir(result.gamesDir);
-        if (notify) onChanged();
+        if (notify) onChangedRef.current();
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setIsBusy(false);
+        setHasLoaded(true);
       }
     },
-    [onChanged]
+    []
   );
 
   useEffect(() => {
@@ -63,7 +71,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
         </Button>
       }
     >
-      <div className="space-y-4">
+      <div className="min-h-[220px] space-y-4">
         <p className="flex items-start gap-2 text-[12px] text-soft">
           <FolderOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />
           <span>
@@ -72,7 +80,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
         </p>
 
         {error && <p className="text-[12px] text-danger-fg">{error}</p>}
-        {packs.length === 0 && !isBusy && <p className="text-[13px] text-mute">{t('packs.empty')}</p>}
+        {packs.length === 0 && hasLoaded && !isBusy && <p className="text-[13px] text-mute">{t('packs.empty')}</p>}
 
         <ul className="space-y-2">
           {packs.map((pack) => (

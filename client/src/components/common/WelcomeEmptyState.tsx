@@ -18,13 +18,7 @@ export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({
       <div className="max-w-[620px] w-full flex flex-col items-center">
         {/* Large Logo */}
         <div className="relative mb-6">
-          <div className="w-20 h-20 rounded-[16px] bg-surface border border-hairline p-3 shadow-md flex items-center justify-center">
-            <img
-              src="/logo.svg"
-              alt="Hosty"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <img src="/logo.svg" alt="Hosty" className="h-20 w-20 rounded-full object-cover shadow-md" />
           <span className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-accent text-white shadow-xs">
             <Sparkles className="w-3.5 h-3.5" />
           </span>
