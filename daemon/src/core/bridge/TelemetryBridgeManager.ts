@@ -3,6 +3,7 @@ import type { WebSocket } from 'ws';
 import fs from 'fs';
 import path from 'path';
 import { loadConfig } from '../../config/env';
+import { DaemonError } from '../../errors';
 import type {
   BridgeIncomingMessage,
   BridgeActionMessage,
@@ -268,33 +269,34 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     return !loader || ['paper', 'purpur', 'spigot', 'fabric'].includes(loader);
   }
 
-  public installBridge(instanceDir: string, loader?: string): boolean {
-    if (!TelemetryBridgeManager.supportsLoader(loader)) return false;
-    const isPlugin = loader === 'paper' || loader === 'purpur' || loader === 'spigot';
+  /**
+   * Copies the bridge artifact into the instance. Returns the written file path.
+   * Throws when the loader is unsupported or the packaged artifact is missing (never writes a stub).
+   */
+  public installBridge(instanceDir: string, loader?: string): string {
+    if (!TelemetryBridgeManager.supportsLoader(loader)) {
+      throw new DaemonError('INVALID_LOADER', `There is no Hosty bridge for "${loader}" yet.`);
+    }
+    // Imported servers may have no stored loader: a plugins/ folder means a Bukkit-style server.
+    const isPlugin = loader
+      ? loader === 'paper' || loader === 'purpur' || loader === 'spigot'
+      : fs.existsSync(path.join(instanceDir, 'plugins')) && !fs.existsSync(path.join(instanceDir, 'mods'));
     const targetFolder = isPlugin ? path.join(instanceDir, 'plugins') : path.join(instanceDir, 'mods');
     fs.mkdirSync(targetFolder, { recursive: true });
 
     const targetFile = path.join(targetFolder, 'mc-nexus-bridge.jar');
-
-    const specificJarName = isPlugin ? 'mc-nexus-bridge-paper.jar' : 'mc-nexus-bridge-fabric.jar';
-    const specificPath = path.join(this.baseAssetsDir, specificJarName);
-
-    if (fs.existsSync(specificPath)) {
-      fs.copyFileSync(specificPath, targetFile);
-      return true;
+    const specificPath = path.join(this.baseAssetsDir, isPlugin ? 'mc-nexus-bridge-paper.jar' : 'mc-nexus-bridge-fabric.jar');
+    const source = [specificPath, this.bridgeJarPath].find((candidate) => fs.existsSync(candidate));
+    if (!source) {
+      throw new DaemonError('BRIDGE_ASSET_MISSING', 'The bridge file is missing from this Hosty installation.');
     }
+    fs.copyFileSync(source, targetFile);
+    return targetFile;
+  }
 
-    if (fs.existsSync(this.bridgeJarPath)) {
-      fs.copyFileSync(this.bridgeJarPath, targetFile);
-      return true;
-    }
-
-    // If binary is not pre-packaged, write a lightweight bridge placeholder manifest
-    const stubContent = Buffer.from(
-      `MC-Nexus Bridge Extension for ${loader || 'paper'}\nVersion: 1.0.0\n`
-    );
-    fs.writeFileSync(targetFile, stubContent);
-    return true;
+  /** True when a bridge jar is present in the instance's plugins/ or mods/ folder. */
+  public static isBridgeInstalled(instanceDir: string): boolean {
+    return ['plugins', 'mods'].some((folder) => fs.existsSync(path.join(instanceDir, folder, 'mc-nexus-bridge.jar')));
   }
 }
 

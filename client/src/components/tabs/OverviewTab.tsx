@@ -577,7 +577,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto font-mono text-[13px] leading-[20px] space-y-1">
+          <div
+            className="flex-1 p-4 overflow-y-auto select-text cursor-text font-mono text-[13px] leading-[20px] space-y-1"
+            onContextMenu={() => {
+              // Right click copies the current selection (the native menu is suppressed globally).
+              const selected = window.getSelection()?.toString();
+              if (selected) void navigator.clipboard?.writeText(selected).catch(() => undefined);
+            }}
+          >
             {logs.length === 0 ? (
               <div className="text-white/50">
                 {t('overview.console_ready')}

@@ -13,7 +13,8 @@ test('shows the empty state and switches theme and language', async ({ page }) =
   await page.getByRole('button', { name: 'Switch to Dark Mode' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 
-  await page.getByRole('button', { name: 'Cambiar a español' }).click();
+  await page.getByRole('button', { name: 'Language' }).click();
+  await page.getByRole('menuitem', { name: /Español/ }).click();
   await expect(page.getByRole('heading', { name: 'Bienvenido a Hosty' })).toBeVisible();
 });
 
@@ -22,12 +23,13 @@ test('walks the creation wizard up to the review step', async ({ page }) => {
   await page.getByRole('button', { name: 'New server', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('button', { name: /Create a new server/ })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Continue' }).click();
-
-  // Game step: Hytale is announced but not selectable yet.
+  // Game step first: Hytale is announced but not selectable yet.
   await expect(dialog.getByRole('button', { name: /Minecraft: Java Edition/ })).toBeVisible();
   await expect(dialog.getByRole('button', { name: /Hytale/ })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Continue' }).click();
+
+  // Then create or import for that game.
+  await expect(dialog.getByRole('button', { name: /Create a new server/ })).toBeVisible();
   await dialog.getByRole('button', { name: 'Continue' }).click();
 
   // Setup step: loader grid and a selected version enable Continue.
@@ -59,6 +61,7 @@ test('imports an existing server folder and detects its game', async ({ page }) 
   await page.getByRole('button', { name: 'Import', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Continue' }).click(); // game step
   await dialog.getByLabel('Server Folder Path').fill(folder);
   await dialog.getByLabel('Server Folder Path').blur();
   await expect(dialog.getByText(/Detected: minecraft/)).toBeVisible();

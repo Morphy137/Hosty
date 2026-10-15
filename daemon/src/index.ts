@@ -10,6 +10,7 @@ import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSupervisor';
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
+import { ModCatalog } from './provisioning/ModCatalog';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { telemetryBridge, TelemetryBridgeManager } from './core/bridge/TelemetryBridgeManager';
@@ -392,6 +393,78 @@ app.delete('/api/instances/:id/icon', (req, res, next) => {
 });
 
 // Restart endpoint
+// Removes an instance from Hosty. Imported folders are only unregistered (files are kept).
+app.delete('/api/instances/:id', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    }
+    if (registry.getSupervisor(instance.id)?.isRunning()) {
+      throw new DaemonError('SERVER_RUNNING', 'Stop the server before removing it.');
+    }
+    instanceManager.deleteInstance(instance.id);
+    registry.removeSupervisor(instance.id);
+    res.json({ ok: true, keptFiles: Boolean(instance.isImported) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Mod catalog: sources are declared by the game driver, the core stays game-agnostic ----------
+const resolveModSource = (instanceId: string, sourceId: unknown) => {
+  const instance = instanceManager.getInstance(instanceId);
+  if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${instanceId}" not found.`);
+  const sources = driverRegistry.getDriver(instance.gameId).summary.modSources ?? [];
+  const source = sources.find((candidate) => candidate.id === sourceId) ?? sources[0];
+  if (!source) throw new DaemonError('INVALID_PAYLOAD', 'This game has no mod catalog.');
+  return { instance, source, sources };
+};
+
+app.get('/api/instances/:id/mods/sources', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    res.json({ sources: driverRegistry.getDriver(instance.gameId).summary.modSources ?? [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/instances/:id/mods/search', async (req, res, next) => {
+  try {
+    const { instance, source } = resolveModSource(req.params.id, req.query.source);
+    const query = typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '';
+    const offset = Number(req.query.offset) || 0;
+    res.json(
+      await ModCatalog.search(
+        source,
+        { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
+        query,
+        offset
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/mods/install', async (req, res, next) => {
+  try {
+    const { source: sourceId, projectId } = req.body as { source?: string; projectId?: string };
+    if (!projectId) throw new DaemonError('INVALID_PAYLOAD', 'projectId is required.');
+    const { instance, source } = resolveModSource(req.params.id, sourceId);
+    const installed = await ModCatalog.install(
+      source,
+      { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
+      projectId
+    );
+    res.json({ ok: true, ...installed, restartRequired: registry.getSupervisor(instance.id)?.isRunning() ?? false });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/instances/:id/restart', (req, res, next) => {
   try {
     const instance = instanceManager.getInstance(req.params.id);
@@ -448,8 +521,26 @@ app.post('/api/instances/import', (req, res, next) => {
     const { path: folderPath, name, gameId } = req.body as { path: string; name?: string; gameId?: string };
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
 
-    const imported = instanceManager.importInstance(folderPath, name, gameId);
-    res.json({ ok: true, instance: imported });
+    // Only folders a driver recognises can be imported: anything else would never start.
+    const inspection = inspectServerFolder(folderPath);
+    if (!inspection.gameId) {
+      throw new DaemonError('INVALID_FOLDER', 'This folder does not look like a supported game server.');
+    }
+    if (gameId && gameId !== inspection.gameId) {
+      throw new DaemonError(
+        'INVALID_FOLDER',
+        `This folder was detected as "${inspection.gameId}", not "${gameId}".`
+      );
+    }
+
+    const imported = instanceManager.importInstance(folderPath, name, inspection.gameId);
+    const detected: Partial<InstanceSettings> = {
+      gameId: inspection.gameId,
+      ...(inspection.loader ? { loader: inspection.loader } : {}),
+      ...(inspection.mcVersion ? { loaderVersion: inspection.mcVersion } : {})
+    };
+    const persisted = instanceManager.updateInstanceSettings(imported.id, detected);
+    res.json({ ok: true, instance: persisted ?? imported });
   } catch (err) {
     next(err);
   }
@@ -762,6 +853,104 @@ app.get('/api/game-packs', (_req, res) => {
 
 app.post('/api/game-packs/reload', (_req, res) => {
   res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadPacks() });
+});
+
+app.post('/api/game-packs/install', (req, res, next) => {
+  try {
+    const { path: sourcePath } = req.body as { path?: string };
+    if (!sourcePath) throw new DaemonError('INVALID_PAYLOAD', 'Pack folder path is required.');
+    try {
+      const packs = driverRegistry.installPack(sourcePath);
+      res.json({ ok: true, gamesDir: config.gamesDir, packs });
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/game-packs/:packId', (req, res, next) => {
+  try {
+    const packId = req.params.packId;
+    const inUse = instanceManager.listInstances().some((instance) => instance.gameId === packId);
+    if (inUse) {
+      throw new DaemonError('SERVER_RUNNING', `Remove the "${packId}" servers before uninstalling this game pack.`);
+    }
+    if (!driverRegistry.uninstallPack(packId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game pack "${packId}" is not an installed pack.`);
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir, packs: driverRegistry.getPackInfos() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- UI translation packs: <localesDir>/<code>.json (user) over bundled packs --------------------
+// A pack may declare `_meta: { name, extends }`; `extends` merges it over a base pack so regional
+// variants only need the keys that differ.
+const LOCALE_CODE = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+type LocaleFile = { _meta?: { name?: string; extends?: string } } & Record<string, unknown>;
+
+const readLocaleFile = (code: string): LocaleFile | null => {
+  if (!LOCALE_CODE.test(code)) return null;
+  for (const dir of [config.localesDir, config.bundledLocalesDir]) {
+    const file = path.join(dir, `${code}.json`);
+    if (!fs.existsSync(file)) continue;
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf-8')) as LocaleFile;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const mergeLocale = (base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> => {
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(overlay)) {
+    const current = result[key];
+    result[key] =
+      value && typeof value === 'object' && current && typeof current === 'object'
+        ? mergeLocale(current as Record<string, unknown>, value as Record<string, unknown>)
+        : value;
+  }
+  return result;
+};
+
+const resolveLocale = (code: string, depth = 0): LocaleFile | null => {
+  const file = readLocaleFile(code);
+  if (!file) return null;
+  const parent = file._meta?.extends;
+  if (!parent || depth > 3) return file;
+  const base = resolveLocale(parent, depth + 1);
+  return base ? ({ ...mergeLocale(base, file), _meta: file._meta } as LocaleFile) : file;
+};
+
+app.get('/api/locales', (_req, res) => {
+  const codes = new Set<string>();
+  for (const dir of [config.bundledLocalesDir, config.localesDir]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      if (file.endsWith('.json') && LOCALE_CODE.test(file.slice(0, -5))) codes.add(file.slice(0, -5));
+    }
+  }
+  const locales = [...codes]
+    .map((code) => ({ code, name: readLocaleFile(code)?._meta?.name ?? code, valid: readLocaleFile(code) !== null }))
+    .filter((locale) => locale.valid)
+    .map(({ code, name }) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  res.json({ localesDir: config.localesDir, locales });
+});
+
+app.get('/api/locales/:code', (req, res, next) => {
+  try {
+    const locale = resolveLocale(req.params.code);
+    if (!locale) throw new DaemonError('CONFIG_NOT_FOUND', `Locale "${req.params.code}" not found.`);
+    res.json(locale);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post('/api/game-packs/:packId/trust', (req, res, next) => {
@@ -1180,7 +1369,24 @@ wss.on('connection', (ws, req) => {
 
 server.listen(config.port, config.host, () => {
   console.log(`[MC-Nexus Daemon] Listening on http://${config.host}:${config.port}`);
+  startAutostartInstances();
 });
+
+/** Starts every instance flagged "start with Hosty", one after another to avoid a CPU spike. */
+function startAutostartInstances(): void {
+  const pending = instanceManager.listInstances().filter((instance) => instance.autostart);
+  pending.forEach((instance, index) => {
+    setTimeout(() => {
+      try {
+        prepareBridgeConfig(instance.id);
+        registry.getOrCreateSupervisor(instance).start();
+        console.log(`[MC-Nexus Daemon] Autostarted "${instance.name}".`);
+      } catch (err) {
+        console.error(`Autostart failed for "${instance.name}":`, err);
+      }
+    }, 1500 + index * 4000);
+  });
+}
 
 let isShuttingDown = false;
 

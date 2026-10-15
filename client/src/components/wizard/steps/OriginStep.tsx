@@ -57,10 +57,15 @@ export const OriginStep: React.FC<OriginStepProps> = ({
     setIsInspecting(true);
     try {
       const info = await inspectFolder(trimmed);
+      if (info.gameId && info.gameId !== draft.gameId) {
+        // Reject folders of another game up front instead of failing at install time.
+        update({ importPath: folder, importInfo: null });
+        setInspectError(t('wizard.import_wrong_game', { detected: info.gameId, selected: draft.gameId }));
+        return;
+      }
       update({
         importPath: folder,
         importInfo: info,
-        gameId: info.gameId ?? draft.gameId,
         name: draft.name || info.suggestedName,
         instanceId: draft.idTouched ? draft.instanceId : slugifyInstanceId(info.suggestedName),
         motd: info.motd ?? draft.motd,

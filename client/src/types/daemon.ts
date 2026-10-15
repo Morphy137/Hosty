@@ -116,6 +116,8 @@ export interface Metrics {
   loadedChunks?: number;
   entitiesCount?: number;
   bridgeConnected?: boolean;
+  bridgeInstalled?: boolean;
+  bridgeSupported?: boolean;
   /** Capabilities advertised by the connected bridge (`action.heal`, `inventory.view`, ...). */
   bridgeCapabilities?: string[];
 }
@@ -155,6 +157,7 @@ export interface InstanceSettings {
   javaPath?: string;
   forceSaveOnStop?: boolean;
   autostart?: boolean;
+  favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
@@ -184,6 +187,32 @@ export interface SetupField {
   component?: string;
 }
 
+export interface ModSourceInfo {
+  id: string;
+  name: string;
+  type: string;
+  baseUrl: string;
+}
+
+export interface ModSearchHit {
+  projectId: string;
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  downloads: number;
+  iconUrl: string | null;
+  url: string | null;
+}
+
+export interface JvmFlagPreset {
+  id: string;
+  label: string;
+  description: string;
+  flags: string[];
+  recommendedFor?: string[];
+}
+
 export interface GameDriverSummary {
   id: string;
   name: string;
@@ -201,6 +230,9 @@ export interface GameDriverSummary {
   setupSchema: SetupField[];
   capabilities: GameCapabilities;
   configFiles: ConfigFileInfo[];
+  launchDefaults?: { memoryMb?: number };
+  jvmFlagPresets?: JvmFlagPreset[];
+  modSources?: ModSourceInfo[];
   source: 'builtin' | 'pack';
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */
@@ -252,12 +284,15 @@ export interface InstanceInfo {
   javaPath: string;
   forceSaveOnStop: boolean;
   autostart: boolean;
+  favorite?: boolean;
   status?: ServerStatus;
   onlinePlayersCount?: number;
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
   bridgeConnected?: boolean;
+  bridgeInstalled?: boolean;
+  bridgeSupported?: boolean;
 }
 
 export interface InstancesResponse {

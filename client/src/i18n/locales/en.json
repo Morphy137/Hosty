@@ -168,7 +168,7 @@
     "motd_label": "Description (MOTD)",
     "folder_path": "Folder Path",
     "force_save_label": "Force 'save-all' on server stop",
-    "autostart_label": "Autostart when daemon starts",
+    "autostart_label": "Start automatically when Hosty opens",
     "icon_label": "Server Icon",
     "upload_icon": "Upload Icon",
     "remove_icon": "Remove Icon",
@@ -179,21 +179,43 @@
     "java_path_label": "Local Java Path Override",
     "java_path_hint": "Overrides the global Java executable path. Leave blank to use system default.",
     "jvm_args_label": "Custom JVM Arguments",
-    "apply_aikar_preset": "Apply Aikar's Flags",
     "startup_preview_label": "Startup Line Preview",
     "running_warning": "Turn the server off to apply port or JVM changes.",
     "tab_bridge": "Telemetry Bridge",
     "bridge_title": "Hosty Telemetry Bridge",
     "bridge_description": "Deploy the native high-frequency bridge (Paper plugin or Fabric mod) to enable silent real-time TPS, MSPT, loaded chunks, and per-player health & coordinates directly over WebSocket without console polling.",
-    "bridge_install_button": "Install Bridge Plugin/Mod",
+    "bridge_install_button": "Install Telemetry Bridge",
     "bridge_installing": "Installing Bridge...",
-    "bridge_installed_success": "Bridge successfully installed into server! Restart the server to activate.",
+    "bridge_installed_restart": "Telemetry Bridge installed. Restart the server to activate it.",
+    "bridge_installed_ready": "Telemetry Bridge is installed and ready. It will activate the next time the server starts.",
+    "bridge_unsupported": "There is no Telemetry Bridge for this server loader yet.",
     "bridge_status_active": "Bridge Active & Streaming",
-    "bridge_status_ready": "Bridge Installed (Awaiting Server Restart)",
+    "bridge_status_ready": "Installed",
     "bridge_status_missing": "Not Installed",
     "copy_path": "Copy path",
     "icon_alt": "Server icon",
-    "engine_label": "Engine"
+    "engine_label": "Engine",
+    "presets_hint": "Recommended flag sets for this game. Applying one merges its flags into the field below.",
+    "preset_recommended": "Recommended",
+    "preset_apply": "Apply",
+    "preset": {
+      "aikar": {
+        "label": "Aikar's flags",
+        "desc": "Tuned G1GC set for Paper-family servers with 4 GB or more. Best for Paper, Purpur and Spigot."
+      },
+      "g1-basic": {
+        "label": "G1GC basic",
+        "desc": "Light, safe G1 tuning for modded and vanilla servers (Fabric, Forge, NeoForge, Vanilla)."
+      },
+      "zgc": {
+        "label": "Generational ZGC",
+        "desc": "Very low pause times on large heaps. Needs Java 21 or newer."
+      },
+      "java23-unsafe": {
+        "label": "Silence Unsafe warning",
+        "desc": "Hides the sun.misc.Unsafe deprecation warning printed by JOML on Java 23+. Do not use on older Java: the server will not start."
+      }
+    }
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -370,6 +392,12 @@
     "CONFIG_NOT_FOUND": "Configuration file not found.",
     "INVALID_FILENAME": "Invalid configuration filename.",
     "INVALID_LOADER": "Invalid server engine loader.",
+    "INVALID_FOLDER": "This folder is not a valid server for the selected game.",
+    "BRIDGE_ASSET_MISSING": "The Telemetry Bridge file is missing from this Hosty installation.",
+    "INSTALL_CANCELLED": "Installation cancelled.",
+    "INTERNAL_ERROR": "Internal error. Check the daemon log for details.",
+    "UNAUTHORIZED": "The daemon rejected the request (invalid token).",
+    "INVALID_MESSAGE": "Invalid message received.",
     "INVALID_VERSION": "Invalid Minecraft version.",
     "INVALID_PAYLOAD": "Invalid payload received.",
     "UPSTREAM_ERROR": "Failed to contact download servers. Check your internet connection.",
@@ -395,7 +423,8 @@
     "import_server_btn": "Import Server",
     "empty_overview_title": "No Server Selected",
     "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game.",
-    "footer_tagline": "Hosty • Multi-game Server Supervisor"
+    "footer_tagline": "Hosty • Multi-game Server Supervisor",
+    "get_started": "Get started"
   },
   "updater": {
     "update_available_title": "Update Available",
@@ -422,7 +451,22 @@
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
     "version": "v{{version}}",
-    "game_packs": "Game packs"
+    "game_packs": "Game packs",
+    "menu_edit": "Edit server",
+    "menu_rename": "Rename",
+    "menu_favorite": "Add to favorites",
+    "menu_unfavorite": "Remove from favorites",
+    "menu_remove": "Remove from Hosty",
+    "menu_delete": "Delete server",
+    "menu_more": "Server options",
+    "rename_title": "Rename server",
+    "rename_save": "Save",
+    "cancel": "Cancel",
+    "remove_title": "Remove from Hosty?",
+    "remove_imported_desc": "\"{{name}}\" will disappear from Hosty. Its folder and files are NOT deleted, so you can import it again later.",
+    "delete_title": "Delete server?",
+    "delete_created_desc": "\"{{name}}\" and all of its files (worlds, mods, configs) will be permanently deleted from disk.",
+    "language": "Language"
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -465,7 +509,7 @@
     "origin_import_desc": "Add a server folder that is already on this PC. The game and loader are detected for you.",
     "import_detecting": "Inspecting the folder...",
     "import_detected": "Detected: {{game}} · {{loader}} · {{version}}",
-    "import_unknown": "Folder found, but the game could not be identified. It will be imported as Minecraft.",
+    "import_unknown": "This folder is not a valid server for any supported game, so it cannot be imported.",
     "game_status": {
       "available": "Available",
       "beta": "Beta",
@@ -489,7 +533,6 @@
     "motd_hint": "Use § or & codes for colours (e.g. §aGreen §lBold).",
     "ram_system": "This PC has {{total}} GB of RAM",
     "ram_system_unknown": "System memory unknown",
-    "ram_recommended": "Use recommended ({{value}} GB)",
     "ram_min_hint": "Initial heap (-Xms): {{min}} MB",
     "gamemode": "Game mode",
     "difficulty": "Difficulty",
@@ -517,7 +560,14 @@
     "done_title": "{{name}} is ready",
     "done_desc": "Your server was created. You can start it now or open its panel to keep configuring.",
     "start_now": "Start server now",
-    "open_panel": "Open panel"
+    "open_panel": "Open panel",
+    "import_wrong_game": "This folder looks like a \"{{detected}}\" server, not \"{{selected}}\". Go back and choose the right game.",
+    "ram_default": "Default: {{value}} GB",
+    "bridge_title": "Hosty Telemetry Bridge",
+    "bridge_recommended": "Recommended",
+    "bridge_desc": "Adds real-time TPS, MSPT, loaded chunks and per-player health and coordinates to the dashboard, and enables in-game player actions, without polling the console.",
+    "bridge_later": "You can also install or check it later from Edit server > Telemetry Bridge.",
+    "warn_bridge": "The server was created, but the Telemetry Bridge could not be installed. You can retry from Edit server."
   },
   "config": {
     "no_files": "This game has no editable configuration files.",
@@ -526,7 +576,7 @@
   },
   "packs": {
     "title": "Game packs",
-    "description": "Add games to Hosty by dropping a game pack folder into the games directory.",
+    "description": "Games are add-ons. Built-in games are listed for reference; install more by choosing a pack folder.",
     "folder_hint": "Games folder:",
     "empty": "No game packs installed yet.",
     "reload": "Reload packs",
@@ -535,6 +585,26 @@
     "code_trusted": "Code trusted",
     "code_untrusted": "Code not trusted",
     "trust_warning": "This pack includes code (driver.js) that would run with the same permissions as Hosty. Only trust packs from authors you know.",
-    "trust_button": "Trust and enable code"
+    "trust_button": "Trust and enable code",
+    "install_placeholder": "Path to a game pack folder (contains hosty-game.json)",
+    "install_title": "Select a game pack folder",
+    "install_button": "Install",
+    "builtin": "Built-in",
+    "uninstall": "Uninstall pack"
+  },
+  "mod_catalog": {
+    "title": "Find mods",
+    "description": "Search {{source}} and download straight into this server. Results are filtered by the server's loader and version.",
+    "browse": "Find mods",
+    "source": "Source",
+    "search_placeholder": "Search mods and plugins...",
+    "search": "Search",
+    "empty": "No results.",
+    "by": "by {{author}}",
+    "install": "Install",
+    "load_more": "Load more",
+    "installed": "{{name}} installed",
+    "install_failed": "Could not install {{name}}",
+    "restart_required": "Restart the server to load it."
   }
 }

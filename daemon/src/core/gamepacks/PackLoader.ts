@@ -69,6 +69,47 @@ export class PackLoader {
     return true;
   }
 
+  /** Copies a pack folder into the games folder after validating its manifest. Code is never auto-trusted. */
+  public install(sourceDir: string): { id: string; dir: string } {
+    const source = path.resolve(sourceDir);
+    const manifestPath = path.join(source, MANIFEST_FILE);
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`"${source}" does not contain ${MANIFEST_FILE}.`);
+    }
+    let raw: unknown;
+    try {
+      raw = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    } catch (error) {
+      throw new Error(`${MANIFEST_FILE} is not valid JSON: ${(error as Error).message}`);
+    }
+    const validation = validateManifest(raw);
+    if (!validation.ok || !validation.manifest) throw new Error(validation.errors.join('; '));
+
+    const id = validation.manifest.id;
+    const target = path.join(this.gamesDir, id);
+    fs.mkdirSync(this.gamesDir, { recursive: true });
+    if (path.resolve(target) === source) throw new Error('This pack is already installed.');
+    fs.rmSync(target, { recursive: true, force: true });
+    fs.cpSync(source, target, {
+      recursive: true,
+      filter: (entry) => !['node_modules', '.git'].includes(path.basename(entry))
+    });
+    // A replaced driver.js must be approved again.
+    this.revoke(id);
+    return { id, dir: target };
+  }
+
+  /** Removes an installed pack folder (never anything outside the games folder). */
+  public uninstall(packId: string): boolean {
+    const dir = this.findPackDir(packId);
+    if (!dir) return false;
+    const relative = path.relative(this.gamesDir, dir);
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return false;
+    fs.rmSync(dir, { recursive: true, force: true });
+    this.revoke(packId);
+    return true;
+  }
+
   public revoke(packId: string): void {
     const store = this.readTrust();
     delete store[packId];

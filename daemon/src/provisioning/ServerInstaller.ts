@@ -8,6 +8,7 @@ import { runServerInstaller } from './JavaInstallerRunner';
 import {
   FORGE_METADATA_URL,
   NEOFORGE_METADATA_URL,
+  compareVersions,
   forgeInstallerUrl,
   forgeMinecraftVersions,
   latestForgeVersion,
@@ -42,7 +43,6 @@ export interface ProvisionHooks {
 
 const USER_AGENT = 'mc-nexus/1.0.0 (contact@mc-nexus.local)';
 const DEFAULT_HEADERS = { 'User-Agent': USER_AGENT };
-const MAX_VERSIONS = 15;
 
 export const DEFAULT_MINECRAFT_VERSIONS: readonly string[] = [
   '1.21.4',
@@ -220,7 +220,7 @@ export class ServerInstaller {
           const allVersions = Object.values(data.versions).flat();
           // Filter out -rc and -pre for clean defaults
           const stableVersions = allVersions.filter((v) => !v.includes('-rc') && !v.includes('-pre'));
-          return (stableVersions.length > 0 ? stableVersions : allVersions).slice(0, MAX_VERSIONS);
+          return [...new Set(stableVersions.length > 0 ? stableVersions : allVersions)].sort((a, b) => compareVersions(b, a));
         }
       }
     } catch {
@@ -236,7 +236,7 @@ export class ServerInstaller {
       throw new DaemonError('UPSTREAM_ERROR', `Purpur API responded with status ${res.status}`);
     }
     const data = (await res.json()) as { versions: string[] };
-    return data.versions.slice().reverse().slice(0, MAX_VERSIONS);
+    return data.versions.slice().sort((a, b) => compareVersions(b, a));
   }
 
   private static async getFabricVersions(): Promise<string[]> {
@@ -245,7 +245,7 @@ export class ServerInstaller {
       throw new DaemonError('UPSTREAM_ERROR', `Fabric meta API responded with status ${res.status}`);
     }
     const data = (await res.json()) as Array<{ version: string; stable: boolean }>;
-    return data.filter((v) => v.stable).map((v) => v.version).slice(0, MAX_VERSIONS);
+    return data.filter((v) => v.stable).map((v) => v.version);
   }
 
   private static async getVanillaVersions(): Promise<string[]> {
@@ -256,7 +256,7 @@ export class ServerInstaller {
       throw new DaemonError('UPSTREAM_ERROR', `Mojang manifest API responded with status ${res.status}`);
     }
     const data = (await res.json()) as { versions: Array<{ id: string; type: string }> };
-    return data.versions.filter((v) => v.type === 'release').map((v) => v.id).slice(0, MAX_VERSIONS);
+    return data.versions.filter((v) => v.type === 'release').map((v) => v.id);
   }
 
   private static async resolveDownloadUrl(loader: LoaderType, mcVersion: string): Promise<string> {

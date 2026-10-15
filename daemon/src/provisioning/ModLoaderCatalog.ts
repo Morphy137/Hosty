@@ -6,7 +6,6 @@ export const NEOFORGE_METADATA_URL =
 
 /** Oldest Minecraft version for which the Forge installer flow is supported. */
 const MIN_FORGE_MC_VERSION = '1.12.2';
-const MAX_VERSIONS = 15;
 
 export const parseMavenVersions = (xml: string): string[] => {
   const block = /<versions>([\s\S]*?)<\/versions>/.exec(xml)?.[1] ?? '';
@@ -39,7 +38,7 @@ export const forgeMinecraftVersions = (mavenVersions: string[]): string[] =>
     mavenVersions
       .map((version) => version.split('-')[0])
       .filter((mc) => /^(1|\d{2})\.\d+(\.\d+)?$/.test(mc) && compareVersions(mc, MIN_FORGE_MC_VERSION) >= 0)
-  ).slice(0, MAX_VERSIONS);
+  );
 
 /** Metadata lists versions oldest to newest, so the last match is the latest build. */
 export const latestForgeVersion = (mavenVersions: string[], mcVersion: string): string | null => {
@@ -68,7 +67,7 @@ export const neoForgeMinecraftVersions = (mavenVersions: string[]): string[] =>
     mavenVersions
       .map((version) => neoForgeToMinecraftVersion(version))
       .filter((mc): mc is string => mc !== null)
-  ).slice(0, MAX_VERSIONS);
+  );
 
 export const latestNeoForgeVersion = (mavenVersions: string[], mcVersion: string): string | null => {
   const matches = mavenVersions.filter((version) => neoForgeToMinecraftVersion(version) === mcVersion);

@@ -24,6 +24,7 @@ import { ServerHeader } from './components/layout/ServerHeader';
 import { Skeleton } from './components/ui/Skeleton';
 import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
 import { useGames } from './hooks/useGames';
+import { useLocales } from './hooks/useLocales';
 import { useAppVersion } from './hooks/useAppVersion';
 import { useMetricsHistory } from './hooks/useMetricsHistory';
 import { useToast } from './components/ui/toastContext';
@@ -36,6 +37,7 @@ import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
 import type { WizardOrigin } from './components/wizard/wizardTypes';
 import { EditServerModal } from './components/modals/EditServerModal';
+import { ModCatalogDialog } from './components/modals/ModCatalogDialog';
 import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
 import { WelcomeEmptyState } from './components/common/WelcomeEmptyState';
 import { useAppUpdater } from './hooks/useAppUpdater';
@@ -98,6 +100,8 @@ export default function App() {
   const { toast } = useToast();
   const appVersion = useAppVersion();
   const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
+  const locales = useLocales(connectionState);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
@@ -256,7 +260,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-canvas text-ink select-none overflow-hidden transition-colors">
+    <div className="h-screen w-screen flex flex-col bg-canvas text-ink overflow-hidden transition-colors">
       {isTauriRuntime() && <TitleBar />}
 
       <div className="flex min-h-0 flex-1">
@@ -270,6 +274,21 @@ export default function App() {
           onCreate={() => openWizard('create')}
           onImport={() => openWizard('import')}
           onOpenGamePacks={() => setIsPacksOpen(true)}
+          languages={locales.options}
+          currentLanguage={locales.current}
+          onChangeLanguage={(code) => void locales.select(code)}
+          onEditInstance={(id) => {
+            void instances.selectInstance(id).then(() => setIsEditModalOpen(true));
+          }}
+          onRenameInstance={async (id, name) => {
+            await instances.updateSettings(id, { name }).catch(() => undefined);
+          }}
+          onToggleFavorite={async (id, favorite) => {
+            await instances.updateSettings(id, { favorite }).catch(() => undefined);
+          }}
+          onRemoveInstance={async (id) => {
+            await instances.deleteInstance(id).catch(() => undefined);
+          }}
           theme={theme}
           onToggleTheme={toggleTheme}
           appVersion={appVersion}
@@ -305,7 +324,6 @@ export default function App() {
               ) : (
                 <WelcomeEmptyState
                   onCreateServer={() => openWizard('create')}
-                  onImportServer={() => openWizard('import')}
                 />
               )
             ) : (
@@ -344,6 +362,7 @@ export default function App() {
                     onToggleMod={modFiles.toggleMod}
                     onDeleteMod={modFiles.deleteMod}
                     onOpenConfigTab={() => setActiveTab('mods')}
+                    onBrowseCatalog={activeGame?.modSources?.length ? () => setIsCatalogOpen(true) : undefined}
                   />
                 )}
 
@@ -400,6 +419,16 @@ export default function App() {
         onChanged={() => setGamesReloadKey((key) => key + 1)}
       />
 
+      {activeGame?.modSources?.length && instances.activeInstance ? (
+        <ModCatalogDialog
+          open={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          instanceId={instances.activeInstance.id}
+          sources={activeGame.modSources}
+          onInstalled={() => void modFiles.refresh()}
+        />
+      ) : null}
+
       <EditServerModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -407,6 +436,7 @@ export default function App() {
         serverStatus={status}
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
+        jvmFlagPresets={activeGame?.jvmFlagPresets}
       />
 
       {/* Auto-updater Notification Banner */}

@@ -8,6 +8,8 @@ export type DaemonErrorCode =
   | 'INSTALL_IN_PROGRESS'
   | 'INSTALL_CANCELLED'
   | 'UPSTREAM_ERROR'
+  | 'INVALID_FOLDER'
+  | 'BRIDGE_ASSET_MISSING'
   | 'INTERNAL_ERROR';
 
 const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
@@ -20,6 +22,8 @@ const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
   INSTALL_IN_PROGRESS: 409,
   INSTALL_CANCELLED: 409,
   UPSTREAM_ERROR: 502,
+  INVALID_FOLDER: 400,
+  BRIDGE_ASSET_MISSING: 500,
   INTERNAL_ERROR: 500
 };
 

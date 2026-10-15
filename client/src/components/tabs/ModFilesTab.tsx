@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Package, Trash2, Sliders, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, Package, Trash2, Sliders, CheckCircle2, XCircle, Download } from 'lucide-react';
 import type { ModFileInfo } from '../../types/daemon';
 
 interface ModFilesTabProps {
@@ -10,6 +10,8 @@ interface ModFilesTabProps {
   onToggleMod: (filename: string) => Promise<void>;
   onDeleteMod: (filename: string) => Promise<void>;
   onOpenConfigTab: () => void;
+  /** Present only when the game declares a mod catalog. */
+  onBrowseCatalog?: () => void;
 }
 
 export const ModFilesTab: React.FC<ModFilesTabProps> = ({
@@ -18,7 +20,8 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
   onFilterChange,
   onToggleMod,
   onDeleteMod,
-  onOpenConfigTab
+  onOpenConfigTab,
+  onBrowseCatalog
 }) => {
   const { t } = useTranslation();
 
@@ -39,6 +42,19 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden gap-4 max-w-[1200px] w-full mx-auto">
+      {onBrowseCatalog && (
+        <div className="flex shrink-0 justify-end">
+          <button
+            type="button"
+            onClick={onBrowseCatalog}
+            className="flex h-9 cursor-pointer items-center gap-2 rounded-[6px] bg-ink px-4 text-[13px] font-medium text-on-ink transition hover:bg-ink-hover"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {t('mod_catalog.browse')}
+          </button>
+        </div>
+      )}
+
       {/* Metric Counters Strip */}
       <div className="grid grid-cols-3 gap-4 shrink-0">
         <div className="geist-card p-4 flex items-center justify-between bg-surface border border-hairline">

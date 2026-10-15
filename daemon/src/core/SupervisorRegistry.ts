@@ -61,6 +61,11 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
     });
   }
 
+  /** Forgets a stopped instance's supervisor (used when the instance is removed). */
+  public removeSupervisor(instanceId: string): void {
+    this.supervisors.delete(instanceId);
+  }
+
   public getSupervisor(instanceId: string): ProcessSupervisor | undefined {
     return this.supervisors.get(instanceId);
   }

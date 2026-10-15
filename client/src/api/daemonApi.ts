@@ -1,5 +1,6 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  ModSearchHit,
   ConfigEntry,
   ConfigPayload,
   DaemonErrorPayload,
@@ -166,16 +167,76 @@ export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: Gam
   return postJson<{ ok: boolean; packs: GamePackInfo[] }>(`/api/game-packs/${encodeURIComponent(packId)}/trust`, {});
 }
 
+export function installGamePack(sourcePath: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/install', {
+    path: sourcePath
+  });
+}
+
+export function uninstallGamePack(packId: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return deleteRequest<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>(
+    `/api/game-packs/${encodeURIComponent(packId)}`
+  );
+}
+
+export function searchCatalogMods(
+  instanceId: string,
+  sourceId: string,
+  query: string,
+  offset = 0
+): Promise<{ hits: ModSearchHit[]; total: number; offset: number }> {
+  const params = new URLSearchParams({ source: sourceId, q: query, offset: String(offset) });
+  return request<{ hits: ModSearchHit[]; total: number; offset: number }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/mods/search?${params.toString()}`
+  );
+}
+
+export function installCatalogMod(
+  instanceId: string,
+  sourceId: string,
+  projectId: string
+): Promise<{ ok: boolean; filename: string; restartRequired: boolean }> {
+  return postJson<{ ok: boolean; filename: string; restartRequired: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/mods/install`,
+    { source: sourceId, projectId }
+  );
+}
+
+export interface LocaleInfo {
+  code: string;
+  name: string;
+}
+
+export function fetchLocales(): Promise<{ localesDir: string; locales: LocaleInfo[] }> {
+  return request<{ localesDir: string; locales: LocaleInfo[] }>('/api/locales');
+}
+
+export function fetchLocale(code: string): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/api/locales/${encodeURIComponent(code)}`);
+}
+
 export function getGameLogoUrl(gameId: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }
 
-export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
-  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', { path: folderPath, name });
+export function importInstance(
+  folderPath: string,
+  name?: string,
+  gameId?: string
+): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', {
+    path: folderPath,
+    name,
+    gameId
+  });
 }
 
 export function fetchInstanceSettings(id: string): Promise<InstanceInfo> {
   return request<InstanceInfo>(`/api/instances/${encodeURIComponent(id)}/settings`);
+}
+
+export function deleteInstance(id: string): Promise<{ ok: boolean; keptFiles: boolean }> {
+  return deleteRequest<{ ok: boolean; keptFiles: boolean }>(`/api/instances/${encodeURIComponent(id)}`);
 }
 
 export function updateInstanceSettings(
@@ -200,8 +261,8 @@ export function deleteInstanceIcon(id: string): Promise<{ ok: boolean }> {
   return deleteRequest<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/icon`);
 }
 
-export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
-  return postJson<{ ok: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
+export function installInstanceBridge(id: string): Promise<{ ok: boolean; serverRunning: boolean }> {
+  return postJson<{ ok: boolean; serverRunning: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
 }
 
 export function getInstanceIconUrl(id: string): string {
@@ -275,14 +336,14 @@ export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[
       const res = await fetch('https://meta.fabricmc.net/v2/versions/game');
       if (res.ok) {
         const data = (await res.json()) as Array<{ version: string; stable: boolean }>;
-        const stable = data.filter((v) => v.stable).map((v) => v.version).slice(0, 15);
+        const stable = data.filter((v) => v.stable).map((v) => v.version);
         if (stable.length > 0) return stable;
       }
     } else if (loader === 'vanilla') {
       const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
       if (res.ok) {
         const data = (await res.json()) as { versions: Array<{ id: string; type: string }> };
-        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id).slice(0, 15);
+        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id);
         if (releases.length > 0) return releases;
       }
     }

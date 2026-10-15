@@ -4,7 +4,7 @@ import { defaultMinRamMb } from '../../utils/ram';
 import type { WizardDraft } from './wizardTypes';
 
 export type CreationPlan =
-  | { kind: 'import'; path: string; name: string }
+  | { kind: 'import'; path: string; name: string; gameId: string }
   | {
       kind: 'install';
       loader: ServerLoader;
@@ -52,7 +52,7 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
   const name = draft.name.trim();
 
   if (draft.origin === 'import') {
-    return { kind: 'import', path: draft.importPath.trim(), name };
+    return { kind: 'import', path: draft.importPath.trim(), name, gameId: draft.gameId };
   }
 
   const settings = buildInstanceSettings(draft, game);
@@ -84,3 +84,12 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
 
   return { kind: 'create', instanceId: draft.instanceId, name, settings };
 }
+
+const BRIDGE_LOADERS = ['paper', 'purpur', 'spigot', 'fabric'];
+
+/** True when a Telemetry Bridge can be installed for what this wizard run will produce. */
+export const bridgeEligible = (draft: WizardDraft, game: GameDriverSummary | undefined): boolean => {
+  if (!game?.capabilities.bridge) return false;
+  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.minecraft.loader : null;
+  return Boolean(loader && BRIDGE_LOADERS.includes(loader));
+};

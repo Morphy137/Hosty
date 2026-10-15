@@ -9,8 +9,13 @@ import type {
   ProvisionJobState,
   ServerLoader
 } from '../../types/daemon';
-import { fetchSystemEnvironment, saveServerProperties, uploadInstanceIcon } from '../../api/daemonApi';
-import { recommendedRamMb } from '../../utils/ram';
+import {
+  fetchSystemEnvironment,
+  installInstanceBridge,
+  saveServerProperties,
+  uploadInstanceIcon
+} from '../../api/daemonApi';
+import { maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Stepper } from '../ui/Stepper';
@@ -21,7 +26,7 @@ import { SetupStep } from './steps/SetupStep';
 import { CustomizeStep } from './steps/CustomizeStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { DoneStep } from './steps/DoneStep';
-import { buildCreationPlan } from './wizardPlan';
+import { bridgeEligible, buildCreationPlan } from './wizardPlan';
 import {
   CREATE_STEPS,
   IMPORT_STEPS,
@@ -49,7 +54,7 @@ export interface WizardActions {
     loaderVersion?: string;
   }) => Promise<void>;
   createInstance: (id: string, name: string, settings: Partial<InstanceSettings>) => Promise<string>;
-  importInstance: (path: string, name?: string) => Promise<string>;
+  importInstance: (path: string, name?: string, gameId?: string) => Promise<string>;
 }
 
 interface CreateServerWizardProps {
@@ -95,7 +100,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   const { toast } = useToast();
 
   const [draft, setDraft] = useState<WizardDraft>(INITIAL_DRAFT);
-  const [step, setStep] = useState<WizardStepId>('origin');
+  const [step, setStep] = useState<WizardStepId>('game');
   const [direction, setDirection] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +131,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
         port: nextFreePort(minecraft?.defaultPort ?? INITIAL_DRAFT.port, instances),
         maxPlayers: minecraft?.defaultMaxPlayers ?? INITIAL_DRAFT.maxPlayers
       });
-      setStep('origin');
+      setStep('game');
       setDirection(1);
       setIsBusy(false);
       setError(null);
@@ -146,7 +151,6 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
         setJavaMajor(env.java.detected ? env.java.majorVersion : null);
         if (env.totalMemMb) {
           setSystemRamMb(env.totalMemMb);
-          setDraft((current) => ({ ...current, ramMb: recommendedRamMb(env.totalMemMb) }));
         }
       })
       .catch(() => {
@@ -172,7 +176,11 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       idTouched: false,
       motd: t('wizard.default_motd', { game: shortName }),
       port: nextFreePort(selected.defaultPort, instances),
-      maxPlayers: selected.defaultMaxPlayers
+      maxPlayers: selected.defaultMaxPlayers,
+      ramMb: Math.min(
+        selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
+        maxAllocatableRamMb(systemRamMb)
+      )
     });
   };
 
@@ -185,7 +193,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   const canContinue = (() => {
     switch (step) {
       case 'origin':
-        return draft.origin === 'create' || (draft.importInfo !== null && !isInspecting);
+        return draft.origin === 'create' || (draft.importInfo?.gameId === draft.gameId && !isInspecting);
       case 'game':
         return game !== undefined && game.status !== 'coming_soon';
       case 'setup':
@@ -198,11 +206,6 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   })();
 
   const handleNext = () => {
-    if (step === 'origin' && draft.origin === 'create') {
-      // Preselect Minecraft the first time so the game step starts with a sensible default.
-      const target = games.find((candidate) => candidate.id === draft.gameId && candidate.status !== 'coming_soon');
-      if (target && !draft.name) handleSelectGame(target);
-    }
     const next = steps[stepIndex + 1];
     if (next) goTo(next, 1);
   };
@@ -223,7 +226,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
 
       switch (plan.kind) {
         case 'import':
-          instanceId = await actions.importInstance(plan.path, plan.name);
+          instanceId = await actions.importInstance(plan.path, plan.name, plan.gameId);
           break;
         case 'install':
           await actions.install({
@@ -267,6 +270,14 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           ]);
         } catch {
           problems.push(t('wizard.warn_properties'));
+        }
+      }
+
+      if (draft.installBridge && bridgeEligible(draft, game)) {
+        try {
+          await installInstanceBridge(instanceId);
+        } catch {
+          problems.push(t('wizard.warn_bridge'));
         }
       }
 
@@ -415,6 +426,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
                   logs={provisionLogs}
                   error={error}
                   onCancel={onCancelInstall}
+                  update={update}
                 />
               )}
               {isDone && <DoneStep name={draft.name} warning={warning} />}

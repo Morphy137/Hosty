@@ -3,8 +3,8 @@ import type { FolderInspection, GameDriverSummary, JarInspection, ServerLoader }
 export type WizardOrigin = 'create' | 'import';
 export type WizardStepId = 'origin' | 'game' | 'setup' | 'customize' | 'review' | 'done';
 
-export const CREATE_STEPS: WizardStepId[] = ['origin', 'game', 'setup', 'customize', 'review'];
-export const IMPORT_STEPS: WizardStepId[] = ['origin', 'customize', 'review'];
+export const CREATE_STEPS: WizardStepId[] = ['game', 'origin', 'setup', 'customize', 'review'];
+export const IMPORT_STEPS: WizardStepId[] = ['game', 'origin', 'customize', 'review'];
 
 export type SetupValue = string | number | boolean;
 
@@ -34,6 +34,8 @@ export interface WizardDraft {
   gamemode: 'survival' | 'creative' | 'adventure' | 'spectator';
   difficulty: 'peaceful' | 'easy' | 'normal' | 'hard';
   iconBase64: string | null;
+  /** Install the Telemetry Bridge right after creation (when the loader supports it). */
+  installBridge: boolean;
 }
 
 export const INITIAL_DRAFT: WizardDraft = {
@@ -52,7 +54,8 @@ export const INITIAL_DRAFT: WizardDraft = {
   ramMb: 4096,
   gamemode: 'survival',
   difficulty: 'normal',
-  iconBase64: null
+  iconBase64: null,
+  installBridge: true
 };
 
 export interface StepProps {

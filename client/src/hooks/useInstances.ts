@@ -4,6 +4,7 @@ import {
   selectInstance as apiSelectInstance,
   createInstance as apiCreateInstance,
   importInstance as apiImportInstance,
+  deleteInstance as apiDeleteInstance,
   updateInstanceSettings as apiUpdateInstanceSettings,
   restartInstance as apiRestartInstance
 } from '../api/daemonApi';
@@ -18,7 +19,8 @@ export interface InstancesState {
   createInstance: (id: string, name?: string, settings?: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   updateSettings: (id: string, patch: Partial<InstanceSettings>) => Promise<InstanceInfo>;
   restartServer: (id: string) => Promise<void>;
-  importInstance: (folderPath: string, name?: string) => Promise<InstanceInfo>;
+  importInstance: (folderPath: string, name?: string, gameId?: string) => Promise<InstanceInfo>;
+  deleteInstance: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -117,11 +119,24 @@ export function useInstances(
   );
 
   const importInstance = useCallback(
-    async (folderPath: string, name?: string): Promise<InstanceInfo> => {
+    async (folderPath: string, name?: string, gameId?: string): Promise<InstanceInfo> => {
       try {
-        const res = await apiImportInstance(folderPath, name);
+        const res = await apiImportInstance(folderPath, name, gameId);
         await refresh();
         return res.instance;
+      } catch (err) {
+        onError(err);
+        throw err;
+      }
+    },
+    [onError, refresh]
+  );
+
+  const deleteInstance = useCallback(
+    async (id: string): Promise<void> => {
+      try {
+        await apiDeleteInstance(id);
+        await refresh();
       } catch (err) {
         onError(err);
         throw err;
@@ -142,6 +157,7 @@ export function useInstances(
     updateSettings,
     restartServer,
     importInstance,
+    deleteInstance,
     refresh
   };
 }

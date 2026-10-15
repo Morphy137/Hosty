@@ -5,9 +5,10 @@ import type { GameDriverSummary, ProvisionJobState, ProvisionPhase } from '../..
 import { LOADER_METADATA } from '../../../types/daemon';
 import { GameLogo } from '../../common/GameIcons';
 import { Button } from '../../ui/Button';
-import { usesLoaderInstall } from '../wizardPlan';
+import { bridgeEligible, usesLoaderInstall } from '../wizardPlan';
 import { cn } from '../../../utils/cn';
 import type { WizardDraft } from '../wizardTypes';
+import { Activity } from 'lucide-react';
 
 interface ReviewStepProps {
   draft: WizardDraft;
@@ -17,11 +18,12 @@ interface ReviewStepProps {
   logs: string[];
   error: string | null;
   onCancel: () => void;
+  update: (patch: Partial<WizardDraft>) => void;
 }
 
 const PHASES: ProvisionPhase[] = ['resolve', 'download', 'install', 'configure'];
 
-export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job, logs, error, onCancel }) => {
+export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job, logs, error, onCancel, update }) => {
   const { t } = useTranslation();
   const isImport = draft.origin === 'import';
   const install = draft.minecraft;
@@ -75,6 +77,28 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job
           ))}
         </dl>
       </div>
+
+      {!isBusy && bridgeEligible(draft, game) && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-[8px] border border-hairline bg-surface p-4 hover:border-hairline-strong">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={draft.installBridge}
+            onChange={(event) => update({ installBridge: event.target.checked })}
+          />
+          <span className="min-w-0">
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+              <Activity className="h-3.5 w-3.5 text-accent-fg" />
+              {t('wizard.bridge_title')}
+              <span className="rounded-[4px] bg-success/10 px-1.5 py-0.5 font-mono text-[10px] text-success-fg">
+                {t('wizard.bridge_recommended')}
+              </span>
+            </span>
+            <span className="mt-1 block text-[12px] leading-relaxed text-soft">{t('wizard.bridge_desc')}</span>
+            <span className="mt-1 block text-[11px] text-mute">{t('wizard.bridge_later')}</span>
+          </span>
+        </label>
+      )}
 
       {isBusy && (
         <div className="space-y-3 rounded-[8px] border border-hairline p-4">

@@ -168,7 +168,7 @@
     "motd_label": "Descripción (MOTD)",
     "folder_path": "Ruta de la Carpeta",
     "force_save_label": "Forzar 'save-all' al detener el servidor",
-    "autostart_label": "Iniciar automáticamente con el daemon",
+    "autostart_label": "Iniciar automáticamente al abrir Hosty",
     "icon_label": "Ícono del Servidor",
     "upload_icon": "Subir Ícono",
     "remove_icon": "Eliminar Ícono",
@@ -179,21 +179,43 @@
     "java_path_label": "Ruta de Java Personalizada",
     "java_path_hint": "Sobrescribe la ruta de Java global. Deja en blanco para usar la del sistema.",
     "jvm_args_label": "Argumentos JVM Personalizados",
-    "apply_aikar_preset": "Aplicar Banderas de Aikar",
     "startup_preview_label": "Vista Previa de Inicio",
     "running_warning": "Apaga el servidor para aplicar cambios en el puerto o argumentos JVM.",
     "tab_bridge": "Bridge de Telemetría",
     "bridge_title": "Bridge de Telemetría Hosty",
     "bridge_description": "Instala el bridge nativo de alta frecuencia (plugin de Paper o mod de Fabric) para habilitar monitoreo de TPS, MSPT, chunks cargados y telemetría de jugadores directamente por WebSocket sin saturar la consola.",
-    "bridge_install_button": "Instalar Plugin/Mod del Bridge",
+    "bridge_install_button": "Instalar Telemetry Bridge",
     "bridge_installing": "Instalando Bridge...",
-    "bridge_installed_success": "¡Bridge instalado correctamente en el servidor! Reinicia el servidor para activarlo.",
+    "bridge_installed_restart": "Telemetry Bridge instalado. Reinicia el servidor para activarlo.",
+    "bridge_installed_ready": "Telemetry Bridge instalado y listo. Se activará la próxima vez que inicie el servidor.",
+    "bridge_unsupported": "Aún no existe Telemetry Bridge para el motor de este servidor.",
     "bridge_status_active": "Bridge Conectado y Transmitiendo",
-    "bridge_status_ready": "Bridge Instalado (Esperando Reinicio del Servidor)",
+    "bridge_status_ready": "Instalado",
     "bridge_status_missing": "No Instalado",
     "copy_path": "Copiar ruta",
     "icon_alt": "Icono del servidor",
-    "engine_label": "Motor"
+    "engine_label": "Motor",
+    "presets_hint": "Conjuntos de flags recomendados para este juego. Al aplicar uno se combinan sus flags en el campo de abajo.",
+    "preset_recommended": "Recomendado",
+    "preset_apply": "Aplicar",
+    "preset": {
+      "aikar": {
+        "label": "Flags de Aikar",
+        "desc": "Conjunto G1GC optimizado para servidores de la familia Paper con 4 GB o más. Ideal para Paper, Purpur y Spigot."
+      },
+      "g1-basic": {
+        "label": "G1GC básico",
+        "desc": "Ajuste G1 ligero y seguro para servidores con mods o vanilla (Fabric, Forge, NeoForge, Vanilla)."
+      },
+      "zgc": {
+        "label": "ZGC generacional",
+        "desc": "Pausas muy bajas con heaps grandes. Requiere Java 21 o superior."
+      },
+      "java23-unsafe": {
+        "label": "Silenciar aviso de Unsafe",
+        "desc": "Oculta el aviso de obsolescencia de sun.misc.Unsafe que imprime JOML en Java 23+. No usar en Java anterior: el servidor no iniciará."
+      }
+    }
   },
   "mod_files": {
     "total_mods": "Total de Mods",
@@ -370,6 +392,12 @@
     "CONFIG_NOT_FOUND": "Archivo de configuración no encontrado.",
     "INVALID_FILENAME": "Nombre de archivo de configuración inválido.",
     "INVALID_LOADER": "Motor de servidor inválido.",
+    "INVALID_FOLDER": "Esta carpeta no es un servidor válido para el juego seleccionado.",
+    "BRIDGE_ASSET_MISSING": "Falta el archivo de Telemetry Bridge en esta instalación de Hosty.",
+    "INSTALL_CANCELLED": "Instalación cancelada.",
+    "INTERNAL_ERROR": "Error interno. Revisa el registro del daemon.",
+    "UNAUTHORIZED": "El daemon rechazó la solicitud (token inválido).",
+    "INVALID_MESSAGE": "Mensaje inválido recibido.",
     "INVALID_VERSION": "Versión de Minecraft inválida.",
     "INVALID_PAYLOAD": "Carga útil recibida no válida.",
     "UPSTREAM_ERROR": "Error al contactar con los servidores de descarga. Verifica tu conexión a internet.",
@@ -395,7 +423,8 @@
     "import_server_btn": "Importar servidor",
     "empty_overview_title": "Ningún servidor seleccionado",
     "empty_overview_desc": "Crea un nuevo servidor dedicado o importa una carpeta de servidor existente para comenzar a gestionarlo.",
-    "footer_tagline": "Hosty • Supervisor de servidores multijuego"
+    "footer_tagline": "Hosty • Supervisor de servidores multijuego",
+    "get_started": "Comenzar"
   },
   "updater": {
     "update_available_title": "Actualización disponible",
@@ -422,7 +451,22 @@
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
     "version": "v{{version}}",
-    "game_packs": "Paquetes de juegos"
+    "game_packs": "Paquetes de juegos",
+    "menu_edit": "Editar servidor",
+    "menu_rename": "Cambiar nombre",
+    "menu_favorite": "Añadir a favoritos",
+    "menu_unfavorite": "Quitar de favoritos",
+    "menu_remove": "Quitar de Hosty",
+    "menu_delete": "Eliminar servidor",
+    "menu_more": "Opciones del servidor",
+    "rename_title": "Cambiar nombre del servidor",
+    "rename_save": "Guardar",
+    "cancel": "Cancelar",
+    "remove_title": "¿Quitar de Hosty?",
+    "remove_imported_desc": "\"{{name}}\" desaparecerá de Hosty. Su carpeta y archivos NO se borran, así que puedes importarlo de nuevo más tarde.",
+    "delete_title": "¿Eliminar servidor?",
+    "delete_created_desc": "\"{{name}}\" y todos sus archivos (mundos, mods, configuraciones) se eliminarán permanentemente del disco.",
+    "language": "Idioma"
   },
   "titlebar": {
     "minimize": "Minimizar",
@@ -465,7 +509,7 @@
     "origin_import_desc": "Añade una carpeta de servidor que ya está en este PC. El juego y el loader se detectan solos.",
     "import_detecting": "Analizando la carpeta...",
     "import_detected": "Detectado: {{game}} · {{loader}} · {{version}}",
-    "import_unknown": "Carpeta encontrada, pero no se pudo identificar el juego. Se importará como Minecraft.",
+    "import_unknown": "Esta carpeta no es un servidor válido de ningún juego soportado, por lo que no se puede importar.",
     "game_status": {
       "available": "Disponible",
       "beta": "Beta",
@@ -489,7 +533,6 @@
     "motd_hint": "Usa códigos § o & para colores (p. ej. §aVerde §lNegrita).",
     "ram_system": "Este PC tiene {{total}} GB de RAM",
     "ram_system_unknown": "Memoria del sistema desconocida",
-    "ram_recommended": "Usar la recomendada ({{value}} GB)",
     "ram_min_hint": "Memoria inicial (-Xms): {{min}} MB",
     "gamemode": "Modo de juego",
     "difficulty": "Dificultad",
@@ -517,7 +560,14 @@
     "done_title": "{{name}} está listo",
     "done_desc": "Tu servidor fue creado. Puedes iniciarlo ahora o abrir su panel para seguir configurándolo.",
     "start_now": "Iniciar servidor ahora",
-    "open_panel": "Abrir panel"
+    "open_panel": "Abrir panel",
+    "import_wrong_game": "Esta carpeta parece un servidor de \"{{detected}}\", no de \"{{selected}}\". Vuelve atrás y elige el juego correcto.",
+    "ram_default": "Por defecto: {{value}} GB",
+    "bridge_title": "Hosty Telemetry Bridge",
+    "bridge_recommended": "Recomendado",
+    "bridge_desc": "Añade TPS, MSPT, chunks cargados y salud y coordenadas por jugador en tiempo real al panel, y habilita acciones sobre jugadores, sin consultar la consola.",
+    "bridge_later": "También puedes instalarlo o comprobarlo luego desde Editar servidor > Telemetry Bridge.",
+    "warn_bridge": "El servidor se creó, pero no se pudo instalar el Telemetry Bridge. Puedes reintentarlo desde Editar servidor."
   },
   "config": {
     "no_files": "Este juego no tiene archivos de configuración editables.",
@@ -526,7 +576,7 @@
   },
   "packs": {
     "title": "Paquetes de juegos",
-    "description": "Añade juegos a Hosty soltando la carpeta de un paquete en el directorio de juegos.",
+    "description": "Los juegos son complementos. Los juegos integrados se listan como referencia; instala más eligiendo una carpeta de pack.",
     "folder_hint": "Carpeta de juegos:",
     "empty": "Todavía no hay paquetes de juegos instalados.",
     "reload": "Recargar paquetes",
@@ -535,6 +585,26 @@
     "code_trusted": "Código de confianza",
     "code_untrusted": "Código sin confianza",
     "trust_warning": "Este paquete incluye código (driver.js) que se ejecutaría con los mismos permisos que Hosty. Confía solo en paquetes de autores que conozcas.",
-    "trust_button": "Confiar y activar el código"
+    "trust_button": "Confiar y activar el código",
+    "install_placeholder": "Ruta a una carpeta de game pack (contiene hosty-game.json)",
+    "install_title": "Selecciona una carpeta de game pack",
+    "install_button": "Instalar",
+    "builtin": "Integrado",
+    "uninstall": "Desinstalar pack"
+  },
+  "mod_catalog": {
+    "title": "Buscar mods",
+    "description": "Busca en {{source}} y descarga directo en este servidor. Los resultados se filtran por el motor y la versión del servidor.",
+    "browse": "Buscar mods",
+    "source": "Fuente",
+    "search_placeholder": "Buscar mods y plugins...",
+    "search": "Buscar",
+    "empty": "Sin resultados.",
+    "by": "por {{author}}",
+    "install": "Instalar",
+    "load_more": "Cargar más",
+    "installed": "{{name}} instalado",
+    "install_failed": "No se pudo instalar {{name}}",
+    "restart_required": "Reinicia el servidor para cargarlo."
   }
 }

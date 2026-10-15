@@ -1,0 +1,45 @@
+{
+  "_meta": { "name": "Português (Portugal)", "extends": "pt-BR" },
+  "common": { "save": "Guardar" },
+  "header": { "mock_active": "Simulação ativa" },
+  "overview": {
+    "players": { "tp": "Teletransportar" },
+    "console": { "placeholder": "Escreva um comando (ex.: say Olá, give @p diamond)..." }
+  },
+  "players": {
+    "tp_spawn": "Spawn",
+    "teleport_coords_label": "Teletransportar para coordenadas",
+    "unmute": "Remover silêncio",
+    "give_exp": "Dar experiência"
+  },
+  "edit_server": {
+    "icon_hint": "A imagem tem de ser um .png de 64x64.",
+    "force_save_label": "Forçar 'save-all' ao parar o servidor",
+    "bridge_description": "Instala a bridge nativa de alta frequência (plugin Paper ou mod Fabric) para mostrar TPS, MSPT, chunks carregados e vida e coordenadas de cada jogador em tempo real, sem consultar a consola.",
+    "bridge_installing": "A instalar a Bridge...",
+    "bridge_installed_restart": "Telemetry Bridge instalada. Reinicie o servidor para a ativar.",
+    "bridge_installed_ready": "Telemetry Bridge instalada e pronta. Será ativada da próxima vez que o servidor iniciar."
+  },
+  "mod_files": { "empty": "Nenhum ficheiro .jar encontrado na pasta /mods.", "delete_confirm": "Tem a certeza de que quer eliminar {{filename}}?", "delete": "Eliminar mod" },
+  "import_server": { "browse": "Procurar...", "picker_title": "Selecione a pasta do servidor" },
+  "properties": { "save": "Guardar alterações", "saved": "Guardado!" },
+  "mods": { "save": "Guardar configuração", "saved": "Guardado!" },
+  "errors": {
+    "SERVER_NOT_ONLINE": "Não é possível enviar comandos com o servidor offline.",
+    "UNKNOWN": "Ocorreu um erro inesperado.",
+    "NETWORK_ERROR": "Não foi possível contactar o daemon do Hosty. Verifique se está em execução na porta 4000.",
+    "UPSTREAM_ERROR": "Falha ao contactar os servidores de transferência. Verifique a sua ligação à internet.",
+    "INTERNAL_ERROR": "Erro interno. Consulte o registo do daemon para mais detalhes."
+  },
+  "updater": { "downloading": "A transferir atualização ({{progress}}%)...", "download_complete": "Transferência concluída. A reiniciar o Hosty..." },
+  "startup": { "starting": "A iniciar o serviço em segundo plano...", "view_logs": "Ver registos" },
+  "sidebar": { "rename_save": "Guardar", "delete_created_desc": "\"{{name}}\" e todos os seus ficheiros (mundos, mods, configurações) serão eliminados permanentemente do disco.", "menu_delete": "Eliminar servidor", "delete_title": "Eliminar servidor?" },
+  "wizard": {
+    "warn_icon": "O servidor foi criado, mas não foi possível guardar o ícone.",
+    "icon_hint": "Qualquer imagem serve: é recortada e redimensionada para 64×64 automaticamente.",
+    "version_search": "Pesquisar versões...",
+    "default_name": "O meu servidor de {{game}}"
+  },
+  "packs": { "empty": "Ainda não há pacotes de jogos instalados.", "install_button": "Instalar" },
+  "mod_catalog": { "search_placeholder": "Pesquisar mods e plugins...", "search": "Pesquisar", "browse": "Procurar mods", "title": "Procurar mods", "install_failed": "Não foi possível instalar {{name}}" }
+}

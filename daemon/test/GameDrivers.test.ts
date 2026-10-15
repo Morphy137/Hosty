@@ -65,6 +65,21 @@ describe('Game Drivers Architecture', () => {
   describe('MinecraftDriver', () => {
     const driver = new MinecraftDriver();
 
+    it('does not add G1 when the user picked another collector, and deduplicates flags', () => {
+      fs.writeFileSync(path.join(tmpDir, 'server.jar'), '');
+      const zgc = driver.buildLaunchPlan({ workingDir: tmpDir, jvmArgs: ['-XX:+UseZGC', '-XX:+UseZGC'] });
+      expect(zgc.args.filter((arg) => arg === '-XX:+UseZGC')).toHaveLength(1);
+      expect(zgc.args).not.toContain('-XX:+UseG1GC');
+
+      const plain = driver.buildLaunchPlan({ workingDir: tmpDir, jvmArgs: ['-XX:+UseG1GC'] });
+      expect(plain.args.filter((arg) => arg === '-XX:+UseG1GC')).toHaveLength(1);
+    });
+
+    it('declares launch defaults and flag presets in its summary', () => {
+      expect(driver.summary.launchDefaults?.memoryMb).toBeGreaterThan(0);
+      expect(driver.summary.jvmFlagPresets?.map((preset) => preset.id)).toContain('aikar');
+    });
+
     it('validates server installation based on server.jar existence', () => {
       expect(driver.validateInstallation(tmpDir)).toBe(false);
 

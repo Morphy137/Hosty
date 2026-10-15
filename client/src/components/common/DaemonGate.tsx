@@ -14,9 +14,7 @@ export const DaemonGate: React.FC<{ children: React.ReactNode }> = ({ children }
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-canvas p-6 select-none">
       <div className="max-w-[420px] w-full flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-[14px] bg-surface border border-hairline p-3 shadow-md flex items-center justify-center mb-6">
-          <img src="/logo.svg" alt="Hosty" className="w-full h-full object-contain" />
-        </div>
+        <img src="/logo.svg" alt="Hosty" className="mb-6 h-16 w-16 rounded-full object-cover shadow-md" />
 
         {state.phase === 'starting' ? (
           <>
