@@ -16,6 +16,7 @@
     "title": "Hosty",
     "instance": "Local Instance",
     "instance_tooltip": "Switch active server instance",
+    "no_servers": "No servers",
     "new_server": "New Server",
     "import_server": "Import",
     "mock_button": "Simulate Telemetry",
@@ -349,5 +350,28 @@
     "java_missing_desc": "Minecraft and Java-based game servers require Java (JDK 21) to run on your system.",
     "java_download_btn": "Download Java (Temurin 21)",
     "java_detected": "Java {{version}} detected"
+  },
+  "onboarding": {
+    "welcome_title": "Welcome to Hosty",
+    "welcome_subtitle": "What would you like to do to get started?",
+    "welcome_desc": "You do not have any game servers configured yet. Hosty lets you create dedicated servers from scratch or import existing folders.",
+    "create_server_title": "Create a New Server",
+    "create_server_desc": "Set up a server step-by-step. Choose a game, download files automatically, and customize performance.",
+    "create_server_btn": "Create Server",
+    "import_server_title": "Import Existing Server",
+    "import_server_desc": "Add a server folder already on your PC to manage, monitor, and run it with Hosty.",
+    "import_server_btn": "Import Server",
+    "empty_overview_title": "No Server Selected",
+    "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game."
+  },
+  "updater": {
+    "update_available_title": "Update Available",
+    "update_available_desc": "Hosty v{{version}} is ready to install.",
+    "update_now_btn": "Update & Restart",
+    "downloading": "Downloading update ({{progress}}%)...",
+    "download_complete": "Download complete. Restarting Hosty...",
+    "check_for_updates": "Check for Updates",
+    "up_to_date": "Hosty is up to date",
+    "check_failed": "Could not check for updates"
   }
 }

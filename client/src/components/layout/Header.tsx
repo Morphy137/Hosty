@@ -63,6 +63,8 @@ export const Header: React.FC<HeaderProps> = ({
     changeLanguage(nextLang);
   };
 
+  const hasNoServers = instances.length === 0;
+
   return (
     <header className="border-b border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#0a0a0a] px-8 pt-4 select-none transition-colors">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between pb-4 gap-4">
@@ -85,17 +87,24 @@ export const Header: React.FC<HeaderProps> = ({
             <select
               value={activeInstanceId}
               onChange={(e) => onSelectInstance(e.target.value)}
-              className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#383838] text-[13px] font-medium text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer appearance-none min-w-[200px] transition"
+              disabled={instances.length === 0}
+              className="h-8 pl-8 pr-7 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] disabled:opacity-60 border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#383838] text-[13px] font-medium text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer appearance-none min-w-[200px] transition"
               title={t('header.instance_tooltip')}
             >
-              {instances.map((inst) => {
-                const gameTag = inst.gameId === 'project-zomboid' ? ' [PZ]' : inst.gameId === 'hytale' ? ' [HY]' : '';
-                return (
-                  <option key={inst.id} value={inst.id} className="dark:bg-[#141414]">
-                    {inst.name}{gameTag} (:{inst.port})
-                  </option>
-                );
-              })}
+              {instances.length === 0 ? (
+                <option value="" disabled className="dark:bg-[#141414]">
+                  {t('header.no_servers')}
+                </option>
+              ) : (
+                instances.map((inst) => {
+                  const gameTag = inst.gameId === 'project-zomboid' ? ' [PZ]' : inst.gameId === 'hytale' ? ' [HY]' : '';
+                  return (
+                    <option key={inst.id} value={inst.id} className="dark:bg-[#141414]">
+                      {inst.name}{gameTag} (:{inst.port})
+                    </option>
+                  );
+                })
+              )}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-[#888888] absolute right-2.5 pointer-events-none" />
           </div>
@@ -167,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => onSendAction('START')}
-            disabled={status === 'ONLINE' || status === 'STARTING'}
+            disabled={hasNoServers || status === 'ONLINE' || status === 'STARTING'}
             className="h-8 px-3.5 rounded-[6px] bg-[#171717] dark:bg-[#ededed] hover:bg-[#333333] dark:hover:bg-[#ffffff] disabled:opacity-40 text-white dark:text-[#000000] text-[13px] font-medium tracking-[-0.28px] flex items-center justify-center gap-1.5 transition cursor-pointer min-w-[135px] shrink-0 shadow-xs"
           >
             <Play className="w-3 h-3 fill-current shrink-0" />
@@ -178,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => onSendAction('STOP')}
-            disabled={status === 'OFFLINE'}
+            disabled={hasNoServers || status === 'OFFLINE'}
             className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] disabled:opacity-40 text-[#171717] dark:text-[#ededed] border border-[#ebebeb] dark:border-[#262626] text-[13px] font-medium tracking-[-0.28px] flex items-center justify-center gap-1.5 transition cursor-pointer min-w-[110px] shrink-0 shadow-2xs"
           >
             <Square className="w-3 h-3 fill-current shrink-0" />
@@ -189,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onRestart}
-            disabled={status === 'OFFLINE'}
+            disabled={hasNoServers || status === 'OFFLINE'}
             className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] disabled:opacity-40 text-[#171717] dark:text-[#ededed] border border-[#ebebeb] dark:border-[#262626] text-[13px] font-medium tracking-[-0.28px] flex items-center justify-center gap-1.5 transition cursor-pointer min-w-[115px] shrink-0 shadow-2xs"
             title={t('overview.controls.restart')}
           >
@@ -201,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => onSendAction('KILL')}
-            disabled={status === 'OFFLINE'}
+            disabled={hasNoServers || status === 'OFFLINE'}
             className="h-8 w-8 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f7d4d6]/40 dark:hover:bg-[#381215] disabled:opacity-40 text-[#ee0000] border border-[#ebebeb] dark:border-[#262626] flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs"
             title={t('overview.controls.kill')}
           >
@@ -211,7 +220,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Sub-navigation Tabs */}
-      <nav className="max-w-[1400px] mx-auto flex items-center gap-6 -mb-[1px]">
+      {!hasNoServers && (
+        <nav className="max-w-[1400px] mx-auto flex items-center gap-6 -mb-[1px]">
         <button
           type="button"
           onClick={() => onTabChange('overview')}
@@ -277,6 +287,7 @@ export const Header: React.FC<HeaderProps> = ({
           {t('nav.properties')}
         </button>
       </nav>
+      )}
     </header>
   );
 };

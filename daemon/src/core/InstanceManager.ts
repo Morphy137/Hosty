@@ -60,14 +60,26 @@ export class InstanceManager {
   private readonly instancesBaseDir: string;
   private readonly registryFilePath: string;
 
-  constructor(instancesBaseDir: string, defaultInstanceId = 'default') {
+  constructor(instancesBaseDir: string, defaultInstanceId = '') {
     this.instancesBaseDir = path.resolve(instancesBaseDir);
     this.registryFilePath = path.join(this.instancesBaseDir, REGISTRY_FILE);
     fs.mkdirSync(this.instancesBaseDir, { recursive: true });
 
+    if (defaultInstanceId) {
+      this.ensureDefaultInstance(defaultInstanceId);
+    }
+
     const registry = this.loadRegistry();
-    this.activeId = registry.activeInstanceId || defaultInstanceId;
-    this.ensureDefaultInstance(defaultInstanceId);
+    const existing = this.listInstances();
+    if (registry.activeInstanceId && existing.some((inst) => inst.id === registry.activeInstanceId)) {
+      this.activeId = registry.activeInstanceId;
+    } else if (existing.length > 0) {
+      this.activeId = existing[0].id;
+    } else if (defaultInstanceId) {
+      this.activeId = defaultInstanceId;
+    } else {
+      this.activeId = '';
+    }
   }
 
   public getActiveInstanceId(): string {
@@ -77,7 +89,7 @@ export class InstanceManager {
   public getActiveInstanceDir(): string {
     const instance = this.getInstance(this.activeId);
     if (!instance) {
-      return path.join(this.instancesBaseDir, 'default');
+      return this.instancesBaseDir;
     }
     return instance.dir;
   }
@@ -107,6 +119,7 @@ export class InstanceManager {
         if (!entry.isDirectory()) continue;
         const id = entry.name;
         const dir = path.join(this.instancesBaseDir, id);
+        if (!this.isConfiguredDirectory(dir)) continue;
         list.push(this.inspectInstance(id, dir, false));
       }
     }
@@ -356,23 +369,51 @@ export class InstanceManager {
     return candidate;
   }
 
+  private isConfiguredDirectory(dir: string): boolean {
+    const settingsPath = path.join(dir, INSTANCE_SETTINGS_FILE);
+    const propsPath = path.join(dir, 'server.properties');
+    const jarPath = path.join(dir, 'server.jar');
+    if (fs.existsSync(settingsPath) || fs.existsSync(propsPath) || fs.existsSync(jarPath)) {
+      return true;
+    }
+    try {
+      const files = fs.readdirSync(dir);
+      return files.some((f) => f !== 'mods' && f !== 'config');
+    } catch {
+      return false;
+    }
+  }
+
   private ensureDefaultInstance(id: string): void {
     const dir = path.join(this.instancesBaseDir, id);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
       fs.mkdirSync(path.join(dir, 'mods'), { recursive: true });
       fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
+      const defaultSettings: InstanceSettings = {
+        name: id,
+        gameId: 'minecraft',
+        port: DEFAULT_PORT,
+        maxPlayers: DEFAULT_MAX_PLAYERS,
+        minRamMb: DEFAULT_MIN_RAM_MB,
+        maxRamMb: DEFAULT_MAX_RAM_MB
+      };
+      fs.writeFileSync(
+        path.join(dir, INSTANCE_SETTINGS_FILE),
+        JSON.stringify(defaultSettings, null, 2),
+        'utf-8'
+      );
     }
   }
 
   private loadRegistry(): RegistryData {
     if (!fs.existsSync(this.registryFilePath)) {
-      return { activeInstanceId: 'default', importedInstances: {} };
+      return { activeInstanceId: '', importedInstances: {} };
     }
     try {
       return JSON.parse(fs.readFileSync(this.registryFilePath, 'utf-8'));
     } catch {
-      return { activeInstanceId: 'default', importedInstances: {} };
+      return { activeInstanceId: '', importedInstances: {} };
     }
   }
 

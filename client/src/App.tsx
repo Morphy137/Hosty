@@ -19,14 +19,20 @@ import { CreateServerModal } from './components/modals/CreateServerModal';
 import { ImportServerModal } from './components/modals/ImportServerModal';
 import { EditServerModal } from './components/modals/EditServerModal';
 import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
+import { WelcomeModal } from './components/modals/WelcomeModal';
+import { WelcomeEmptyState } from './components/common/WelcomeEmptyState';
+import { useAppUpdater } from './hooks/useAppUpdater';
+import { UpdateBanner } from './components/common/UpdateBanner';
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const updater = useAppUpdater();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isWelcomeModalDismissed, setIsWelcomeModalDismissed] = useState(false);
   const [inspectingPlayer, setInspectingPlayer] = useState<PlayerState | null>(null);
 
   const {
@@ -56,6 +62,9 @@ export default function App() {
   }, [clearError]);
 
   const instances = useInstances(connectionState, handleError);
+  const hasNoServers = !instances.isLoading && instances.instances.length === 0;
+  const isWelcomeModalOpen =
+    hasNoServers && !isWelcomeModalDismissed && !isCreateModalOpen && !isImportModalOpen;
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
   const serverProperties = useServerProperties(connectionState, handleError);
   const modConfigs = useModConfigs(connectionState, handleError);
@@ -191,65 +200,72 @@ export default function App() {
       <ErrorAlert error={activeError} onDismiss={handleDismissError} />
 
       <main className="flex-1 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto h-full p-6 flex flex-col gap-6">
-          {activeTab === 'overview' && (
-            <OverviewTab
-              metrics={metrics}
-              players={players}
-              logs={logs}
-              instance={instances.activeInstance}
-              status={status}
-              onSendCommand={handleSendCommand}
-              onSendAction={sendAction}
-              onOpenEditModal={() => setIsEditModalOpen(true)}
-              onRestart={handleRestartServer}
-              onInspectInventory={handleInspectInventory}
-            />
-          )}
+        {hasNoServers ? (
+          <WelcomeEmptyState
+            onCreateServer={() => setIsCreateModalOpen(true)}
+            onImportServer={() => setIsImportModalOpen(true)}
+          />
+        ) : (
+          <div className="max-w-[1400px] mx-auto h-full p-6 flex flex-col gap-6">
+            {activeTab === 'overview' && (
+              <OverviewTab
+                metrics={metrics}
+                players={players}
+                logs={logs}
+                instance={instances.activeInstance}
+                status={status}
+                onSendCommand={handleSendCommand}
+                onSendAction={sendAction}
+                onOpenEditModal={() => setIsEditModalOpen(true)}
+                onRestart={handleRestartServer}
+                onInspectInventory={handleInspectInventory}
+              />
+            )}
 
-          {activeTab === 'players' && (
-            <PlayersTab
-              players={players}
-              onSendCommand={handleSendCommand}
-              onSendAction={sendAction}
-              onInspectInventory={handleInspectInventory}
-            />
-          )}
+            {activeTab === 'players' && (
+              <PlayersTab
+                players={players}
+                onSendCommand={handleSendCommand}
+                onSendAction={sendAction}
+                onInspectInventory={handleInspectInventory}
+              />
+            )}
 
-          {activeTab === 'mod_files' && (
-            <ModFilesTab
-              files={modFiles.files}
-              filter={modFiles.filter}
-              onFilterChange={modFiles.setFilter}
-              onToggleMod={modFiles.toggleMod}
-              onDeleteMod={modFiles.deleteMod}
-              onOpenConfigTab={() => setActiveTab('mods')}
-            />
-          )}
+            {activeTab === 'mod_files' && (
+              <ModFilesTab
+                files={modFiles.files}
+                filter={modFiles.filter}
+                onFilterChange={modFiles.setFilter}
+                onToggleMod={modFiles.toggleMod}
+                onDeleteMod={modFiles.deleteMod}
+                onOpenConfigTab={() => setActiveTab('mods')}
+              />
+            )}
 
-          {activeTab === 'mods' && (
-            <ModsTab
-              files={modConfigs.files}
-              selectedFile={modConfigs.selectedFile}
-              entries={modConfigs.entries}
-              filter={modConfigs.filter}
-              onFilterChange={modConfigs.setFilter}
-              onSelectFile={modConfigs.selectFile}
-              onUpdateEntry={modConfigs.updateEntry}
-              onSave={modConfigs.save}
-            />
-          )}
+            {activeTab === 'mods' && (
+              <ModsTab
+                files={modConfigs.files}
+                selectedFile={modConfigs.selectedFile}
+                entries={modConfigs.entries}
+                filter={modConfigs.filter}
+                onFilterChange={modConfigs.setFilter}
+                onSelectFile={modConfigs.selectFile}
+                onUpdateEntry={modConfigs.updateEntry}
+                onSave={modConfigs.save}
+              />
+            )}
 
-          {activeTab === 'properties' && (
-            <PropertiesTab
-              entries={serverProperties.entries}
-              filter={serverProperties.filter}
-              onFilterChange={serverProperties.setFilter}
-              onUpdateEntry={serverProperties.updateEntry}
-              onSave={serverProperties.save}
-            />
-          )}
-        </div>
+            {activeTab === 'properties' && (
+              <PropertiesTab
+                entries={serverProperties.entries}
+                filter={serverProperties.filter}
+                onFilterChange={serverProperties.setFilter}
+                onUpdateEntry={serverProperties.updateEntry}
+                onSave={serverProperties.save}
+              />
+            )}
+          </div>
+        )}
       </main>
 
       {/* Creation, Import, and Edit Modals */}
@@ -275,6 +291,24 @@ export default function App() {
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
       />
+
+      {/* Onboarding Welcome Choice Modal */}
+      <WelcomeModal
+        isOpen={isWelcomeModalOpen}
+        onClose={() => setIsWelcomeModalDismissed(true)}
+        onCreateServer={() => {
+          setIsWelcomeModalDismissed(true);
+          setIsCreateModalOpen(true);
+        }}
+        onImportServer={() => {
+          setIsWelcomeModalDismissed(true);
+          setIsImportModalOpen(true);
+        }}
+        canDismiss={true}
+      />
+
+      {/* Auto-updater Notification Banner */}
+      <UpdateBanner updater={updater} />
 
       {/* Player Inventory Inspector Modal */}
       {inspectingPlayer && (

@@ -66,30 +66,14 @@ let isInstalling = false;
 const getActiveDir = () => instanceManager.getActiveInstanceDir();
 
 // Helper to get or create the ProcessSupervisor for the active instance
-const getActiveSupervisor = (): ProcessSupervisor => {
-  const activeInstance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+const getActiveSupervisor = (): ProcessSupervisor | null => {
+  const activeId = instanceManager.getActiveInstanceId();
+  if (!activeId) return null;
+  const activeInstance = instanceManager.getInstance(activeId);
   if (activeInstance) {
     return registry.getOrCreateSupervisor(activeInstance);
   }
-  return registry.getOrCreateSupervisor({
-    id: instanceManager.getActiveInstanceId(),
-    dir: instanceManager.getActiveInstanceDir(),
-    name: 'default',
-    port: 25565,
-    motd: 'default',
-    hasJar: false,
-    hasIcon: false,
-    isImported: false,
-    createdAt: new Date().toISOString(),
-    maxPlayers: 20,
-    minRamMb: config.minRamMb,
-    maxRamMb: config.maxRamMb,
-    jvmArgs: [],
-    javaPath: config.javaPath,
-    forceSaveOnStop: true,
-    autostart: false,
-    gameId: 'minecraft'
-  });
+  return null;
 };
 
 const broadcast = (type: string, payload: unknown) => {
@@ -145,8 +129,8 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     mockEnabled: config.mockEnabled,
-    serverStatus: sup.getStatus(),
-    activeInstance: instanceManager.getActiveInstanceId()
+    serverStatus: sup ? sup.getStatus() : 'OFFLINE',
+    activeInstance: instanceManager.getActiveInstanceId() || null
   });
 });
 
@@ -527,7 +511,7 @@ app.post('/api/provisioning/install', async (req, res, next) => {
       }
     } else {
       const sup = getActiveSupervisor();
-      if (sup.getStatus() !== 'OFFLINE') {
+      if (sup && sup.getStatus() !== 'OFFLINE') {
         throw new DaemonError('SERVER_RUNNING', 'Cannot install server software while server is running.');
       }
     }
@@ -656,17 +640,18 @@ wss.on('connection', (ws, req) => {
   }
 
   const activeSup = getActiveSupervisor();
-  ws.send(JSON.stringify({ type: 'STATUS', payload: activeSup.getStatus() }));
-  ws.send(JSON.stringify({ type: 'PLAYERS', payload: activeSup.getPlayers() }));
+  const activeId = instanceManager.getActiveInstanceId();
+  ws.send(JSON.stringify({ type: 'STATUS', payload: activeSup ? activeSup.getStatus() : 'OFFLINE' }));
+  ws.send(JSON.stringify({ type: 'PLAYERS', payload: activeSup ? activeSup.getPlayers() : [] }));
   ws.send(
     JSON.stringify({
       type: 'METRICS',
       payload: {
         cpu: 0,
         ramMb: 0,
-        maxRamMb: activeSup.getConfig().maxRamMb,
+        maxRamMb: activeSup ? activeSup.getConfig().maxRamMb : config.maxRamMb,
         uptime: 0,
-        bridgeConnected: registry.isBridgeConnected(instanceManager.getActiveInstanceId())
+        bridgeConnected: activeId ? registry.isBridgeConnected(activeId) : false
       }
     })
   );
@@ -675,6 +660,18 @@ wss.on('connection', (ws, req) => {
     try {
       const { action, data } = JSON.parse(raw.toString());
       const sup = getActiveSupervisor();
+
+      if (!sup) {
+        if (action === 'START' || action === 'STOP' || action === 'COMMAND') {
+          ws.send(
+            JSON.stringify({
+              type: 'ERROR',
+              payload: { code: 'CONFIG_NOT_FOUND', message: 'No server configured or active.' }
+            })
+          );
+        }
+        return;
+      }
 
       if (action === 'START') sup.start();
       if (action === 'STOP') sup.stop();

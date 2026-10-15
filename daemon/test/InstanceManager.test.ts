@@ -16,11 +16,17 @@ describe('InstanceManager', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('initializes and lists default instance', () => {
+  it('initializes and lists default instance when requested', () => {
     const manager = new InstanceManager(tmpDir, 'default');
     const instances = manager.listInstances();
     expect(instances.length).toBeGreaterThanOrEqual(1);
     expect(manager.getActiveInstanceId()).toBe('default');
+  });
+
+  it('initializes with empty instances when no default ID is provided', () => {
+    const manager = new InstanceManager(tmpDir);
+    expect(manager.listInstances()).toEqual([]);
+    expect(manager.getActiveInstanceId()).toBe('');
   });
 
   it('creates a new instance with dedicated directory and server-port', () => {

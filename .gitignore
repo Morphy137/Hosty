@@ -16,6 +16,8 @@ dependency-reduced-pom.xml
 .env.*
 !.env.example
 *.pem
+*.key
+*.pub
 
 # Minecraft server instances (worlds, jars, logs)
 instances/
