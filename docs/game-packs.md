@@ -49,6 +49,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `bridgeLoaders` | | Loaders a Telemetry Bridge exists for; enables the bridge install flow. |
 | `defaults.memoryMb` | | Default heap offered when creating a server ("Default: X GB"). |
 | `jvmFlagPresets` | | Recommended JVM flag sets shown in the server editor (`id`, `label`, `description`, `flags`, `recommendedFor`). |
+| `serverIcon` | | `{ file, size }`: the icon the game itself shows (e.g. `server-icon.png`, 64). Hosty writes the user's icon there as a `size`×`size` PNG; without it the icon is only shown inside Hosty. |
 | `modSources` | | Mod catalogs the server can search and install from (Modrinth-compatible API). |
 | `instanceFolders` | | Folders created inside every new instance (e.g. `["mods", "config"]`); none by default. |
 | `modLayout` | | `{ modsDir, configDir }`: where the Mods tabs look (defaults `mods` / `config`). |

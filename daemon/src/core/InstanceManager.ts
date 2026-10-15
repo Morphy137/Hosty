@@ -4,6 +4,7 @@ import { DaemonError } from '../errors';
 import { driverRegistry } from './drivers/GameDriverRegistry';
 import { readSyncedValues, writeSyncedValues } from './ConfigSync';
 import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
+import { deleteInstanceIcon, findInstanceIcon, saveInstanceIcon, type GameIconResult } from './InstanceIcon';
 
 const defaultGameId = (): string => driverRegistry.getDefaultGameId();
 
@@ -75,7 +76,6 @@ interface RegistryData {
 
 const REGISTRY_FILE = 'instances_registry.json';
 const INSTANCE_SETTINGS_FILE = 'instance.json';
-const SERVER_ICON_FILE = 'server-icon.png';
 const DEFAULT_PORT = 25565;
 const DEFAULT_MAX_PLAYERS = 20;
 const DEFAULT_MIN_RAM_MB = 1024;
@@ -273,17 +273,16 @@ export class InstanceManager {
   public getInstanceIconPath(id: string): string | null {
     const instance = this.getInstance(id);
     if (!instance) return null;
-    const iconPath = path.join(instance.dir, SERVER_ICON_FILE);
-    return fs.existsSync(iconPath) ? iconPath : null;
+    return findInstanceIcon(instance.dir, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
   }
 
-  public saveInstanceIcon(id: string, buffer: Buffer): void {
+  /** Saves the app icon and, if the game declares a `serverIcon`, its in-game icon file too. */
+  public saveInstanceIcon(id: string, buffer: Buffer): GameIconResult {
     const instance = this.getInstance(id);
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
     }
-    const iconPath = path.join(instance.dir, SERVER_ICON_FILE);
-    fs.writeFileSync(iconPath, buffer);
+    return saveInstanceIcon(instance.dir, buffer, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
   }
 
   public deleteInstanceIcon(id: string): void {
@@ -291,10 +290,7 @@ export class InstanceManager {
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
     }
-    const iconPath = path.join(instance.dir, SERVER_ICON_FILE);
-    if (fs.existsSync(iconPath)) {
-      fs.unlinkSync(iconPath);
-    }
+    deleteInstanceIcon(instance.dir, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
   }
 
   public importInstance(externalPath: string, name?: string, gameId?: string): InstanceInfo {
@@ -357,7 +353,7 @@ export class InstanceManager {
 
     const stat = fs.statSync(dir);
     const hasJar = driver.validateInstallation(dir, settings.launchFile);
-    const hasIcon = fs.existsSync(path.join(dir, SERVER_ICON_FILE));
+    const hasIcon = findInstanceIcon(dir, driver.summary.serverIcon) !== null;
 
     return {
       id,

@@ -173,6 +173,8 @@ export interface GameManifest {
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSource[];
+  /** Icon the game itself shows, e.g. in its server list: a square PNG of `size` px at `file` (relative). */
+  serverIcon?: { file: string; size: number };
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */
   detect?: string[];
   logs?: {

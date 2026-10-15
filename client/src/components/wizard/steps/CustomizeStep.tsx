@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { AlertCircle, ChevronDown, ImagePlus, Trash2 } from 'lucide-react';
 import type { GameDriverSummary, InstanceInfo } from '../../../types/daemon';
 import { isPortInUse } from '../../../api/daemonApi';
-import { resizeToServerIcon } from '../../../utils/serverIcon';
+import { iconSizeFor, resizeToServerIcon } from '../../../utils/serverIcon';
 import { defaultMinRamMb, maxAllocatableRamMb, recommendedRamMb } from '../../../utils/ram';
 import { MotdPreview } from '../../common/MotdPreview';
+import { ServerIconHint } from '../../common/ServerIconHint';
 import { Button } from '../../ui/Button';
 import { Input, NumberInput } from '../../ui/Input';
 import { Slider } from '../../ui/Slider';
@@ -57,7 +58,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
     if (!file) return;
     setIconError(null);
     try {
-      update({ iconBase64: await resizeToServerIcon(file) });
+      update({ iconBase64: await resizeToServerIcon(file, iconSizeFor(game)) });
     } catch (error) {
       setIconError(error instanceof Error ? error.message : String(error));
     }
@@ -124,7 +125,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
             <Input id="wizard-name" value={draft.name} disabled={disabled} onChange={(e) => changeName(e.target.value)} />
           )}
           {iconError && <p className="text-[12px] text-danger-fg">{iconError}</p>}
-          <p className="text-[11px] text-mute">{t('wizard.icon_hint')}</p>
+          <ServerIconHint game={game} />
         </div>
       </div>
 

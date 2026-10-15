@@ -26,6 +26,13 @@ const validManifest = {
 };
 
 describe('validateManifest', () => {
+  it('validates the optional in-game server icon', () => {
+    expect(validateManifest({ ...validManifest, serverIcon: { file: 'icon.png', size: 64 } }).ok).toBe(true);
+    for (const serverIcon of [{ file: 'icon.jpg', size: 64 }, { file: '../icon.png', size: 64 }, { file: 'icon.png', size: 4 }]) {
+      expect(validateManifest({ ...validManifest, serverIcon }).errors.join(' ')).toMatch(/serverIcon/);
+    }
+  });
+
   it('accepts a complete manifest', () => {
     const result = validateManifest(validManifest);
     expect(result.ok).toBe(true);
@@ -380,6 +387,8 @@ describe('extensible manifest surface', () => {
     expect(summary.configSync?.map.port).toBe('server-port');
     expect(summary.bridgeLoaders).toEqual(expect.arrayContaining(['paper', 'fabric']));
     expect(summary.launchDefaults?.memoryMb).toBe(4096);
+    expect(summary.serverIcon).toEqual({ file: 'server-icon.png', size: 64 });
+    expect(registry.getDriver('project-zomboid').summary.serverIcon).toBeUndefined();
     expect(registry.getManifest('minecraft')?.playerQueries?.length).toBeGreaterThan(0);
   });
 });

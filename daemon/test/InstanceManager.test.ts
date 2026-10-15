@@ -5,6 +5,17 @@ import os from 'os';
 import { InstanceManager } from '../src/core/InstanceManager';
 import { DaemonError } from '../src/errors';
 
+/** Smallest buffer with a PNG signature and an IHDR header of the given square size. */
+const fakePng = (size: number): Buffer => {
+  const buffer = Buffer.alloc(33);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buffer, 0);
+  buffer.writeUInt32BE(13, 8);
+  buffer.write('IHDR', 12, 'ascii');
+  buffer.writeUInt32BE(size, 16);
+  buffer.writeUInt32BE(size, 20);
+  return buffer;
+};
+
 describe('InstanceManager', () => {
   let tmpDir: string;
 
@@ -96,24 +107,39 @@ describe('InstanceManager', () => {
     expect(updated.maxRamMb).toBe(12288);
   });
 
-  it('manages server-icon.png lifecycle (save, retrieve, delete)', () => {
+  it('stores the icon for Hosty and as the game icon when the game declares one', () => {
     const manager = new InstanceManager(tmpDir, 'default');
-    const inst = manager.createInstance('icon-test', 'Icon Server');
+    const inst = manager.createInstance('icon-test', 'Icon Server', { gameId: 'minecraft' });
     expect(inst.hasIcon).toBe(false);
     expect(manager.getInstanceIconPath('icon-test')).toBeNull();
 
-    // Save mock icon
-    const dummyPng = Buffer.from('mock-png-bytes');
-    manager.saveInstanceIcon('icon-test', dummyPng);
+    expect(manager.saveInstanceIcon('icon-test', fakePng(64))).toBe('written');
+    expect(fs.existsSync(path.join(inst.dir, '.hosty', 'icon.png'))).toBe(true);
+    expect(fs.existsSync(path.join(inst.dir, 'server-icon.png'))).toBe(true);
+    expect(manager.getInstance('icon-test')?.hasIcon).toBe(true);
 
-    const reloaded = manager.getInstance('icon-test');
-    expect(reloaded?.hasIcon).toBe(true);
-    expect(manager.getInstanceIconPath('icon-test')).not.toBeNull();
+    // A size the game rejects only updates Hosty's copy.
+    fs.rmSync(path.join(inst.dir, 'server-icon.png'));
+    expect(manager.saveInstanceIcon('icon-test', fakePng(128))).toBe('wrong-size');
+    expect(fs.existsSync(path.join(inst.dir, 'server-icon.png'))).toBe(false);
 
-    // Delete icon
     manager.deleteInstanceIcon('icon-test');
     expect(manager.getInstanceIconPath('icon-test')).toBeNull();
     expect(manager.getInstance('icon-test')?.hasIcon).toBe(false);
+  });
+
+  it('keeps the icon inside Hosty for games without a server icon', () => {
+    const manager = new InstanceManager(tmpDir, 'default');
+    const inst = manager.createInstance('pz-icon', 'Zomboid', { gameId: 'project-zomboid' });
+    expect(manager.saveInstanceIcon('pz-icon', fakePng(128))).toBe('unsupported');
+    expect(fs.readdirSync(inst.dir)).not.toContain('server-icon.png');
+    expect(manager.getInstanceIconPath('pz-icon')).toBe(path.join(inst.dir, '.hosty', 'icon.png'));
+  });
+
+  it('rejects files that are not PNG images', () => {
+    const manager = new InstanceManager(tmpDir, 'default');
+    manager.createInstance('bad-icon', 'Bad');
+    expect(() => manager.saveInstanceIcon('bad-icon', Buffer.from('not-a-png'))).toThrow(/PNG/);
   });
 });
 

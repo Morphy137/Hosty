@@ -175,7 +175,6 @@
     "icon_label": "服务器图标",
     "upload_icon": "上传图标",
     "remove_icon": "移除图标",
-    "icon_hint": "图片必须是 64x64 的 .png。",
     "ram_label": "内存分配",
     "port_label": "服务器端口",
     "max_players_label": "最大玩家数",
@@ -457,6 +456,10 @@
     "delete_created_desc": "“{{name}}”及其所有文件（世界、模组、配置）将从磁盘永久删除。",
     "language": "语言"
   },
+  "server_icon": {
+    "hint_game": "也会作为 {{game}} 内的服务器图标（{{file}}）。必须是 {{size}}×{{size}} 的 PNG：任何图片都会自动裁剪并缩放。",
+    "hint_app": "仅在 Hosty 内显示：{{game}} 没有自己的服务器图标。任何图片都可以，会自动裁剪为正方形。"
+  },
   "titlebar": {
     "minimize": "最小化",
     "maximize": "最大化",
@@ -513,7 +516,6 @@
     "java_download": "下载 Java {{version}}",
     "java_ok": "已检测到 Java {{installed}}（需要 {{required}}+）",
     "icon_choose": "选择图标",
-    "icon_hint": "任何图片都可以：会自动裁剪并缩放为 64×64。",
     "motd_hint": "使用 § 或 & 代码设置颜色（例如 §a绿色 §l粗体）。",
     "ram_system": "这台电脑有 {{total}} GB 内存",
     "ram_system_unknown": "系统内存未知",

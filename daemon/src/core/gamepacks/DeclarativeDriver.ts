@@ -152,6 +152,7 @@ export class DeclarativeGameDriver implements IGameDriver {
       bridgeLoaders: manifest.bridgeLoaders,
       jvmFlagPresets: manifest.jvmFlagPresets,
       modSources: manifest.modSources,
+      serverIcon: manifest.serverIcon ? { ...manifest.serverIcon } : undefined,
       source,
       hasLogo: Boolean(manifest.logo && packDir && fs.existsSync(path.join(packDir, manifest.logo))),
       i18n: manifest.i18n,

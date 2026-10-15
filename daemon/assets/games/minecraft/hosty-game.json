@@ -279,6 +279,10 @@
       "defaultInstallDir": "mods"
     }
   ],
+  "serverIcon": {
+    "file": "server-icon.png",
+    "size": 64
+  },
   "logo": "logo.svg",
   "extension": "minecraft",
   "playerPanel": "minecraft-players",

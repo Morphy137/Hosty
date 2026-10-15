@@ -17,6 +17,7 @@ import {
   uploadInstanceIcon
 } from '../../api/daemonApi';
 import { maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
+import { iconSizeFor, resizeToServerIcon } from '../../utils/serverIcon';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Stepper } from '../ui/Stepper';
@@ -266,7 +267,8 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       const problems: string[] = [];
       if (draft.iconBase64) {
         try {
-          await uploadInstanceIcon(instanceId, draft.iconBase64);
+          // Resized again here: the game (and so the required size) may have changed after the icon was picked.
+          await uploadInstanceIcon(instanceId, await resizeToServerIcon(draft.iconBase64, iconSizeFor(game)));
         } catch {
           problems.push(t('wizard.warn_icon'));
         }
