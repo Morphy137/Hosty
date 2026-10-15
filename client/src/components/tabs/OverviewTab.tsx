@@ -145,7 +145,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2.5">
               <h1 className="text-[17px] font-semibold tracking-[-0.34px] text-ink truncate">
-                {instance?.name || 'Local Minecraft Server'}
+                {instance?.name || t('header.instance')}
               </h1>
               <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-surface-2 border border-hairline font-mono text-[11px] font-medium uppercase tracking-wider text-ink">
                 <span
