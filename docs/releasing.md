@@ -2,10 +2,10 @@
 
 ## Cutting a release
 
-1. Merge the work into `main` (never commit to it directly) and bump the version in **all** of:
-   `package.json`, `daemon/package.json`, `client/package.json`, `client/src-tauri/tauri.conf.json`,
-   `client/src-tauri/Cargo.toml` (and their lockfiles via `npm install --package-lock-only`).
-2. Tag it: `git tag v0.5.1 && git push origin v0.5.1`.
+1. Merge the work into `main` (never commit to it directly) and bump the version in **all** of the files listed
+   under Versioning in [AGENTS.md](../AGENTS.md). The root `package.json` is the source of truth. Refresh the
+   lockfiles with `npm --prefix <dir> install --package-lock-only` and any `cargo` command.
+2. Tag it with the same version: `git tag vX.Y.Z && git push origin vX.Y.Z` (e.g. `v0.1.3`).
 3. `.github/workflows/release.yml` runs on Windows, macOS and Linux: tests, lint, daemon build, **sidecar build
    (Node SEA) + health smoke test**, then `tauri-action` builds the installers and uploads them (plus the
    updater `latest.json`) to the GitHub release.

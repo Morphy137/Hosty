@@ -71,11 +71,17 @@ Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, J
 
 ## Conventions
 
-- **Versioning** `a.b.c`: `a` major only after explicit manual approval; `b` new features/loaders/drivers/UI; `c` fixes/minor. Current: `0.1.0` (alpha). Version is mirrored in root/daemon/client `package.json` and `tauri.conf.json`.
+- **Versioning** `a.b.c` (current: `0.1.3`). The **source of truth is the `version` field in the root [package.json](package.json)**; every other version must be set to the same value:
+  - `daemon/package.json`, `client/package.json`, `client/src-tauri/tauri.conf.json` and `client/src-tauri/Cargo.toml` (`[package] version`).
+  - Lockfiles, refreshed by the tools and never edited by hand: `version` in `daemon/package-lock.json` and `client/package-lock.json` (`npm --prefix <dir> install --package-lock-only`), and the `hosty` entry in `client/src-tauri/Cargo.lock` (any `cargo` command, e.g. `cargo metadata`).
+  - `a` (major): `0` while the tool is not yet fully functional. It becomes `1.0.0` only when the product is complete, and only after explicit manual approval.
+  - `b` (minor): new features, loaders, game drivers, UI, or major changes. The MVP is built through `b` bumps (`0.1.x` → `0.2.0` for a new feature set).
+  - `c` (patch): fixes and minor adjustments. While the MVP is in progress most releases only bump `c` (`0.1.2` → `0.1.3`).
+  - Releases: the git tag must be `v` + the root `package.json` version (e.g. `v0.1.3`). Pushing that tag triggers the release workflow (see Release below).
 - All code, comments and commits in English; Conventional Commits; never commit to `main` directly (use `feature/`, `fix/`, `refactor/`, `chore/`, `docs/` branches).
 - No hardcoded UI strings: use i18n keys present in both `en.json` and `es.json`.
 - Run lint, build and tests before considering a task complete.
 - Never commit `.env*` (except `.env.example`), `instances/`, or edit lockfiles manually.
-- Release: pushing a `v*` tag triggers `.github/workflows/release.yml` (tests, lint, daemon build, sidecar smoke test, Tauri release for Windows/macOS/Linux).
+- Release: pushing a `v*` tag (matching the root `package.json` version, see Versioning) triggers `.github/workflows/release.yml` automatically (tests, lint, daemon build, sidecar smoke test, Tauri release for Windows/macOS/Linux). Merging to `main` alone does not release. Full steps in [docs/releasing.md](docs/releasing.md).
 - README screenshots live in `docs/screenshots/`; regenerate them with `npm --prefix client run screenshots` when the UI changes noticeably.
 - CI (`.github/workflows/ci.yml`) runs lint, tests, build, SDK type-check and Playwright on every PR; releases are described in [docs/releasing.md](docs/releasing.md).
