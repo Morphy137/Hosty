@@ -431,7 +431,10 @@
     "install_button": "इंस्टॉल करें",
     "builtin": "अंतर्निहित",
     "uninstall": "पैक अनइंस्टॉल करें",
-    "copy_manifest": "टेम्पलेट के रूप में manifest कॉपी करें"
+    "copy_manifest": "टेम्पलेट के रूप में manifest कॉपी करें",
+    "template_placeholder": "नए पैक की ID (जैसे my-game)",
+    "template_button": "टेम्पलेट से नया पैक",
+    "open_folder": "गेम फ़ोल्डर खोलें"
   },
   "mod_catalog": {
     "title": "मॉड खोजें",

@@ -431,7 +431,10 @@
     "install_button": "Instalar",
     "builtin": "Integrado",
     "uninstall": "Desinstalar pacote",
-    "copy_manifest": "Copiar manifest como modelo"
+    "copy_manifest": "Copiar manifest como modelo",
+    "template_placeholder": "ID do novo pack (ex.: meu-jogo)",
+    "template_button": "Novo pack a partir do modelo",
+    "open_folder": "Abrir pasta de jogos"
   },
   "mod_catalog": {
     "title": "Buscar mods",

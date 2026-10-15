@@ -15,8 +15,9 @@ my-game/
 └─ driver.js         # optional, needs the user's explicit trust
 ```
 
-Scaffold one with `npm create hosty-game my-game`, then copy the folder into the games folder and press
-**Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
+Scaffold one with `npm create hosty-game my-game` (or **Game packs → New pack from template** in the app, which
+creates it directly in the games folder; **Open games folder** shows it). Check it with `npx hosty-pack validate my-game`
+(the same rules the daemon applies), then install it and press **Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
 [`project-zomboid`](examples/project-zomboid/hosty-game.json) and [`hytale`](examples/hytale/hosty-game.json) (the built-in games
 expressed as packs). In the app, the Game packs dialog can copy any built-in game's manifest as a template.
 

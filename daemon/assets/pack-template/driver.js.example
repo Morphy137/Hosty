@@ -1,0 +1,11 @@
+// Rename this file to driver.js to enable it. Packs with code must be trusted in Hosty before they run.
+// Only override what the manifest cannot express; every other method keeps the declarative behaviour.
+const { defineDriver } = require('@hosty/game-sdk');
+
+module.exports = defineDriver(({ base }) => ({
+  parseLogLine(line) {
+    // Example: treat a custom banner as "server ready", otherwise fall back to the manifest patterns.
+    if (line.includes('== SERVER ONLINE ==')) return { isReady: true };
+    return base.parseLogLine(line);
+  }
+}));

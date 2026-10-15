@@ -428,7 +428,10 @@
     "install_button": "Instalar",
     "builtin": "Integrado",
     "uninstall": "Desinstalar pack",
-    "copy_manifest": "Copiar manifest como plantilla"
+    "copy_manifest": "Copiar manifest como plantilla",
+    "template_placeholder": "Id del nuevo pack (p. ej. mi-juego)",
+    "template_button": "Nuevo pack desde plantilla",
+    "open_folder": "Abrir carpeta de juegos"
   },
   "mod_catalog": {
     "title": "Buscar mods",

@@ -72,6 +72,10 @@
     }
   },
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint: path or URL of this schema."
+    },
     "apiVersion": {
       "const": 1
     },

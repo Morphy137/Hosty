@@ -174,6 +174,20 @@ export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: Gam
   return postJson<{ ok: boolean; packs: GamePackInfo[] }>(`/api/game-packs/${encodeURIComponent(packId)}/trust`, {});
 }
 
+export function openGamePacksFolder(): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>('/api/game-packs/open-folder', {});
+}
+
+export function createGamePackFromTemplate(
+  id: string,
+  name?: string
+): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/from-template', {
+    id,
+    name
+  });
+}
+
 export function installGamePack(sourcePath: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
   return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/install', {
     path: sourcePath

@@ -428,7 +428,10 @@
     "install_button": "Install",
     "builtin": "Built-in",
     "uninstall": "Uninstall pack",
-    "copy_manifest": "Copy manifest as a template"
+    "copy_manifest": "Copy manifest as a template",
+    "template_placeholder": "New pack id (e.g. my-game)",
+    "template_button": "New pack from template",
+    "open_folder": "Open games folder"
   },
   "mod_catalog": {
     "title": "Find mods",

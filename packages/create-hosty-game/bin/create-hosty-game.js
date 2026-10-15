@@ -36,5 +36,6 @@ for (const entry of fs.readdirSync(templateDir)) {
 console.log(`Created game pack "${name}" in ${target}`);
 console.log('Next steps:');
 console.log(`  1. Edit ${name}/hosty-game.json (launch, logs, config files).`);
-console.log('  2. Copy the folder into your Hosty games directory (Sidebar > Game packs shows its path).');
-console.log('  3. Open Game packs in Hosty and press "Reload packs".');
+console.log(`  2. Validate it: npx hosty-pack validate ${name}`);
+console.log('  3. Install it from Hosty > Game packs (or copy it into the games folder).');
+console.log('  4. Press "Reload packs".');

@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Copy, FolderInput, FolderOpen, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, FolderInput, FolderOpen, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
 import {
+  createGamePackFromTemplate,
   fetchGamePackManifest,
   fetchGamePacks,
   installGamePack,
+  openGamePacksFolder,
   reloadGamePacks,
   setGamePackEnabled,
   trustGamePack,
@@ -17,6 +19,8 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Switch } from '../ui/Switch';
+
+const PACK_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
 
 interface GamePacksDialogProps {
   open: boolean;
@@ -33,6 +37,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [installPath, setInstallPath] = useState('');
+  const [templateId, setTemplateId] = useState('');
   // Toggles are optimistic and only lock their own switch, so the rest of the dialog never flashes.
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -136,6 +141,33 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
             }
           >
             {t('packs.install_button')}
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Input
+            value={templateId}
+            placeholder={t('packs.template_placeholder')}
+            className="font-mono text-[12px]"
+            onChange={(event) => setTemplateId(event.target.value.toLowerCase())}
+          />
+          <Button
+            variant="secondary"
+            disabled={!PACK_ID_PATTERN.test(templateId.trim())}
+            loading={isBusy}
+            leadingIcon={<Plus className="h-3.5 w-3.5" />}
+            onClick={() =>
+              void run(() => createGamePackFromTemplate(templateId.trim()), true).then(() => setTemplateId(''))
+            }
+          >
+            {t('packs.template_button')}
+          </Button>
+          <Button
+            variant="secondary"
+            leadingIcon={<FolderOpen className="h-3.5 w-3.5" />}
+            onClick={() => void openGamePacksFolder().catch((err) => setError(err instanceof Error ? err.message : String(err)))}
+          >
+            {t('packs.open_folder')}
           </Button>
         </div>
 

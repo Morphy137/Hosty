@@ -27,6 +27,7 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
+import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
 import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
 import net from 'net';
@@ -951,6 +952,35 @@ app.get('/api/game-packs/:packId/manifest', (req, res, next) => {
       throw new DaemonError('CONFIG_NOT_FOUND', `Game "${req.params.packId}" has no declarative manifest.`);
     }
     res.json(manifest);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/game-packs/open-folder', (_req, res, next) => {
+  try {
+    fs.mkdirSync(config.gamesDir, { recursive: true });
+    try {
+      openFolder(config.gamesDir);
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/game-packs/from-template', (req, res, next) => {
+  try {
+    const { id, name } = req.body as { id?: unknown; name?: unknown };
+    if (typeof id !== 'string' || !id) throw new DaemonError('INVALID_PAYLOAD', 'Pack id is required.');
+    try {
+      createPackFromTemplate(config.gamesDir, config.packTemplateDir, id, typeof name === 'string' ? name : undefined);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, gamesDir: config.gamesDir, packs: driverRegistry.reloadAll() });
   } catch (err) {
     next(err);
   }
