@@ -8,7 +8,6 @@ import {
   ExternalLink,
   Upload,
   FileText,
-  ChevronDown,
   ChevronRight,
   ChevronLeft,
   Check,
@@ -23,6 +22,7 @@ import { SERVER_LOADERS, LOADER_METADATA } from '../../types/daemon';
 import { fetchLoaderVersions, fetchSystemEnvironment, inspectServerJar } from '../../api/daemonApi';
 import { defaultMinRamMb, maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
 import { GameLogo } from '../common/GameIcons';
+import { Select } from '../ui/Select';
 
 interface CreateServerModalProps {
   isOpen: boolean;
@@ -346,14 +346,14 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="geist-card bg-surface border border-hairline max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-hairline pb-4 shrink-0">
           <div>
-            <h2 className="text-[17px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
+            <h2 className="text-[17px] font-semibold text-ink tracking-[-0.3px]">
               {t('create_server.modal_title')}
             </h2>
-            <p className="text-[13px] text-[#888888] dark:text-[#a1a1a1] mt-0.5">
+            <p className="text-[13px] text-mute mt-0.5">
               {t(`create_server.step_desc.${step}`)}
             </p>
           </div>
@@ -361,14 +361,14 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
             type="button"
             onClick={handleClose}
             disabled={isInstalling}
-            className="p-1.5 rounded-[4px] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer disabled:opacity-40"
+            className="p-1.5 rounded-[4px] hover:bg-surface-2 text-mute hover:text-ink transition cursor-pointer disabled:opacity-40"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Stepper Progress Indicator */}
-        <div className="grid grid-cols-4 gap-2 shrink-0 border-b border-[#ebebeb] dark:border-[#262626] pb-3">
+        <div className="grid grid-cols-4 gap-2 shrink-0 border-b border-hairline pb-3">
           {WIZARD_STEPS.map((s, idx) => {
             const isCurrent = step === s.id;
             const isPast = idx < currentStepIndex;
@@ -382,19 +382,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                 onClick={() => isPast && setStep(s.id)}
                 className={`flex items-center gap-2 py-1.5 px-2 rounded-[4px] text-left transition ${
                   isCurrent
-                    ? 'bg-[#171717]/5 dark:bg-white/10 text-[#0070f3] dark:text-[#3291ff] font-medium'
+                    ? 'bg-ink/5 dark:bg-ink-hover/10 text-accent-fg font-medium'
                     : isPast
-                    ? 'text-[#171717] dark:text-[#ededed] hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a] cursor-pointer'
-                    : 'text-[#888888] dark:text-[#666666] opacity-60 cursor-default'
+                    ? 'text-ink hover:bg-surface-2 cursor-pointer'
+                    : 'text-mute opacity-60 cursor-default'
                 }`}
               >
                 <div
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 font-mono ${
                     isPast
-                      ? 'bg-[#0070f3] text-white'
+                      ? 'bg-accent text-white'
                       : isCurrent
-                      ? 'bg-[#0070f3]/15 text-[#0070f3] dark:text-[#3291ff] border border-[#0070f3]'
-                      : 'border border-[#ebebeb] dark:border-[#333333] text-[#888888]'
+                      ? 'bg-accent/15 text-accent-fg border border-accent'
+                      : 'border border-hairline text-mute'
                   }`}
                 >
                   {isPast ? <Check className="w-3 h-3 stroke-[3]" /> : <StepIcon className="w-3 h-3" />}
@@ -410,7 +410,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
           {/* STEP 1: GAME SELECTION */}
           {step === 'game' && (
             <div className="space-y-4">
-              <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+              <label className="font-mono text-[11px] uppercase text-mute">
                 {t('create_server.game_engine_label')}
               </label>
 
@@ -425,19 +425,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       disabled={isInstalling}
                       className={`p-4 rounded-[8px] border text-left transition cursor-pointer flex items-center justify-between gap-4 ${
                         isSelected
-                          ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3]/5 dark:bg-[#3291ff]/10 text-[#171717] dark:text-[#ededed]'
-                          : 'border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#141414] hover:border-[#888888]/60 text-[#171717] dark:text-[#ededed]'
+                          ? 'border-accent bg-accent/5 dark:bg-accent/10 text-ink'
+                          : 'border-hairline bg-surface hover:border-mute/60 text-ink'
                       }`}
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         <GameLogo gameId={game.id} size={36} />
                         <div className="min-w-0">
                           <div>
-                            <span className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed]">
+                            <span className="text-[14px] font-semibold text-ink">
                               {game.name}
                             </span>
                           </div>
-                          <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] mt-0.5 truncate">
+                          <p className="text-[12px] text-soft mt-0.5 truncate">
                             {t(game.descKey)}
                           </p>
                         </div>
@@ -447,8 +447,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         <div
                           className={`w-5 h-5 rounded-full border flex items-center justify-center transition ${
                             isSelected
-                              ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3] dark:bg-[#3291ff] text-white'
-                              : 'border-[#d4d4d4] dark:border-[#404040]'
+                              ? 'border-accent bg-accent text-white'
+                              : 'border-hairline-strong'
                           }`}
                         >
                           {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -468,13 +468,13 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               {selectedGame === 'minecraft' && (
                 <>
                   {isJavaMissing && (
-                    <div className="p-3.5 rounded-[6px] bg-[#fff8eb] dark:bg-[#231805] border border-[#f5d9a8] dark:border-[#f5a623]/30 flex items-start gap-3 text-[12px]">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-[#f5a623] mt-0.5" />
+                    <div className="p-3.5 rounded-[6px] bg-warning-soft border border-warning-soft dark:border-warning/30 flex items-start gap-3 text-[12px]">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-warning mt-0.5" />
                       <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="font-semibold text-[#171717] dark:text-[#ededed]">
+                        <div className="font-semibold text-ink">
                           {t('environment.java_missing_title')}
                         </div>
-                        <p className="text-[12px] leading-relaxed text-[#666666] dark:text-[#a1a1a1]">
+                        <p className="text-[12px] leading-relaxed text-soft">
                           {t('environment.java_missing_desc')}
                         </p>
                         <div className="pt-0.5">
@@ -482,7 +482,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                             href="https://adoptium.net/temurin/releases/?version=21"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-[4px] bg-[#f5a623] text-black hover:bg-[#e09612] transition no-underline"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-[4px] bg-warning text-black hover:bg-warning transition no-underline"
                           >
                             <ExternalLink className="w-3 h-3" />
                             {t('environment.java_download_btn')}
@@ -493,7 +493,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   )}
 
                   <div className="flex items-center justify-between">
-                    <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                    <label className="font-mono text-[11px] uppercase text-mute">
                       {t('create_server.install_method_label')}
                     </label>
                     <div className="flex items-center gap-2">
@@ -502,8 +502,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         onClick={() => setUseCustomJar(false)}
                         className={`px-2.5 py-1 rounded-[4px] text-[12px] font-medium transition cursor-pointer ${
                           !useCustomJar
-                            ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717]'
-                            : 'text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed]'
+                            ? 'bg-ink text-on-ink'
+                            : 'text-mute hover:text-ink'
                         }`}
                       >
                         {t('create_server.install_auto')}
@@ -513,8 +513,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         onClick={() => setUseCustomJar(true)}
                         className={`px-2.5 py-1 rounded-[4px] text-[12px] font-medium transition cursor-pointer ${
                           useCustomJar
-                            ? 'bg-[#171717] dark:bg-[#ededed] text-white dark:text-[#171717]'
-                            : 'text-[#888888] dark:text-[#a1a1a1] hover:text-[#171717] dark:hover:text-[#ededed]'
+                            ? 'bg-ink text-on-ink'
+                            : 'text-mute hover:text-ink'
                         }`}
                       >
                         {t('create_server.install_custom')}
@@ -525,7 +525,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   {/* LOADER GRID (always visible) + automated version selector */}
                   <div className="space-y-3.5">
                       <div className="space-y-1.5">
-                        <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                        <label className="font-mono text-[11px] uppercase text-mute">
                           {t('provisioning.loader_label')}
                         </label>
                         <div className="grid grid-cols-4 gap-2">
@@ -541,8 +541,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                                 disabled={isInstalling}
                                 className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer flex flex-col justify-between ${
                                   isSelected
-                                    ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3]/5 dark:bg-[#0070f3]/10 text-[#0070f3] dark:text-[#3291ff]'
-                                    : 'bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed] border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f]'
+                                    ? 'border-accent bg-accent/5 dark:bg-accent/10 text-accent-fg'
+                                    : 'bg-surface text-ink border-hairline hover:bg-surface-2'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
@@ -552,10 +552,10 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                                   <span
                                     className={`font-mono text-[9px] uppercase px-1 py-0.5 rounded-[2px] ${
                                       isSelected
-                                        ? 'bg-[#0070f3]/15 dark:bg-[#3291ff]/20 text-[#0070f3] dark:text-[#3291ff]'
+                                        ? 'bg-accent/15 dark:bg-accent/20 text-accent-fg'
                                         : meta.isAutomatic
-                                        ? 'bg-[#50e3c2]/15 text-[#0070f3] dark:text-[#50e3c2]'
-                                        : 'bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]'
+                                        ? 'bg-success/15 text-accent-fg'
+                                        : 'bg-surface-2 border border-hairline text-mute'
                                     }`}
                                   >
                                     {meta.isAutomatic ? t('create_server.badge_auto') : t('create_server.badge_manual')}
@@ -564,8 +564,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                                 <span
                                   className={`text-[10px] mt-1 capitalize ${
                                     isSelected
-                                      ? 'text-[#0070f3]/80 dark:text-[#3291ff]/80'
-                                      : 'text-[#888888] dark:text-[#a1a1a1]'
+                                      ? 'text-accent-fg/80'
+                                      : 'text-mute'
                                   }`}
                                 >
                                   {meta.category}
@@ -579,40 +579,36 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       {/* Version Selector */}
                       {!requiresManualJar && !useCustomJar && (
                         <div className="space-y-1.5">
-                          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
+                          <label className="font-mono text-[11px] uppercase text-mute flex items-center justify-between">
                             <span>{t('provisioning.version_label')}</span>
                             {isLoadingVersions && (
-                              <span className="flex items-center gap-1 text-[11px] text-[#0070f3] dark:text-[#3291ff]">
+                              <span className="flex items-center gap-1 text-[11px] text-accent-fg">
                                 <Loader2 className="w-3 h-3 animate-spin" />
                                 {t('provisioning.loading_versions')}
                               </span>
                             )}
                           </label>
 
-                          <div className="relative flex items-center">
-                            <select
-                              value={selectedVersion}
-                              onChange={(e) => setSelectedVersion(e.target.value)}
-                              disabled={isInstalling || versions.length === 0}
-                              className="w-full h-9 pl-3 pr-8 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#d4d4d4] dark:hover:border-[#404040] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed] cursor-pointer disabled:opacity-50 appearance-none transition"
-                            >
-                              {versions.map((v) => (
-                                <option key={v} value={v}>
-                                  {t('create_server.version_option', { version: v, loader: selectedLoader.toUpperCase() })}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="w-3.5 h-3.5 text-[#888888] dark:text-[#a1a1a1] absolute right-3 pointer-events-none" />
-                          </div>
+                          <Select
+                            className="font-mono"
+                            ariaLabel={t('provisioning.version_label')}
+                            value={selectedVersion}
+                            onValueChange={setSelectedVersion}
+                            disabled={isInstalling || versions.length === 0}
+                            options={versions.map((v) => ({
+                              value: v,
+                              label: t('create_server.version_option', { version: v, loader: selectedLoader.toUpperCase() })
+                            }))}
+                          />
                         </div>
                       )}
                   </div>
 
                   {/* CUSTOM / MANUAL JAR DROPZONE */}
                   {(requiresManualJar || useCustomJar) && (
-                    <div className="space-y-3 p-3.5 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626]">
+                    <div className="space-y-3 p-3.5 rounded-[6px] bg-surface-2 border border-hairline">
                       {currentLoaderMeta.officialUrl && (
-                        <div className="flex items-start justify-between gap-3 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+                        <div className="flex items-start justify-between gap-3 text-[12px] text-body">
                           <p>
                             {t('provisioning.manual_download_instructions', {
                               loader: currentLoaderMeta.name
@@ -622,10 +618,10 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                             href={currentLoaderMeta.officialUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="shrink-0 px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#171717] dark:hover:border-[#ededed] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center gap-1 transition"
+                            className="shrink-0 px-2.5 py-1 rounded-[4px] bg-surface border border-hairline hover:border-ink text-[11px] font-medium text-ink flex items-center gap-1 transition"
                           >
                             <span>{t('provisioning.visit_official_site')}</span>
-                            <ExternalLink className="w-3 h-3 text-[#888888] dark:text-[#a1a1a1]" />
+                            <ExternalLink className="w-3 h-3 text-mute" />
                           </a>
                         </div>
                       )}
@@ -634,7 +630,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-[#d4d4d4] dark:border-[#333333] hover:border-[#171717] dark:hover:border-[#ededed] rounded-[6px] p-5 text-center cursor-pointer transition bg-white dark:bg-[#0d0d0d]"
+                        className="border-2 border-dashed border-hairline-strong hover:border-ink rounded-[6px] p-5 text-center cursor-pointer transition bg-surface"
                       >
                         <input
                           ref={fileInputRef}
@@ -646,23 +642,23 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
                         {attachedFile ? (
                           <div className="flex items-center justify-center gap-2.5">
-                            <FileText className="w-6 h-6 text-[#0070f3] dark:text-[#3291ff]" />
+                            <FileText className="w-6 h-6 text-accent-fg" />
                             <div className="text-left">
-                              <div className="font-mono text-[13px] font-medium text-[#171717] dark:text-[#ededed]">
+                              <div className="font-mono text-[13px] font-medium text-ink">
                                 {attachedFile.name}
                               </div>
-                              <div className="font-mono text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                              <div className="font-mono text-[11px] text-mute">
                                 {(attachedFile.size / (1024 * 1024)).toFixed(2)} MB
                               </div>
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-1.5">
-                            <Upload className="w-6 h-6 text-[#888888] dark:text-[#a1a1a1] mx-auto" />
-                            <div className="text-[13px] font-medium text-[#171717] dark:text-[#ededed]">
+                            <Upload className="w-6 h-6 text-mute mx-auto" />
+                            <div className="text-[13px] font-medium text-ink">
                               {t('provisioning.upload_jar_dropzone')}
                             </div>
-                            <div className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                            <div className="text-[11px] text-mute">
                               {t('provisioning.upload_jar_hint')}
                             </div>
                           </div>
@@ -670,7 +666,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       </div>
 
                       {attachedFile && (
-                        <div className="flex items-center gap-2 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+                        <div className="flex items-center gap-2 text-[12px] text-body">
                           {isInspecting ? (
                             <>
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -678,7 +674,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                             </>
                           ) : detected?.loader ? (
                             <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#50e3c2]" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-success-fg" />
                               {t(
                                 detected.kind === 'installer'
                                   ? 'create_server.detected_installer'
@@ -691,7 +687,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                             </>
                           ) : (
                             <>
-                              <AlertCircle className="w-3.5 h-3.5 text-[#f5a623]" />
+                              <AlertCircle className="w-3.5 h-3.5 text-warning" />
                               {t('create_server.detected_unknown')}
                             </>
                           )}
@@ -705,20 +701,20 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               {/* PROJECT ZOMBOID SETUP */}
               {selectedGame === 'project-zomboid' && (
                 <div className="space-y-3.5">
-                  <div className="p-4 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2">
+                  <div className="p-4 rounded-[6px] bg-surface-2 border border-hairline space-y-2">
                     <div className="flex items-center gap-2">
                       <GameLogo gameId="project-zomboid" size={24} />
-                      <span className="text-[13px] font-semibold text-[#171717] dark:text-[#ededed]">
+                      <span className="text-[13px] font-semibold text-ink">
                         {t('create_server.zomboid_info_title')}
                       </span>
                     </div>
-                    <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] leading-relaxed">
+                    <p className="text-[12px] text-soft leading-relaxed">
                       {t('create_server.zomboid_info_desc')}
                     </p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                    <label className="font-mono text-[11px] uppercase text-mute">
                       {t('create_server.zomboid_branch_label')}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -727,8 +723,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         onClick={() => setPzBranch('stable')}
                         className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer ${
                           pzBranch === 'stable'
-                            ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3]/5 dark:bg-[#3291ff]/10 text-[#0070f3] dark:text-[#3291ff]'
-                            : 'border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed]'
+                            ? 'border-accent bg-accent/5 dark:bg-accent/10 text-accent-fg'
+                            : 'border-hairline bg-surface text-ink'
                         }`}
                       >
                         <div className="text-[12px] font-medium">{t('create_server.zomboid_branch_stable')}</div>
@@ -738,8 +734,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                         onClick={() => setPzBranch('unstable')}
                         className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer ${
                           pzBranch === 'unstable'
-                            ? 'border-[#0070f3] dark:border-[#3291ff] bg-[#0070f3]/5 dark:bg-[#3291ff]/10 text-[#0070f3] dark:text-[#3291ff]'
-                            : 'border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#141414] text-[#171717] dark:text-[#ededed]'
+                            ? 'border-accent bg-accent/5 dark:bg-accent/10 text-accent-fg'
+                            : 'border-hairline bg-surface text-ink'
                         }`}
                       >
                         <div className="text-[12px] font-medium">{t('create_server.zomboid_branch_unstable')}</div>
@@ -751,17 +747,17 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
               {/* HYTALE SETUP */}
               {selectedGame === 'hytale' && (
-                <div className="p-4 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2.5">
+                <div className="p-4 rounded-[6px] bg-surface-2 border border-hairline space-y-2.5">
                   <div className="flex items-center gap-2">
                     <GameLogo gameId="hytale" size={24} />
-                    <span className="text-[13px] font-semibold text-[#171717] dark:text-[#ededed]">
+                    <span className="text-[13px] font-semibold text-ink">
                       {t('create_server.hytale_info_title')}
                     </span>
                   </div>
-                  <p className="text-[12px] text-[#666666] dark:text-[#a1a1a1] leading-relaxed">
+                  <p className="text-[12px] text-soft leading-relaxed">
                     {t('create_server.hytale_info_desc')}
                   </p>
-                  <div className="pt-2 border-t border-[#ebebeb] dark:border-[#262626] text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                  <div className="pt-2 border-t border-hairline text-[11px] text-mute">
                     {t('create_server.hytale_mode_notice')}
                   </div>
                 </div>
@@ -775,7 +771,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               {/* Server Name & ID */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                  <label className="font-mono text-[11px] uppercase text-mute">
                     {t('create_server.name_label')}
                   </label>
                   <input
@@ -789,12 +785,12 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     }}
                     disabled={isInstalling}
                     required
-                    className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                    className="w-full h-9 px-3 rounded-[4px] bg-surface border border-hairline text-[13px] text-ink focus:outline-none focus:border-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                  <label className="font-mono text-[11px] uppercase text-mute">
                     {t('create_server.id_label')}
                   </label>
                   <input
@@ -803,14 +799,14 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     onChange={(e) => setInstanceId(e.target.value)}
                     disabled={isInstalling}
                     required
-                    className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                    className="w-full h-9 px-3 rounded-[4px] bg-surface border border-hairline font-mono text-[12px] text-body focus:outline-none focus:border-ink"
                   />
                 </div>
               </div>
 
               {/* MOTD */}
               <div className="space-y-1.5">
-                <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                <label className="font-mono text-[11px] uppercase text-mute">
                   {t('edit_server.motd_label')}
                 </label>
                 <input
@@ -819,14 +815,14 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   onChange={(e) => setMotd(e.target.value)}
                   disabled={isInstalling}
                   placeholder={t('create_server.motd_placeholder')}
-                  className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                  className="w-full h-9 px-3 rounded-[4px] bg-surface border border-hairline text-[13px] text-ink placeholder-mute focus:outline-none focus:border-ink"
                 />
               </div>
 
               {/* Port, Max Players, RAM Allocation */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                  <label className="font-mono text-[11px] uppercase text-mute">
                     {t('edit_server.port_label')}
                   </label>
                   <input
@@ -834,12 +830,12 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     value={port}
                     onChange={(e) => setPort(Number(e.target.value))}
                     disabled={isInstalling}
-                    className="w-full h-9 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                    className="w-full h-9 px-2.5 rounded-[4px] bg-surface border border-hairline font-mono text-[13px] text-ink focus:outline-none focus:border-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                  <label className="font-mono text-[11px] uppercase text-mute">
                     {t('edit_server.max_players_label')}
                   </label>
                   <input
@@ -849,12 +845,12 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     value={maxPlayers}
                     onChange={(e) => setMaxPlayers(Number(e.target.value))}
                     disabled={isInstalling}
-                    className="w-full h-9 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                    className="w-full h-9 px-2.5 rounded-[4px] bg-surface border border-hairline font-mono text-[13px] text-ink focus:outline-none focus:border-ink"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+                  <label className="font-mono text-[11px] uppercase text-mute">
                     {t('edit_server.ram_label')}
                   </label>
                   <div className="flex items-center gap-1.5">
@@ -865,17 +861,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       value={ramValue}
                       onChange={(e) => setRamValue(Math.max(1, Number(e.target.value)))}
                       disabled={isInstalling}
-                      className="w-full h-9 px-2.5 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[13px] text-[#171717] dark:text-[#ededed] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                      className="w-full h-9 px-2.5 rounded-[4px] bg-surface border border-hairline font-mono text-[13px] text-ink focus:outline-none focus:border-ink"
                     />
-                    <select
+                    <Select
+                      className="w-[88px] shrink-0 font-mono"
+                      ariaLabel={t('edit_server.ram_label')}
                       value={ramUnit}
-                      onChange={(e) => setRamUnit(e.target.value as 'GB' | 'MB')}
+                      onValueChange={(value) => setRamUnit(value as 'GB' | 'MB')}
                       disabled={isInstalling}
-                      className="h-9 px-1.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] focus:outline-none"
-                    >
-                      <option value="GB">GB</option>
-                      <option value="MB">MB</option>
-                    </select>
+                      options={[
+                        { value: 'GB', label: 'GB' },
+                        { value: 'MB', label: 'MB' }
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
@@ -885,19 +883,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
           {/* STEP 4: REVIEW & DEPLOY */}
           {step === 'review' && (
             <div className="space-y-4">
-              <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+              <label className="font-mono text-[11px] uppercase text-mute">
                 {t('create_server.summary_title')}
               </label>
 
               {/* Summary Overview Card */}
-              <div className="p-4 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-3">
-                <div className="flex items-center gap-3 pb-3 border-b border-[#ebebeb] dark:border-[#262626]">
+              <div className="p-4 rounded-[6px] bg-surface-2 border border-hairline space-y-3">
+                <div className="flex items-center gap-3 pb-3 border-b border-hairline">
                   <GameLogo gameId={selectedGame} size={32} />
                   <div>
-                    <div className="text-[14px] font-semibold text-[#171717] dark:text-[#ededed]">
+                    <div className="text-[14px] font-semibold text-ink">
                       {serverName}
                     </div>
-                    <div className="font-mono text-[11px] text-[#888888] dark:text-[#a1a1a1]">
+                    <div className="font-mono text-[11px] text-mute">
                       {instanceId}
                     </div>
                   </div>
@@ -905,19 +903,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
                 <div className="grid grid-cols-2 gap-3 text-[12px]">
                   <div>
-                    <span className="text-[#888888] dark:text-[#a1a1a1] block text-[11px] font-mono uppercase">
+                    <span className="text-mute block text-[11px] font-mono uppercase">
                       {t('create_server.summary_game')}
                     </span>
-                    <span className="font-medium text-[#171717] dark:text-[#ededed]">
+                    <span className="font-medium text-ink">
                       {SUPPORTED_GAMES.find((g) => g.id === selectedGame)?.name}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[#888888] dark:text-[#a1a1a1] block text-[11px] font-mono uppercase">
+                    <span className="text-mute block text-[11px] font-mono uppercase">
                       {t('create_server.summary_engine')}
                     </span>
-                    <span className="font-medium text-[#171717] dark:text-[#ededed]">
+                    <span className="font-medium text-ink">
                       {selectedGame === 'minecraft'
                         ? requiresManualJar || useCustomJar
                           ? attachedFile ? attachedFile.name : t('create_server.engine_custom_jar')
@@ -929,19 +927,19 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   </div>
 
                   <div>
-                    <span className="text-[#888888] dark:text-[#a1a1a1] block text-[11px] font-mono uppercase">
+                    <span className="text-mute block text-[11px] font-mono uppercase">
                       {t('create_server.summary_resources')}
                     </span>
-                    <span className="font-mono font-medium text-[#171717] dark:text-[#ededed]">
+                    <span className="font-mono font-medium text-ink">
                       {ramValue} {ramUnit}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[#888888] dark:text-[#a1a1a1] block text-[11px] font-mono uppercase">
+                    <span className="text-mute block text-[11px] font-mono uppercase">
                       {t('create_server.summary_network')}
                     </span>
-                    <span className="font-mono font-medium text-[#171717] dark:text-[#ededed]">
+                    <span className="font-mono font-medium text-ink">
                       {t('create_server.network_summary', { port, max: maxPlayers })}
                     </span>
                   </div>
@@ -950,18 +948,18 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
               {/* Installation progress */}
               {isInstalling && provisionJob && provisionJob.status === 'running' && (
-                <div className="p-3.5 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2.5">
+                <div className="p-3.5 rounded-[6px] bg-surface-2 border border-hairline space-y-2.5">
                   <div className="flex items-center justify-between text-[12px]">
-                    <span className="font-medium text-[#171717] dark:text-[#ededed]">
+                    <span className="font-medium text-ink">
                       {t(`provisioning.phase.${provisionJob.phase}`)}
                     </span>
                     {provisionJob.percent !== null && (
-                      <span className="font-mono text-[#888888] dark:text-[#a1a1a1]">{provisionJob.percent}%</span>
+                      <span className="font-mono text-mute">{provisionJob.percent}%</span>
                     )}
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#ebebeb] dark:bg-[#262626] overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-hairline overflow-hidden">
                     <div
-                      className={`h-full rounded-full bg-[#0070f3] transition-all duration-200 ${
+                      className={`h-full rounded-full bg-accent transition-all duration-200 ${
                         provisionJob.percent === null ? 'w-1/3 animate-pulse' : ''
                       }`}
                       style={provisionJob.percent !== null ? { width: `${provisionJob.percent}%` } : undefined}
@@ -971,7 +969,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     <button
                       type="button"
                       onClick={onCancelInstall}
-                      className="h-7 px-3 rounded-[4px] border border-[#ebebeb] dark:border-[#333333] text-[12px] font-medium text-[#666666] dark:text-[#a1a1a1] hover:text-[#e5484d] cursor-pointer transition"
+                      className="h-7 px-3 rounded-[4px] border border-hairline text-[12px] font-medium text-soft hover:text-danger-fg cursor-pointer transition"
                     >
                       {t('provisioning.cancel_install')}
                     </button>
@@ -981,13 +979,13 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
 
               {/* Provisioning Logs Feed */}
               {provisionLogs.length > 0 && (
-                <div className="rounded-[4px] bg-[#171717] dark:bg-[#0a0a0a] border dark:border-[#262626] text-white p-3 font-mono text-[11px] space-y-1 max-h-32 overflow-y-auto">
-                  <div className="flex items-center justify-between text-[#888888] pb-1 border-b border-[#2e2e2e]">
+                <div className="rounded-[4px] bg-console border border-white/10 text-white p-3 font-mono text-[11px] space-y-1 max-h-32 overflow-y-auto">
+                  <div className="flex items-center justify-between text-white/50 pb-1 border-b border-white/10">
                     <span>{t('provisioning.logs_title')}</span>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#50e3c2]" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                   </div>
                   {provisionLogs.map((log, i) => (
-                    <div key={i} className="text-[#e5e5e5] break-all">
+                    <div key={i} className="text-on-dark break-all">
                       {log}
                     </div>
                   ))}
@@ -997,13 +995,13 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
           )}
 
           {/* Stepper Navigation Buttons */}
-          <div className="flex items-center justify-between pt-3 border-t border-[#ebebeb] dark:border-[#262626] shrink-0">
+          <div className="flex items-center justify-between pt-3 border-t border-hairline shrink-0">
             {step === 'game' ? (
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isInstalling}
-                className="h-9 px-4 rounded-[4px] bg-[#fafafa] dark:bg-[#1a1a1a] hover:bg-[#f5f5f5] dark:hover:bg-[#262626] border border-[#ebebeb] dark:border-[#333333] text-[#666666] dark:text-[#a1a1a1] text-[13px] font-medium transition cursor-pointer"
+                className="h-9 px-4 rounded-[4px] bg-surface-2 hover:bg-surface-3 border border-hairline text-soft text-[13px] font-medium transition cursor-pointer"
               >
                 {t('common.cancel')}
               </button>
@@ -1016,7 +1014,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   else if (step === 'review') setStep('settings');
                 }}
                 disabled={isInstalling}
-                className="h-9 px-4 rounded-[4px] bg-[#fafafa] dark:bg-[#1a1a1a] hover:bg-[#f5f5f5] dark:hover:bg-[#262626] border border-[#ebebeb] dark:border-[#333333] text-[#666666] dark:text-[#a1a1a1] text-[13px] font-medium flex items-center gap-1.5 transition cursor-pointer"
+                className="h-9 px-4 rounded-[4px] bg-surface-2 hover:bg-surface-3 border border-hairline text-soft text-[13px] font-medium flex items-center gap-1.5 transition cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
                 {t('create_server.back_button')}
@@ -1035,7 +1033,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   (step === 'installation' && !isInstallationValid) ||
                   (step === 'settings' && !isSettingsValid)
                 }
-                className="h-9 px-5 rounded-[4px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] disabled:opacity-40 text-[13px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                className="h-9 px-5 rounded-[4px] bg-ink hover:bg-ink-hover text-on-ink disabled:opacity-40 text-[13px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               >
                 {t('create_server.continue_button')}
                 <ChevronRight className="w-4 h-4" />
@@ -1044,7 +1042,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
               <button
                 type="submit"
                 disabled={isInstalling}
-                className="h-9 px-5 rounded-[4px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] disabled:opacity-40 text-[13px] font-medium flex items-center gap-2 transition cursor-pointer shadow-2xs"
+                className="h-9 px-5 rounded-[4px] bg-ink hover:bg-ink-hover text-on-ink disabled:opacity-40 text-[13px] font-medium flex items-center gap-2 transition cursor-pointer shadow-2xs"
               >
                 {isInstalling ? (
                   <>

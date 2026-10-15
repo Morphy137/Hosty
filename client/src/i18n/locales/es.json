@@ -278,7 +278,9 @@
     "name_label": "Nombre del Servidor (opcional)",
     "submit_button": "Importar Servidor",
     "submitting": "Importando...",
-    "display_name_placeholder": "Nombre personalizado (opcional)"
+    "display_name_placeholder": "Nombre personalizado (opcional)",
+    "browse": "Examinar...",
+    "picker_title": "Selecciona la carpeta del servidor"
   },
   "properties": {
     "title": "Propiedades del Servidor",
@@ -413,5 +415,28 @@
     "failed_desc": "No se pudo contactar con el servicio en segundo plano. Revisa el registro del servicio para ver los detalles.",
     "retry": "Reintentar",
     "view_logs": "Ver logs"
+  },
+  "sidebar": {
+    "servers": "Servidores",
+    "new_server": "Nuevo servidor",
+    "language_to_es": "Cambiar a español",
+    "language_to_en": "Switch to English",
+    "version": "v{{version}}"
+  },
+  "titlebar": {
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Cerrar"
+  },
+  "server_header": {
+    "not_installed": "Sin instalar",
+    "more_actions": "Más acciones",
+    "edit": "Ajustes del servidor",
+    "address_copied": "Dirección copiada",
+    "copy_failed": "No se pudo copiar la dirección",
+    "kill_confirm_title": "¿Forzar el cierre del servidor?",
+    "kill_confirm_desc": "El proceso se termina de inmediato. Se puede perder el progreso del mundo sin guardar.",
+    "kill_confirm_action": "Forzar cierre"
   }
 }

@@ -118,10 +118,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   return (
     <>
       {/* MCSS Inspired Server Hero Banner */}
-      <div className="geist-card p-4 flex items-center justify-between shrink-0 shadow-xs bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626] transition-colors">
+      <div className="geist-card p-4 flex items-center justify-between shrink-0 shadow-xs bg-surface border border-hairline transition-colors">
         <div className="flex items-center gap-4 min-w-0">
           {/* Server Icon with fallback */}
-          <div className="w-14 h-14 rounded-[8px] border border-[#ebebeb] dark:border-[#262626] bg-[#fafafa] dark:bg-[#141414] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-[8px] border border-hairline bg-surface-2 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
             {instance?.hasIcon ? (
               <img
                 src={getInstanceIconUrl(instance.id)}
@@ -129,29 +129,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 className="w-full h-full object-contain image-rendering-pixelated"
               />
             ) : (
-              <Server className="w-7 h-7 text-[#888888] dark:text-[#707070]" />
+              <Server className="w-7 h-7 text-mute" />
             )}
           </div>
 
           {/* Server Meta & Live Status */}
           <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2.5">
-              <h1 className="text-[17px] font-semibold tracking-[-0.34px] text-[#171717] dark:text-[#ededed] truncate">
+              <h1 className="text-[17px] font-semibold tracking-[-0.34px] text-ink truncate">
                 {instance?.name || 'Local Minecraft Server'}
               </h1>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[11px] font-medium uppercase tracking-wider text-[#171717] dark:text-[#ededed]">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-surface-2 border border-hairline font-mono text-[11px] font-medium uppercase tracking-wider text-ink">
                 <span
                   className={`w-2 h-2 rounded-[2px] shrink-0 ${
                     status === 'ONLINE'
-                      ? 'bg-[#50e3c2] shadow-[0_0_6px_rgba(80,227,194,0.35)]'
+                      ? 'bg-success shadow-[0_0_6px_rgba(80,227,194,0.35)]'
                       : status === 'STARTING'
-                      ? 'bg-[#f5a623] animate-pulse'
-                      : 'bg-[#888888]'
+                      ? 'bg-warning animate-pulse'
+                      : 'bg-mute'
                   }`}
                 />
                 {status}
               </span>
-              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[#666666] dark:text-[#a1a1a1] uppercase flex items-center gap-1.5">
+              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-surface-2 border border-hairline text-soft uppercase flex items-center gap-1.5">
                 <GameLogo gameId={instance?.gameId || 'minecraft'} size={14} />
                 <span>
                   {instance?.gameId === 'project-zomboid'
@@ -162,54 +162,54 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </span>
               </span>
               {metrics.bridgeConnected && (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#50e3c2]/10 dark:bg-[#50e3c2]/15 border border-[#50e3c2]/30 text-[#0f8c70] dark:text-[#50e3c2] font-mono text-[10px] font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#50e3c2] animate-pulse" />
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-success/10 dark:bg-success/15 border border-success/30 text-success-fg font-mono text-[10px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                   {t('overview.metrics.bridge_connected')}
                 </span>
               )}
             </div>
 
             {/* Sub-meta Strip: IP, Loader, Player Count, MOTD */}
-            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#666666] dark:text-[#888888]">
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px] text-soft">
               {/* Network Address with Copy */}
               <button
                 type="button"
                 onClick={handleCopyIp}
-                className="inline-flex items-center gap-1 font-mono text-[#171717] dark:text-[#ededed] hover:text-[#0070f3] dark:hover:text-[#0070f3] transition cursor-pointer"
+                className="inline-flex items-center gap-1 font-mono text-ink hover:text-accent-fg transition cursor-pointer"
                 title={t('overview.copy_ip_title')}
               >
                 <span>{serverAddress}</span>
                 {copiedIp ? (
-                  <Check className="w-3 h-3 text-[#50e3c2]" />
+                  <Check className="w-3 h-3 text-success-fg" />
                 ) : (
-                  <Copy className="w-3 h-3 text-[#888888]" />
+                  <Copy className="w-3 h-3 text-mute" />
                 )}
               </button>
 
-              <span className="text-[#ebebeb] dark:text-[#333333]">|</span>
+              <span className="text-hairline-strong">|</span>
 
               {/* Loader */}
-              <span className="inline-flex items-center gap-1 text-[#4d4d4d] dark:text-[#a1a1a1]">
-                <Layers className="w-3.5 h-3.5 text-[#888888]" />
+              <span className="inline-flex items-center gap-1 text-body">
+                <Layers className="w-3.5 h-3.5 text-mute" />
                 <span>
                   {instance?.loader ? `${instance.loader.toUpperCase()} ${instance.loaderVersion || ''}` : 'Vanilla'}
                 </span>
               </span>
 
-              <span className="text-[#ebebeb] dark:text-[#333333]">|</span>
+              <span className="text-hairline-strong">|</span>
 
               {/* Player Count */}
-              <span className="inline-flex items-center gap-1 text-[#4d4d4d] dark:text-[#a1a1a1]">
-                <Users className="w-3.5 h-3.5 text-[#888888]" />
+              <span className="inline-flex items-center gap-1 text-body">
+                <Users className="w-3.5 h-3.5 text-mute" />
                 <span>
                   {players.length}/{maxPlayersCount} {t('overview.metrics.players_online')}
                 </span>
               </span>
 
-              <span className="text-[#ebebeb] dark:text-[#333333]">|</span>
+              <span className="text-hairline-strong">|</span>
 
               {/* MOTD */}
-              <span className="italic text-[#888888] dark:text-[#707070] truncate max-w-sm">
+              <span className="italic text-mute truncate max-w-sm">
                 &ldquo;{instance?.motd || 'No description for this server'}&rdquo;
               </span>
             </div>
@@ -222,20 +222,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             type="button"
             onClick={onRestart}
             disabled={status === 'OFFLINE'}
-            className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] disabled:opacity-40 text-[#171717] dark:text-[#ededed] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-8 px-3 rounded-[6px] bg-surface hover:bg-surface-2 disabled:opacity-40 text-ink border border-hairline text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title={t('overview.controls.restart')}
           >
-            <RotateCcw className="w-3.5 h-3.5 text-[#888888]" />
+            <RotateCcw className="w-3.5 h-3.5 text-mute" />
             <span>{t('overview.controls.restart')}</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenEditModal}
-            className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#171717] dark:text-[#ededed] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-8 px-3 rounded-[6px] bg-surface hover:bg-surface-2 text-ink border border-hairline text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title={t('edit_server.modal_title')}
           >
-            <Settings className="w-3.5 h-3.5 text-[#888888]" />
+            <Settings className="w-3.5 h-3.5 text-mute" />
             <span>{t('edit_server.button')}</span>
           </button>
         </div>
@@ -243,68 +243,68 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
       {/* Top 4-Up Metric Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-        <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+        <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[12px] uppercase text-[#888888]">
+            <span className="font-mono text-[12px] uppercase text-mute">
               {t('overview.metrics.cpu')}
             </span>
-            <Cpu className="w-4 h-4 text-[#888888]" />
+            <Cpu className="w-4 h-4 text-mute" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ededed]">
+            <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
               {metrics.cpu}%
             </span>
-            <span className="font-mono text-[12px] text-[#888888]">java.exe</span>
+            <span className="font-mono text-[12px] text-mute">java.exe</span>
           </div>
-          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] dark:bg-[#1f1f1f] rounded-[2px] overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-surface-3 rounded-[2px] overflow-hidden">
             <div
-              className="h-full bg-[#171717] dark:bg-[#ededed] transition-all duration-300"
+              className="h-full bg-ink transition-all duration-300"
               style={{ width: `${Math.min(100, metrics.cpu)}%` }}
             />
           </div>
         </div>
 
-        <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+        <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[12px] uppercase text-[#888888]">
+            <span className="font-mono text-[12px] uppercase text-mute">
               {t('overview.metrics.ram')}
             </span>
-            <HardDrive className="w-4 h-4 text-[#888888]" />
+            <HardDrive className="w-4 h-4 text-mute" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ededed]">
+            <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
               {metrics.ramMb} MB
             </span>
-            <span className="font-mono text-[12px] text-[#888888]">
+            <span className="font-mono text-[12px] text-mute">
               / {metrics.maxRamMb} MB ({ramPercent}%)
             </span>
           </div>
-          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] dark:bg-[#1f1f1f] rounded-[2px] overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-surface-3 rounded-[2px] overflow-hidden">
             <div
-              className="h-full bg-[#171717] dark:bg-[#ededed] transition-all duration-300"
+              className="h-full bg-ink transition-all duration-300"
               style={{ width: `${ramPercent}%` }}
             />
           </div>
         </div>
 
         {/* TPS / MSPT Performance Card */}
-        <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+        <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[12px] uppercase text-[#888888]">
+            <span className="font-mono text-[12px] uppercase text-mute">
               {t('overview.metrics.tps')}
             </span>
-            <Activity className="w-4 h-4 text-[#888888]" />
+            <Activity className="w-4 h-4 text-mute" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span
               className={`text-[24px] font-semibold tracking-[-0.96px] ${
                 status !== 'ONLINE'
-                  ? 'text-[#888888]'
+                  ? 'text-mute'
                   : (metrics.tps ?? 20) >= 19.5
-                  ? 'text-[#50e3c2]'
+                  ? 'text-success-fg'
                   : (metrics.tps ?? 20) >= 15
-                  ? 'text-[#f5a623]'
-                  : 'text-[#ee0000]'
+                  ? 'text-warning'
+                  : 'text-danger-fg'
               }`}
             >
               {status === 'ONLINE'
@@ -312,24 +312,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   ? metrics.tps.toFixed(1)
                   : '20.0'
                 : '--'}{' '}
-              <span className="text-[14px] font-normal text-[#888888]">TPS</span>
+              <span className="text-[14px] font-normal text-mute">TPS</span>
             </span>
-            <span className="font-mono text-[12px] text-[#888888]">
+            <span className="font-mono text-[12px] text-mute">
               {status === 'ONLINE' && metrics.mspt !== undefined
                 ? `${metrics.mspt.toFixed(1)} ms`
                 : t('overview.metrics.mspt')}
             </span>
           </div>
-          <div className="mt-3 h-1.5 w-full bg-[#f5f5f5] dark:bg-[#1f1f1f] rounded-[2px] overflow-hidden">
+          <div className="mt-3 h-1.5 w-full bg-surface-3 rounded-[2px] overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
                 status !== 'ONLINE'
                   ? 'bg-transparent'
                   : (metrics.tps ?? 20) >= 19.5
-                  ? 'bg-[#50e3c2]'
+                  ? 'bg-success'
                   : (metrics.tps ?? 20) >= 15
-                  ? 'bg-[#f5a623]'
-                  : 'bg-[#ee0000]'
+                  ? 'bg-warning'
+                  : 'bg-danger'
               }`}
               style={{
                 width: `${
@@ -343,24 +343,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         {/* Connected Players & Port Card */}
-        <div className="geist-card p-4 flex flex-col justify-between bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+        <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[12px] uppercase text-[#888888]">
+            <span className="font-mono text-[12px] uppercase text-mute">
               {t('overview.metrics.players_online')}
             </span>
-            <Users className="w-4 h-4 text-[#888888]" />
+            <Users className="w-4 h-4 text-mute" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ededed]">
+            <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
               {players.length}
             </span>
-            <span className="font-mono text-[12px] text-[#888888]">
+            <span className="font-mono text-[12px] text-mute">
               / {maxPlayersCount} Max
             </span>
           </div>
-          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-body">
             <span>{t('overview.controls.address')}:</span>
-            <span className="font-mono text-[#171717] dark:text-[#ededed]">localhost:{serverPort}</span>
+            <span className="font-mono text-ink">localhost:{serverPort}</span>
           </div>
         </div>
       </div>
@@ -368,49 +368,49 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       {/* Lower Split Workspace */}
       <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden">
         {/* Left Column: Connected Players Table/Cards */}
-        <div className="col-span-5 geist-card flex flex-col overflow-hidden bg-white dark:bg-[#0d0d0d] border border-[#ebebeb] dark:border-[#262626]">
+        <div className="col-span-5 geist-card flex flex-col overflow-hidden bg-surface border border-hairline">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-[#ebebeb] dark:border-[#262626] flex items-center justify-between bg-[#fafafa]/50 dark:bg-[#141414]/50">
+          <div className="px-4 py-3 border-b border-hairline flex items-center justify-between bg-surface-2/50">
             <div>
-              <h2 className="text-[14px] font-medium tracking-[-0.28px] text-[#171717] dark:text-[#ededed]">
+              <h2 className="text-[14px] font-medium tracking-[-0.28px] text-ink">
                 {t('overview.players.title')}
               </h2>
             </div>
-            <span className="font-mono text-[12px] text-[#888888]">
+            <span className="font-mono text-[12px] text-mute">
               {players.length} online
             </span>
           </div>
 
           {/* Quick Player Search in Overview */}
-          <div className="px-3 py-2 border-b border-[#ebebeb] dark:border-[#262626] bg-white dark:bg-[#0d0d0d] flex items-center gap-2">
+          <div className="px-3 py-2 border-b border-hairline bg-surface flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-[#888888] absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-mute absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={playerSearch}
                 onChange={(e) => setPlayerSearch(e.target.value)}
                 placeholder={t('overview.players.search_placeholder')}
-                className="w-full h-7 pl-8 pr-2.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+                className="w-full h-7 pl-8 pr-2.5 rounded-[4px] bg-surface-2 border border-hairline text-[12px] text-ink placeholder-mute focus:outline-none focus:border-ink"
               />
             </div>
             {playerSearch && (
               <button
                 type="button"
                 onClick={() => setPlayerSearch('')}
-                className="text-[11px] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] cursor-pointer"
+                className="text-[11px] text-mute hover:text-ink cursor-pointer"
               >
                 {t('overview.players.clear_search')}
               </button>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-[#ebebeb] dark:divide-[#262626]">
+          <div className="flex-1 overflow-y-auto divide-y divide-hairline">
             {filteredOverviewPlayers.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <p className="text-[14px] font-medium text-[#171717] dark:text-[#ededed]">
+                <p className="text-[14px] font-medium text-ink">
                   {playerSearch ? t('overview.players.no_matches') : t('overview.players.empty')}
                 </p>
-                <p className="text-[13px] text-[#888888] mt-1 max-w-xs">
+                <p className="text-[13px] text-mute mt-1 max-w-xs">
                   {playerSearch
                     ? t('overview.players.no_matches_description')
                     : t('players.empty_description')}
@@ -423,44 +423,44 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 return (
                   <div
                     key={p.username}
-                    className="p-4 hover:bg-[#fafafa] dark:hover:bg-[#141414] transition space-y-3"
+                    className="p-4 hover:bg-surface-2 transition space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
                           src={`https://mc-heads.net/avatar/${p.username}/40`}
                           alt={p.username}
-                          className="w-9 h-9 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
+                          className="w-9 h-9 rounded-[6px] border border-hairline"
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[14px] font-medium tracking-[-0.28px] text-[#171717] dark:text-[#ededed]">
+                            <span className="text-[14px] font-medium tracking-[-0.28px] text-ink">
                               {p.username}
                             </span>
                             {p.isOp && (
-                              <span className="px-1 py-0.2 rounded-[3px] bg-[#f5a623]/15 border border-[#f5a623]/30 text-[#f5a623] font-mono text-[9px] font-bold">
+                              <span className="px-1 py-0.2 rounded-[3px] bg-warning/15 border border-warning/30 text-warning font-mono text-[9px] font-bold">
                                 {t('overview.players.operator')}
                               </span>
                             )}
                             {p.isFrozen && (
-                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#0070f3]/15 border border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] font-mono text-[9px] font-bold">
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-accent/15 border border-accent/30 text-accent-fg font-mono text-[9px] font-bold">
                                 <Snowflake className="w-2.5 h-2.5" />
                                 {t('players.frozen')}
                               </span>
                             )}
                             {p.isMuted && (
-                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-[#ee0000]/15 border border-[#ee0000]/30 text-[#ee0000] font-mono text-[9px] font-bold">
+                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-danger/15 border border-danger/30 text-danger-fg font-mono text-[9px] font-bold">
                                 <VolumeX className="w-2.5 h-2.5" />
                                 {t('players.muted')}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#888888] flex-wrap">
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-mute flex-wrap">
                             <span>XYZ: {p.x}, {p.y}, {p.z}</span>
                             {p.ping !== undefined && (
                               <>
                                 <span>&bull;</span>
-                                <span className="inline-flex items-center gap-0.5 text-[#50e3c2]">
+                                <span className="inline-flex items-center gap-0.5 text-success-fg">
                                   <Wifi className="w-2.5 h-2.5" />
                                   {p.ping}ms
                                 </span>
@@ -469,8 +469,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                             {p.health !== undefined && (
                               <>
                                 <span>&bull;</span>
-                                <span className="inline-flex items-center gap-0.5 text-[#ee0000]">
-                                  <Heart className="w-2.5 h-2.5 fill-[#ee0000]" />
+                                <span className="inline-flex items-center gap-0.5 text-danger-fg">
+                                  <Heart className="w-2.5 h-2.5 fill-danger-fg" />
                                   {p.health} HP
                                 </span>
                               </>
@@ -479,7 +479,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         </div>
                       </div>
 
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[11px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-surface-2 border border-hairline font-mono text-[11px] text-body">
                         <DimensionIcon dimension={p.dimension} className="w-3.5 h-3.5" />
                         {dimLabel}
                       </span>
@@ -490,53 +490,53 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                         <button
                           type="button"
                           onClick={() => onInspectInventory(p)}
-                          className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                          className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                           title={t('players.inventory_button')}
                         >
-                          <Package className="w-[11px] h-[11px] text-[#171717] dark:text-[#ededed] shrink-0" />
+                          <Package className="w-[11px] h-[11px] text-ink shrink-0" />
                           <SlidingText>{t('players.actions.inventory_short')}</SlidingText>
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'HEAL' })}
-                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-danger/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                         title={t('overview.players.feed')}
                       >
-                        <Heart className="w-[11px] h-[11px] text-[#ee0000] dark:text-[#ff4d4f] shrink-0" />
+                        <Heart className="w-[11px] h-[11px] text-danger-fg shrink-0" />
                         <SlidingText>{t('overview.players.feed')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'GIFT' })}
-                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#0070f3]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-accent/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                         title={t('players.actions.gift')}
                       >
-                        <Gift className="w-[11px] h-[11px] text-[#0070f3] dark:text-[#3291ff] shrink-0" />
+                        <Gift className="w-[11px] h-[11px] text-accent-fg shrink-0" />
                         <SlidingText>{t('players.actions.gift')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActionTarget({ player: p, type: 'DAMAGE' })}
-                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#f5a623]/40 text-[11px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-warning/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                         title={t('players.actions.hurt')}
                       >
-                        <Zap className="w-[11px] h-[11px] text-[#f5a623] dark:text-[#f7b955] shrink-0" />
+                        <Zap className="w-[11px] h-[11px] text-warning shrink-0" />
                         <SlidingText>{t('players.actions.hurt')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KILL')}
-                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#fff0f0] dark:hover:bg-[#381215] border border-[#ebebeb] dark:border-[#262626] hover:border-[#ee0000]/40 text-[11px] font-medium text-[#ee0000] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-danger-soft border border-hairline hover:border-danger/40 text-[11px] font-medium text-danger-fg flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                         title={t('players.actions.kill')}
                       >
-                        <Skull className="w-[11px] h-[11px] text-[#ee0000] dark:text-[#ff4d4f] shrink-0" />
+                        <Skull className="w-[11px] h-[11px] text-danger-fg shrink-0" />
                         <SlidingText>{t('players.actions.kill')}</SlidingText>
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePlayerAction(p.username, 'KICK')}
-                        className="flex-1 h-7 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] hover:border-[#888888]/40 text-[11px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
+                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-mute/40 text-[11px] font-medium text-body flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
                         title={t('overview.players.kick')}
                       >
                         <LogOut className="w-[11px] h-[11px] shrink-0" />
@@ -551,11 +551,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         {/* Right Column: Console */}
-        <div className="col-span-7 rounded-[8px] bg-[#171717] dark:bg-[#0a0a0a] border border-[#2e2e2e] dark:border-[#262626] text-white flex flex-col overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-[#2e2e2e] dark:border-[#262626] flex items-center justify-between">
+        <div className="col-span-7 rounded-[8px] bg-console border border-white/10 text-white flex flex-col overflow-hidden shadow-sm">
+          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-[#888888]" />
-              <span className="font-mono text-[12px] text-[#f2f2f2]">
+              <Terminal className="w-4 h-4 text-white/50" />
+              <span className="font-mono text-[12px] text-on-dark">
                 {t('overview.console_source')}
               </span>
             </div>
@@ -565,7 +565,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   key={item.cmd}
                   type="button"
                   onClick={() => onSendCommand(item.cmd)}
-                  className="px-2 py-0.5 rounded-[4px] bg-[#262626] dark:bg-[#1a1a1a] hover:bg-[#333333] dark:hover:bg-[#262626] font-mono text-[11px] text-[#a1a1a1] hover:text-white transition cursor-pointer"
+                  className="px-2 py-0.5 rounded-[4px] bg-white/10 hover:bg-white/20 font-mono text-[11px] text-white/50 hover:text-white transition cursor-pointer"
                 >
                   {item.label}
                 </button>
@@ -575,7 +575,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           <div className="flex-1 p-4 overflow-y-auto font-mono text-[13px] leading-[20px] space-y-1">
             {logs.length === 0 ? (
-              <div className="text-[#888888]">
+              <div className="text-white/50">
                 {t('overview.console_ready')}
               </div>
             ) : (
@@ -584,12 +584,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   key={idx}
                   className={`break-all ${
                     line.includes('WARN')
-                      ? 'text-[#f5a623]'
+                      ? 'text-warning'
                       : line.includes('ERROR')
-                      ? 'text-[#ee0000]'
+                      ? 'text-red-400'
                       : line.startsWith('>')
-                      ? 'text-[#50e3c2]'
-                      : 'text-[#e5e5e5]'
+                      ? 'text-success'
+                      : 'text-on-dark'
                   }`}
                 >
                   {line}
@@ -601,19 +601,19 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           <form
             onSubmit={handleCommandSubmit}
-            className="p-2.5 border-t border-[#2e2e2e] dark:border-[#262626] bg-[#111111] dark:bg-[#070707] flex items-center gap-2"
+            className="p-2.5 border-t border-white/10 bg-transparent flex items-center gap-2"
           >
-            <ChevronRight className="w-4 h-4 text-[#888888] ml-1" />
+            <ChevronRight className="w-4 h-4 text-white/50 ml-1" />
             <input
               type="text"
               value={commandInput}
               onChange={(e) => setCommandInput(e.target.value)}
               placeholder={t('overview.console.placeholder')}
-              className="flex-1 bg-transparent font-mono text-[13px] text-white placeholder-[#888888] focus:outline-none"
+              className="flex-1 bg-transparent font-mono text-[13px] text-white placeholder-white/40 focus:outline-none"
             />
             <button
               type="submit"
-              className="h-7 px-3 rounded-[6px] bg-white hover:bg-[#e5e5e5] text-[#171717] text-[12px] font-medium transition cursor-pointer"
+              className="h-7 px-3 rounded-[6px] bg-white hover:bg-white/80 text-black text-[12px] font-medium transition cursor-pointer"
             >
               {t('overview.console.send')}
             </button>

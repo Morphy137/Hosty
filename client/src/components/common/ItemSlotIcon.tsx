@@ -18,7 +18,7 @@ export const ItemSlotIcon: React.FC<ItemSlotIconProps> = ({ id, fallbackText, cl
 
   if (!isMinecraft || stage === 'fallback') {
     return (
-      <span className={`font-mono text-[10px] font-bold text-[#171717] dark:text-[#ededed] leading-tight truncate max-w-[36px] ${className}`}>
+      <span className={`font-mono text-[10px] font-bold text-ink leading-tight truncate max-w-[36px] ${className}`}>
         {fallbackText.slice(0, 3).toUpperCase()}
       </span>
     );

@@ -131,34 +131,34 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-lg w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="geist-card bg-surface border border-hairline max-w-lg w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
+        <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">
             <img
               src={`https://mc-heads.net/avatar/${player.username}/48`}
               alt={player.username}
-              className="w-10 h-10 rounded-[6px] border border-[#ebebeb] dark:border-[#262626]"
+              className="w-10 h-10 rounded-[6px] border border-hairline"
             />
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-[16px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
+                <h2 className="text-[16px] font-semibold text-ink tracking-[-0.3px]">
                   {player.username}
                 </h2>
                 {player.isFrozen && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#0070f3]/15 border border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] font-mono text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-accent/15 border border-accent/30 text-accent-fg font-mono text-[10px] font-bold">
                     <Snowflake className="w-2.5 h-2.5" />
                     {t('players.frozen')}
                   </span>
                 )}
                 {player.isMuted && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#ee0000]/15 border border-[#ee0000]/30 text-[#ee0000] font-mono text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-danger/15 border border-danger/30 text-danger-fg font-mono text-[10px] font-bold">
                     <VolumeX className="w-2.5 h-2.5" />
                     {t('players.muted')}
                   </span>
                 )}
               </div>
-              <div className="font-mono text-[12px] text-[#888888] dark:text-[#a1a1a1] flex items-center gap-1.5 mt-0.5">
+              <div className="font-mono text-[12px] text-mute flex items-center gap-1.5 mt-0.5">
                 <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
                 <span>{formatDimensionName(player.dimension, t)}</span>
                 <span>&bull;</span>
@@ -169,7 +169,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer"
+            className="p-1.5 rounded hover:bg-surface-2 text-mute hover:text-ink transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -177,7 +177,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
         {/* Gamemode Quick Bar */}
         <div className="space-y-2">
-          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+          <label className="font-mono text-[11px] uppercase text-mute">
             {t('players.gamemode_label')}
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -186,7 +186,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                 key={mode}
                 type="button"
                 onClick={() => handleSetGamemode(mode)}
-                className="py-1.5 px-2 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] hover:bg-[#171717] dark:hover:bg-[#ededed] hover:text-white dark:hover:text-[#171717] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium capitalize text-[#4d4d4d] dark:text-[#ededed] transition cursor-pointer text-center whitespace-nowrap overflow-hidden"
+                className="py-1.5 px-2 rounded-[6px] bg-surface-2 hover:bg-ink hover:text-on-ink border border-hairline text-[12px] font-medium capitalize text-body transition cursor-pointer text-center whitespace-nowrap overflow-hidden"
               >
                 <SlidingText>{mode}</SlidingText>
               </button>
@@ -196,22 +196,22 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
         {/* Operator Privileges & Inventory Inspection */}
         <div className="space-y-2">
-          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+          <label className="font-mono text-[11px] uppercase text-mute">
             {t('players.permissions_label')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => handleOpToggle(true)}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-ink flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Shield className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0" />
+              <Shield className="w-3.5 h-3.5 text-accent-fg shrink-0" />
               <SlidingText>{t('overview.players.op')}</SlidingText>
             </button>
             <button
               type="button"
               onClick={() => handleOpToggle(false)}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#888888] dark:text-[#a1a1a1] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-mute flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
               <SlidingText>{t('overview.players.deop')}</SlidingText>
             </button>
@@ -222,26 +222,26 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                   onInspectInventory(player);
                   onClose();
                 }}
-                className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+                className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-ink flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
               >
-                <Package className="w-3.5 h-3.5 text-[#171717] dark:text-[#ededed] shrink-0" />
+                <Package className="w-3.5 h-3.5 text-ink shrink-0" />
                 <SlidingText>{t('players.inventory_button')}</SlidingText>
               </button>
             )}
             <button
               type="button"
               onClick={() => onSendCommand(`clear ${player.username}`)}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-ink flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#f5a623] shrink-0" />
+              <Sparkles className="w-3.5 h-3.5 text-warning shrink-0" />
               <SlidingText>{t('overview.players.clear_inventory')}</SlidingText>
             </button>
           </div>
         </div>
 
         {/* Advanced Admin Controls (Freeze, Mute, Smite, Exp) */}
-        <div className="space-y-2 pt-1 border-t border-[#ebebeb] dark:border-[#262626]">
-          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+        <div className="space-y-2 pt-1 border-t border-hairline">
+          <label className="font-mono text-[11px] uppercase text-mute">
             {t('players.admin_actions')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -250,11 +250,11 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               onClick={handleToggleFreeze}
               className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0 ${
                 player.isFrozen
-                  ? 'bg-[#0070f3]/10 dark:bg-[#0070f3]/20 border-[#0070f3]/40 text-[#0070f3] dark:text-[#3291ff]'
-                  : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
+                  ? 'bg-accent/10 dark:bg-accent/20 border-accent/40 text-accent-fg'
+                  : 'bg-surface hover:bg-surface-3 border-hairline text-ink'
               }`}
             >
-              <Snowflake className="w-3.5 h-3.5 text-[#0070f3] shrink-0" />
+              <Snowflake className="w-3.5 h-3.5 text-accent-fg shrink-0" />
               <SlidingText>{player.isFrozen ? t('players.unfreeze') : t('players.freeze')}</SlidingText>
             </button>
 
@@ -263,30 +263,30 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               onClick={handleToggleMute}
               className={`py-1.5 px-2 rounded-[6px] border text-[12px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0 ${
                 player.isMuted
-                  ? 'bg-[#ee0000]/10 dark:bg-[#ee0000]/20 border-[#ee0000]/40 text-[#ee0000]'
-                  : 'bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border-[#ebebeb] dark:border-[#262626] text-[#171717] dark:text-[#ededed]'
+                  ? 'bg-danger/10 dark:bg-danger/20 border-danger/40 text-danger-fg'
+                  : 'bg-surface hover:bg-surface-3 border-hairline text-ink'
               }`}
             >
-              <VolumeX className="w-3.5 h-3.5 text-[#ee0000] shrink-0" />
+              <VolumeX className="w-3.5 h-3.5 text-danger-fg shrink-0" />
               <SlidingText>{player.isMuted ? t('players.unmute') : t('players.mute')}</SlidingText>
             </button>
 
             <button
               type="button"
               onClick={handleSmite}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-ink flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
             >
-              <Zap className="w-3.5 h-3.5 text-[#f5a623] shrink-0" />
+              <Zap className="w-3.5 h-3.5 text-warning shrink-0" />
               <SlidingText>{t('players.smite')}</SlidingText>
             </button>
 
             <button
               type="button"
               onClick={() => setIsExpModalOpen(true)}
-              className="py-1.5 px-2 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#171717] dark:text-[#ededed] flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
+              className="py-1.5 px-2 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-ink flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap overflow-hidden min-w-0"
               title={t('players.give_exp')}
             >
-              <Award className="w-3.5 h-3.5 text-[#0070f3] dark:text-[#50e3c2] shrink-0" />
+              <Award className="w-3.5 h-3.5 text-accent-fg shrink-0" />
               <SlidingText>{t('players.experience')}</SlidingText>
             </button>
           </div>
@@ -297,9 +297,9 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
                 type="checkbox"
                 checked={frostEffect}
                 onChange={(e) => setFrostEffect(e.target.checked)}
-                className="rounded-[3px] border-[#ebebeb] dark:border-[#262626] text-[#0070f3] focus:ring-0 shrink-0"
+                className="rounded-[3px] border-hairline text-accent-fg focus:ring-0 shrink-0"
               />
-              <span className="text-[11px] text-[#888888] dark:text-[#a1a1a1] leading-tight">
+              <span className="text-[11px] text-mute leading-tight">
                 {t('players.frost_effect_label')}
               </span>
             </label>
@@ -308,7 +308,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
         {/* Teleport Coordinates */}
         <form onSubmit={handleTeleport} className="space-y-2">
-          <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
+          <label className="font-mono text-[11px] uppercase text-mute">
             {t('players.teleport_coords_label')}
           </label>
           <div className="flex gap-2">
@@ -317,25 +317,25 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               value={tpCoords.x}
               onChange={(e) => setTpCoords({ ...tpCoords, x: e.target.value })}
               placeholder="X"
-              className="w-16 h-8 px-2 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] text-center focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+              className="w-16 h-8 px-2 rounded-[6px] bg-surface border border-hairline font-mono text-[12px] text-ink text-center focus:outline-none focus:border-ink"
             />
             <input
               type="text"
               value={tpCoords.y}
               onChange={(e) => setTpCoords({ ...tpCoords, y: e.target.value })}
               placeholder="Y"
-              className="w-16 h-8 px-2 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] text-center focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+              className="w-16 h-8 px-2 rounded-[6px] bg-surface border border-hairline font-mono text-[12px] text-ink text-center focus:outline-none focus:border-ink"
             />
             <input
               type="text"
               value={tpCoords.z}
               onChange={(e) => setTpCoords({ ...tpCoords, z: e.target.value })}
               placeholder="Z"
-              className="w-16 h-8 px-2 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] text-center focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+              className="w-16 h-8 px-2 rounded-[6px] bg-surface border border-hairline font-mono text-[12px] text-ink text-center focus:outline-none focus:border-ink"
             />
             <button
               type="submit"
-              className="flex-1 h-8 px-3 rounded-[6px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] text-[12px] font-medium flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
+              className="flex-1 h-8 px-3 rounded-[6px] bg-ink hover:bg-ink-hover text-on-ink text-[12px] font-medium flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
             >
               <Navigation className="w-3.5 h-3.5 shrink-0" />
               <SlidingText>{t('overview.players.tp')}</SlidingText>
@@ -344,18 +344,18 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
         </form>
 
         {/* Kick & Ban Actions */}
-        <div className="pt-2 border-t border-[#ebebeb] dark:border-[#262626] space-y-3">
+        <div className="pt-2 border-t border-hairline space-y-3">
           <form onSubmit={handleKick} className="flex gap-2">
             <input
               type="text"
               value={kickReason}
               onChange={(e) => setKickReason(e.target.value)}
               placeholder={t('players.kick_reason_placeholder')}
-              className="flex-1 h-8 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
+              className="flex-1 h-8 px-2.5 rounded-[6px] bg-surface border border-hairline text-[12px] text-ink placeholder-mute focus:outline-none focus:border-ink"
             />
             <button
               type="submit"
-              className="h-8 px-3 rounded-[6px] bg-white dark:bg-[#141414] hover:bg-[#f5f5f5] dark:hover:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[12px] font-medium text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center gap-1 transition cursor-pointer whitespace-nowrap overflow-hidden"
+              className="h-8 px-3 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[12px] font-medium text-body flex items-center gap-1 transition cursor-pointer whitespace-nowrap overflow-hidden"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" />
               <SlidingText>{t('overview.players.kick')}</SlidingText>
@@ -368,11 +368,11 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
               placeholder={t('players.ban_reason_placeholder')}
-              className="flex-1 h-8 px-2.5 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ee0000]/30 dark:border-[#ee0000]/50 text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#ee0000]"
+              className="flex-1 h-8 px-2.5 rounded-[6px] bg-surface border border-danger/30 dark:border-danger/50 text-[12px] text-ink placeholder-mute focus:outline-none focus:border-danger"
             />
             <button
               type="submit"
-              className="h-8 px-3 rounded-[6px] bg-[#ee0000] hover:bg-[#cc0000] text-white text-[12px] font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
+              className="h-8 px-3 rounded-[6px] bg-danger hover:bg-danger text-white text-[12px] font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs whitespace-nowrap overflow-hidden"
             >
               <Ban className="w-3.5 h-3.5 shrink-0" />
               <SlidingText>{t('overview.players.ban')}</SlidingText>
