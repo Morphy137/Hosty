@@ -27,6 +27,11 @@ export class GameDriverRegistry {
     }
   }
 
+  /** Game used when an instance does not declare one (legacy instances, fallback lookups). */
+  public getDefaultGameId(): string {
+    return this.defaultDriverId;
+  }
+
   public register(driver: IGameDriver, builtin = false): void {
     const id = driver.id.toLowerCase();
     this.drivers.set(id, driver);

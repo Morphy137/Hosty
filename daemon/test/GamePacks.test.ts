@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { validateManifest } from '../src/core/gamepacks/manifest';
-import { DeclarativeGameDriver, renderTemplate, resolvePlatformValue } from '../src/core/gamepacks/DeclarativeDriver';
+import { DeclarativeGameDriver, expandGlob, renderTemplate, resolvePlatformValue } from '../src/core/gamepacks/DeclarativeDriver';
 import { GameDriverRegistry } from '../src/core/drivers/GameDriverRegistry';
 import { readConfigFile, resolveConfigPath, writeConfigFile } from '../src/core/ConfigFileEditor';
 import { buildSteamCmdArgs } from '../src/provisioning/SteamCmd';
@@ -247,5 +247,139 @@ describe('documented example packs', () => {
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
     if (raw.logo) expect(fs.existsSync(path.join(dir, raw.logo))).toBe(true);
+  });
+});
+
+describe('extensible manifest surface', () => {
+  let dir: string;
+  const platform = process.platform as 'win32' | 'linux' | 'darwin';
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-discover-'));
+  });
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  const javaManifest = (extra: Record<string, unknown>) => {
+    const result = validateManifest({
+      ...validManifest,
+      id: 'java-game',
+      launch: {
+        runtime: 'java',
+        executable: 'server.jar',
+        args: ['nogui'],
+        discover: [
+          {
+            glob: 'libraries/loader/*/args.txt',
+            platform,
+            args: [{ arg: '@user_jvm_args.txt', ifExists: 'user_jvm_args.txt' }, '@{{match}}', 'nogui']
+          },
+          { glob: 'legacy-*.jar', exclude: 'installer', mode: 'jar', args: ['nogui'] }
+        ]
+      },
+      ...extra
+    });
+    expect(result.errors).toEqual([]);
+    return result.manifest!;
+  };
+
+  const touch = (relative: string) => {
+    const target = path.join(dir, relative);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, '');
+  };
+
+  it('expands single-segment wildcards in relative globs', () => {
+    touch('libraries/loader/1.20.1-47/args.txt');
+    touch('libraries/loader/1.21-1/args.txt');
+    expect(expandGlob(dir, 'libraries/loader/*/args.txt')).toEqual([
+      'libraries/loader/1.20.1-47/args.txt',
+      'libraries/loader/1.21-1/args.txt'
+    ]);
+    expect(expandGlob(dir, 'missing/*/args.txt')).toEqual([]);
+  });
+
+  it('launches through a discovered args file and only includes optional args that exist', () => {
+    touch('libraries/loader/1.21-1/args.txt');
+    const driver = new DeclarativeGameDriver(javaManifest({}), null);
+    expect(driver.validateInstallation(dir)).toBe(true);
+
+    const without = driver.buildLaunchPlan({ workingDir: dir });
+    expect(without.args).toContain('@libraries/loader/1.21-1/args.txt');
+    expect(without.args).not.toContain('@user_jvm_args.txt');
+    expect(without.args).not.toContain('-jar');
+
+    touch('user_jvm_args.txt');
+    expect(driver.buildLaunchPlan({ workingDir: dir }).args).toContain('@user_jvm_args.txt');
+  });
+
+  it('runs a discovered legacy jar with -jar and skips installers', () => {
+    touch('legacy-1.12.2-installer.jar');
+    touch('legacy-1.12.2.jar');
+    const driver = new DeclarativeGameDriver(javaManifest({}), null);
+    const plan = driver.buildLaunchPlan({ workingDir: dir });
+    expect(plan.args.slice(plan.args.indexOf('-jar'))).toEqual(['-jar', 'legacy-1.12.2.jar', 'nogui']);
+  });
+
+  it('keeps the default collector unless the user chose one, and removes duplicate flags', () => {
+    touch('server.jar');
+    const driver = new DeclarativeGameDriver(javaManifest({}), null);
+    const zgc = driver.buildLaunchPlan({ workingDir: dir, jvmArgs: ['-XX:+UseZGC', '-XX:+UseZGC'] });
+    expect(zgc.args.filter((arg) => arg === '-XX:+UseZGC')).toHaveLength(1);
+    expect(zgc.args).not.toContain('-XX:+UseG1GC');
+    expect(driver.buildLaunchPlan({ workingDir: dir }).args).toContain('-XX:+UseG1GC');
+  });
+
+  it('polls players with declared queries and applies parsed answers', () => {
+    const driver = new DeclarativeGameDriver(
+      javaManifest({
+        playerQueries: [
+          {
+            id: 'pos',
+            command: 'where {{player}}',
+            pattern: '(?<username>\\w+) is at (?<x>-?[\\d.]+),(?<y>-?[\\d.]+)',
+            fields: { x: 'number', y: 'number' }
+          }
+        ]
+      }),
+      null
+    );
+    const written: string[] = [];
+    const pending = new Set<string>();
+    driver.pollPlayerPositions({ write: (chunk: string) => written.push(chunk) } as never, ['Steve'], pending);
+    expect(written).toEqual(['where Steve\n']);
+    expect(pending.has('Steve:pos')).toBe(true);
+
+    expect(driver.consumeQueryResponse('Steve is at 3.6,-2.2', pending)).toEqual({
+      username: 'Steve',
+      patch: { x: 4, y: -2 }
+    });
+    // Unsolicited lines are ignored.
+    expect(driver.consumeQueryResponse('Alex is at 1,1', pending)).toBeNull();
+  });
+
+  it('rejects malformed discovery, queries and config sync', () => {
+    const result = validateManifest({
+      ...validManifest,
+      launch: { executable: 'x', discover: [{ glob: '../escape/*.txt' }] },
+      playerQueries: [{ id: 'q', command: 'c', pattern: '(?<name>.+)', fields: {} }],
+      configSync: { file: '/abs.properties', format: 'yaml', map: {} }
+    });
+    expect(result.ok).toBe(false);
+    const joined = result.errors.join(' | ');
+    expect(joined).toMatch(/launch\.discover/);
+    expect(joined).toMatch(/named group "username"/);
+    expect(joined).toMatch(/configSync/);
+  });
+
+  it('describes Minecraft entirely through the manifest surface', () => {
+    const registry = new GameDriverRegistry();
+    expect(registry.getDefaultGameId()).toBe('minecraft');
+    const summary = registry.getDriver('minecraft').summary;
+    expect(summary.configSync?.map.port).toBe('server-port');
+    expect(summary.bridgeLoaders).toEqual(expect.arrayContaining(['paper', 'fabric']));
+    expect(summary.launchDefaults?.memoryMb).toBe(4096);
+    expect(registry.getManifest('minecraft')?.playerQueries?.length).toBeGreaterThan(0);
   });
 });

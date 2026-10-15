@@ -11,8 +11,12 @@ export type PlatformValue = string | { win32?: string; linux?: string; darwin?: 
 
 export type ManifestSetupField = {
   id: string;
-  type: 'select' | 'text' | 'secret' | 'number' | 'toggle';
+  type: 'select' | 'text' | 'secret' | 'number' | 'toggle' | 'custom';
   label: LocalizedText;
+  /** i18n key of the host app, used instead of `label` by built-in games. */
+  labelKey?: string;
+  /** For `custom` fields: id of a component registered by the client. */
+  component?: string;
   description?: LocalizedText;
   options?: Array<{ value: string; label: LocalizedText }>;
   default?: string | number | boolean;
@@ -28,6 +32,58 @@ export interface ManifestConfigFile {
 }
 
 export type ProvisionSpec = { type: 'none' } | { type: 'steamcmd'; appId: number };
+
+/** An argument; objects are only included when `ifExists` (a path relative to the instance) exists. */
+export type LaunchArg = string | { arg: string; ifExists: string };
+
+/** How to find the real entry point when it is only known after installation (e.g. generated args files). */
+export interface LaunchDiscovery {
+  /** Relative glob; `*` matches within one path segment. */
+  glob: string;
+  platform?: 'win32' | 'linux' | 'darwin';
+  /** Case-insensitive pattern of file names to skip (e.g. `installer`). */
+  exclude?: string;
+  /** `jar` runs `java -jar <match>`; the default `args` mode puts `{{match}}` only where the args say so. */
+  mode?: 'args' | 'jar';
+  args?: LaunchArg[];
+}
+
+/** A command sent for every online player whose answer updates that player's state. */
+export interface PlayerQuery {
+  id: string;
+  /** `{{player}}` is replaced with the player name. */
+  command: string;
+  /** Must define the named group `username`; other named groups become the fields below. */
+  pattern: string;
+  fields: Record<string, 'number' | 'string'>;
+}
+
+/** Keeps port / description / player limit of the instance in sync with a game config file. */
+export interface ConfigSync {
+  file: string;
+  format: 'properties';
+  map: { port?: string; motd?: string; maxPlayers?: string };
+}
+
+export interface ManifestJvmFlagPreset {
+  id: string;
+  label: string;
+  description: string;
+  flags: string[];
+  recommendedFor?: string[];
+}
+
+export interface ManifestModSource {
+  id: string;
+  name: string;
+  type: 'modrinth';
+  baseUrl: string;
+  projectUrl?: string;
+  loaderCategories?: Record<string, string[]>;
+  projectTypes?: string[];
+  installDir?: Record<string, string>;
+  defaultInstallDir?: string;
+}
 
 export interface GameCapabilities {
   players: boolean;
@@ -46,14 +102,21 @@ export interface GameManifest {
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';
-  defaults: { port: number; maxPlayers: number };
+  defaults: { port: number; maxPlayers: number; memoryMb?: number };
   provision?: ProvisionSpec;
   launch: {
     /** `native` runs the executable directly; `java` runs it as `java -jar <executable>` with RAM flags. */
     runtime?: 'native' | 'java';
     executable: PlatformValue;
     args?: string[];
+    discover?: LaunchDiscovery[];
   };
+  playerQueries?: PlayerQuery[];
+  configSync?: ConfigSync;
+  /** Loaders (or variants) a Telemetry Bridge artifact exists for. */
+  bridgeLoaders?: string[];
+  jvmFlagPresets?: ManifestJvmFlagPreset[];
+  modSources?: ManifestModSource[];
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */
   detect?: string[];
   logs?: {
@@ -80,7 +143,7 @@ export interface ManifestValidation {
 }
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
-const FIELD_TYPES = new Set(['select', 'text', 'secret', 'number', 'toggle']);
+const FIELD_TYPES = new Set(['select', 'text', 'secret', 'number', 'toggle', 'custom']);
 const CONFIG_FORMATS = new Set<ConfigFormat>(['properties', 'ini', 'json', 'toml', 'lines']);
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -159,6 +222,66 @@ export function validateManifest(raw: unknown): ManifestValidation {
     if (launch.runtime !== undefined && !['native', 'java'].includes(String(launch.runtime))) {
       errors.push('launch.runtime must be native or java');
     }
+  }
+
+  if (isObject(launch) && launch.discover !== undefined) {
+    const discover = launch.discover;
+    const argOk = (arg: unknown) =>
+      typeof arg === 'string' ||
+      (isObject(arg) && typeof arg.arg === 'string' && isSafeRelativePath(arg.ifExists));
+    if (
+      !Array.isArray(discover) ||
+      !discover.every(
+        (entry) =>
+          isObject(entry) &&
+          isSafeRelativePath(entry.glob) &&
+          (entry.platform === undefined || ['win32', 'linux', 'darwin'].includes(String(entry.platform))) &&
+          (entry.mode === undefined || ['args', 'jar'].includes(String(entry.mode))) &&
+          (entry.args === undefined || (Array.isArray(entry.args) && entry.args.every(argOk)))
+      )
+    ) {
+      errors.push('launch.discover must be a list of { glob (relative), platform?, exclude?, mode?, args? }');
+    } else {
+      for (const entry of discover as Array<Record<string, unknown>>) {
+        if (entry.exclude !== undefined) checkPatterns('launch.discover.exclude', entry.exclude, errors);
+      }
+    }
+  }
+
+  if (raw.playerQueries !== undefined) {
+    const queries = raw.playerQueries;
+    if (
+      !Array.isArray(queries) ||
+      !queries.every(
+        (query) =>
+          isObject(query) &&
+          typeof query.id === 'string' &&
+          typeof query.command === 'string' &&
+          typeof query.pattern === 'string' &&
+          isObject(query.fields) &&
+          Object.values(query.fields).every((kind) => kind === 'number' || kind === 'string')
+      )
+    ) {
+      errors.push('playerQueries must be a list of { id, command, pattern, fields }');
+    } else {
+      for (const query of queries as Array<Record<string, unknown>>) {
+        checkPatterns(`playerQueries.${String(query.id)}.pattern`, query.pattern, errors);
+        if (typeof query.pattern === 'string' && !query.pattern.includes('(?<username>')) {
+          errors.push(`playerQueries.${String(query.id)}.pattern must define the named group "username"`);
+        }
+      }
+    }
+  }
+
+  if (raw.configSync !== undefined) {
+    const sync = raw.configSync;
+    if (!isObject(sync) || !isSafeRelativePath(sync.file) || sync.format !== 'properties' || !isObject(sync.map)) {
+      errors.push('configSync must be { file (relative), format: "properties", map }');
+    }
+  }
+
+  if (raw.bridgeLoaders !== undefined && !isStringList(raw.bridgeLoaders)) {
+    errors.push('bridgeLoaders must be a list of strings');
   }
 
   if (raw.provision !== undefined) {

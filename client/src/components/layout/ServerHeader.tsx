@@ -90,7 +90,7 @@ export const ServerHeader: React.FC<ServerHeaderProps> = ({
     <header className="shrink-0 border-b border-hairline bg-surface px-6 pt-4">
       <div className="flex items-center justify-between gap-4 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <GameLogo gameId={instance.gameId ?? 'minecraft'} size={36} />
+          <GameLogo gameId={instance.gameId ?? ''} size={36} />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-[17px] font-semibold tracking-[-0.34px] text-ink">{instance.name}</h1>

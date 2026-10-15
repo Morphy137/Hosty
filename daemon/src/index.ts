@@ -13,7 +13,7 @@ import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModCatalog } from './provisioning/ModCatalog';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
-import { telemetryBridge, TelemetryBridgeManager } from './core/bridge/TelemetryBridgeManager';
+import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
 import { tokensMatch } from './core/bridge/BridgeAuth';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
@@ -310,16 +310,20 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
     }
-    if (!TelemetryBridgeManager.supportsLoader(instance.loader)) {
+    const bridgeLoaders = driverRegistry.getDriver(instance.gameId).summary.bridgeLoaders ?? [];
+    if (bridgeLoaders.length === 0 || (instance.loader && !bridgeLoaders.includes(instance.loader))) {
       throw new DaemonError(
         'INVALID_LOADER',
-        `There is no Hosty bridge for "${instance.loader}" yet. Supported: Paper, Purpur, Spigot and Fabric.`
+        `There is no Hosty bridge for "${instance.loader ?? instance.gameId}" yet. Supported: ${bridgeLoaders.join(', ') || 'none'}.`
       );
     }
-    const ok = telemetryBridge.installBridge(instance.dir, instance.loader);
+    const installedPath = telemetryBridge.installBridge(instance.dir, instance.loader);
     prepareBridgeConfig(instance.id);
-    broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".\r\n`);
-    res.json({ ok });
+    broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".
+
+`);
+    const serverRunning = registry.getSupervisor(instance.id)?.isRunning() ?? false;
+    res.json({ ok: true, path: installedPath, serverRunning });
   } catch (err) {
     next(err);
   }

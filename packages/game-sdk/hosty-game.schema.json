@@ -3,97 +3,313 @@
   "$id": "https://hosty.app/schemas/hosty-game.v1.json",
   "title": "Hosty game pack manifest (apiVersion 1)",
   "type": "object",
-  "required": ["apiVersion", "id", "name", "version", "defaults", "launch"],
+  "required": [
+    "apiVersion",
+    "id",
+    "name",
+    "version",
+    "defaults",
+    "launch"
+  ],
   "additionalProperties": false,
   "$defs": {
     "localized": {
-      "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": { "type": "string" } }]
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "platformValue": {
       "oneOf": [
-        { "type": "string", "minLength": 1 },
+        {
+          "type": "string",
+          "minLength": 1
+        },
         {
           "type": "object",
           "properties": {
-            "win32": { "type": "string" },
-            "linux": { "type": "string" },
-            "darwin": { "type": "string" },
-            "default": { "type": "string" }
+            "win32": {
+              "type": "string"
+            },
+            "linux": {
+              "type": "string"
+            },
+            "darwin": {
+              "type": "string"
+            },
+            "default": {
+              "type": "string"
+            }
           },
           "additionalProperties": false
         }
       ]
     },
     "patterns": {
-      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
-    "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?![/\\\\]|[A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" }
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![/\\\\]|[A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$"
+    }
   },
   "properties": {
-    "apiVersion": { "const": 1 },
-    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$" },
-    "name": { "type": "string", "minLength": 1 },
-    "version": { "type": "string", "minLength": 1 },
-    "logo": { "$ref": "#/$defs/relativePath" },
-    "description": { "$ref": "#/$defs/localized" },
-    "badge": { "type": "string", "maxLength": 4 },
-    "category": { "enum": ["voxel", "survival", "sandbox"] },
-    "status": { "enum": ["available", "beta", "coming_soon"] },
+    "apiVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,39}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "logo": {
+      "$ref": "#/$defs/relativePath"
+    },
+    "description": {
+      "$ref": "#/$defs/localized"
+    },
+    "badge": {
+      "type": "string",
+      "maxLength": 4
+    },
+    "category": {
+      "enum": [
+        "voxel",
+        "survival",
+        "sandbox"
+      ]
+    },
+    "status": {
+      "enum": [
+        "available",
+        "beta",
+        "coming_soon"
+      ]
+    },
     "defaults": {
       "type": "object",
-      "required": ["port", "maxPlayers"],
+      "required": [
+        "port",
+        "maxPlayers"
+      ],
       "properties": {
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
-        "maxPlayers": { "type": "integer", "minimum": 1 }
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "maxPlayers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "memoryMb": {
+          "type": "integer",
+          "minimum": 256
+        }
       },
       "additionalProperties": false
     },
     "provision": {
       "oneOf": [
-        { "type": "object", "required": ["type"], "properties": { "type": { "const": "none" } }, "additionalProperties": false },
         {
           "type": "object",
-          "required": ["type", "appId"],
-          "properties": { "type": { "const": "steamcmd" }, "appId": { "type": "integer" } },
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "none"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "appId"
+          ],
+          "properties": {
+            "type": {
+              "const": "steamcmd"
+            },
+            "appId": {
+              "type": "integer"
+            }
+          },
           "additionalProperties": false
         }
       ]
     },
     "launch": {
       "type": "object",
-      "required": ["executable"],
+      "required": [
+        "executable"
+      ],
       "properties": {
-        "runtime": { "enum": ["native", "java"] },
-        "executable": { "$ref": "#/$defs/platformValue" },
-        "args": { "type": "array", "items": { "type": "string" } }
+        "runtime": {
+          "enum": [
+            "native",
+            "java"
+          ]
+        },
+        "executable": {
+          "$ref": "#/$defs/platformValue"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discover": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "glob"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "glob": {
+                "type": "string"
+              },
+              "platform": {
+                "enum": [
+                  "win32",
+                  "linux",
+                  "darwin"
+                ]
+              },
+              "exclude": {
+                "type": "string"
+              },
+              "mode": {
+                "enum": [
+                  "args",
+                  "jar"
+                ]
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "arg",
+                        "ifExists"
+                      ],
+                      "properties": {
+                        "arg": {
+                          "type": "string"
+                        },
+                        "ifExists": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
       },
       "additionalProperties": false
     },
-    "detect": { "type": "array", "items": { "$ref": "#/$defs/relativePath" } },
+    "detect": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relativePath"
+      }
+    },
     "logs": {
       "type": "object",
       "properties": {
-        "ready": { "$ref": "#/$defs/patterns" },
-        "join": { "$ref": "#/$defs/patterns" },
-        "leave": { "$ref": "#/$defs/patterns" },
-        "dimension": { "type": "string" }
+        "ready": {
+          "$ref": "#/$defs/patterns"
+        },
+        "join": {
+          "$ref": "#/$defs/patterns"
+        },
+        "leave": {
+          "$ref": "#/$defs/patterns"
+        },
+        "dimension": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "commands": {
       "type": "object",
-      "properties": { "stop": { "type": "string" }, "save": { "type": ["string", "null"] } },
+      "properties": {
+        "stop": {
+          "type": "string"
+        },
+        "save": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
       "additionalProperties": false
     },
     "configFiles": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["path", "format"],
+        "required": [
+          "path",
+          "format"
+        ],
         "properties": {
-          "path": { "$ref": "#/$defs/relativePath" },
-          "format": { "enum": ["properties", "ini", "json", "toml", "lines"] },
-          "label": { "$ref": "#/$defs/localized" }
+          "path": {
+            "$ref": "#/$defs/relativePath"
+          },
+          "format": {
+            "enum": [
+              "properties",
+              "ini",
+              "json",
+              "toml",
+              "lines"
+            ]
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          }
         },
         "additionalProperties": false
       }
@@ -102,22 +318,65 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "type", "label"],
+        "required": [
+          "id",
+          "type",
+          "label"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "type": { "enum": ["select", "text", "secret", "number", "toggle"] },
-          "label": { "$ref": "#/$defs/localized" },
-          "description": { "$ref": "#/$defs/localized" },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "select",
+              "text",
+              "secret",
+              "number",
+              "toggle",
+              "custom"
+            ]
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          },
+          "description": {
+            "$ref": "#/$defs/localized"
+          },
           "options": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["value", "label"],
-              "properties": { "value": { "type": "string" }, "label": { "$ref": "#/$defs/localized" } }
+              "required": [
+                "value",
+                "label"
+              ],
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "label": {
+                  "$ref": "#/$defs/localized"
+                }
+              }
             }
           },
-          "default": { "type": ["string", "number", "boolean"] },
-          "required": { "type": "boolean" }
+          "default": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "component": {
+            "type": "string"
+          },
+          "labelKey": {
+            "type": "string"
+          }
         },
         "additionalProperties": false
       }
@@ -125,14 +384,197 @@
     "capabilities": {
       "type": "object",
       "properties": {
-        "players": { "type": "boolean" },
-        "mods": { "type": "boolean" },
-        "configEditor": { "type": "boolean" },
-        "bridge": { "type": "boolean" }
+        "players": {
+          "type": "boolean"
+        },
+        "mods": {
+          "type": "boolean"
+        },
+        "configEditor": {
+          "type": "boolean"
+        },
+        "bridge": {
+          "type": "boolean"
+        }
       },
       "additionalProperties": false
     },
-    "modFormat": { "type": "string" },
-    "i18n": { "type": "object", "additionalProperties": { "type": "object", "additionalProperties": { "type": "string" } } }
+    "modFormat": {
+      "type": "string"
+    },
+    "i18n": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "playerQueries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "command",
+          "pattern",
+          "fields"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                "number",
+                "string"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "configSync": {
+      "type": "object",
+      "required": [
+        "file",
+        "format",
+        "map"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "properties"
+          ]
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "type": "string"
+            },
+            "motd": {
+              "type": "string"
+            },
+            "maxPlayers": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "bridgeLoaders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "jvmFlagPresets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "description",
+          "flags"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recommendedFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "modSources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "baseUrl"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "modrinth"
+            ]
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "projectUrl": {
+            "type": "string"
+          },
+          "loaderCategories": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "projectTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "installDir": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "defaultInstallDir": {
+            "type": "string"
+          }
+        }
+      }
+    }
   }
 }

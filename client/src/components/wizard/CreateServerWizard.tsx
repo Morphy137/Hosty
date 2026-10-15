@@ -121,15 +121,39 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
     setDraft((current) => ({ ...current, ...patch }));
   }, []);
 
+  /** Draft values that depend on the chosen game (name, port, limits, setup defaults, memory). */
+  const gameDefaults = (selected: GameDriverSummary): Partial<WizardDraft> => {
+    const defaults: Record<string, string | number | boolean> = {};
+    for (const field of selected.setupSchema) {
+      if (field.default !== undefined) defaults[field.id] = field.default;
+    }
+    const shortName = selected.name.split(':')[0].trim();
+    const name = t('wizard.default_name', { game: shortName });
+    return {
+      gameId: selected.id,
+      setupValues: defaults,
+      name,
+      instanceId: slugifyInstanceId(name),
+      idTouched: false,
+      motd: t('wizard.default_motd', { game: shortName }),
+      port: nextFreePort(selected.defaultPort, instances),
+      maxPlayers: selected.defaultMaxPlayers,
+      ramMb: Math.min(
+        selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
+        maxAllocatableRamMb(systemRamMb)
+      )
+    };
+  };
+
   // Reset to a fresh draft every time the wizard opens.
   useEffect(() => {
     if (isOpen && !wasOpen.current) {
-      const minecraft = games.find((candidate) => candidate.status === 'available') ?? games[0];
+      // Preselect the first available game so Continue works straight away with sensible defaults.
+      const first = games.find((candidate) => candidate.status === 'available') ?? games[0];
       setDraft({
         ...INITIAL_DRAFT,
         origin: initialOrigin,
-        port: nextFreePort(minecraft?.defaultPort ?? INITIAL_DRAFT.port, instances),
-        maxPlayers: minecraft?.defaultMaxPlayers ?? INITIAL_DRAFT.maxPlayers
+        ...(first ? gameDefaults(first) : {})
       });
       setStep('game');
       setDirection(1);
@@ -140,6 +164,8 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       setInspectError(null);
     }
     wasOpen.current = isOpen;
+    // gameDefaults only reads values already listed here (language and system memory are not reset triggers).
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialOrigin, games, instances]);
 
   useEffect(() => {
@@ -161,28 +187,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
     };
   }, [isOpen]);
 
-  const handleSelectGame = (selected: GameDriverSummary) => {
-    const defaults: Record<string, string | number | boolean> = {};
-    for (const field of selected.setupSchema) {
-      if (field.default !== undefined) defaults[field.id] = field.default;
-    }
-    const shortName = selected.name.split(':')[0].trim();
-    const name = t('wizard.default_name', { game: shortName });
-    update({
-      gameId: selected.id,
-      setupValues: defaults,
-      name,
-      instanceId: slugifyInstanceId(name),
-      idTouched: false,
-      motd: t('wizard.default_motd', { game: shortName }),
-      port: nextFreePort(selected.defaultPort, instances),
-      maxPlayers: selected.defaultMaxPlayers,
-      ramMb: Math.min(
-        selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
-        maxAllocatableRamMb(systemRamMb)
-      )
-    });
-  };
+  const handleSelectGame = (selected: GameDriverSummary) => update(gameDefaults(selected));
 
   const goTo = (target: WizardStepId, dir: number) => {
     setDirection(dir);
@@ -262,7 +267,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           problems.push(t('wizard.warn_icon'));
         }
       }
-      if (draft.origin === 'create' && game?.configFileName === 'server.properties' && plan.kind !== 'create') {
+      if (draft.origin === 'create' && Boolean(game?.configSync) && plan.kind !== 'create') {
         try {
           await saveServerProperties([
             { key: 'gamemode', value: draft.gamemode, type: 'string' },

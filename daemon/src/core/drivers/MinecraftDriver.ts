@@ -1,15 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import type { IGameDriver, GameDriverSummary, ProcessLaunchPlan, ParsedLogEvent, JvmFlagPreset, ModSourceSummary } from './IGameDriver';
+import type { ParsedLogEvent } from './IGameDriver';
+import minecraftManifest from '../gamepacks/builtin/minecraft.json';
+import { DeclarativeGameDriver } from '../gamepacks/DeclarativeDriver';
+import { validateManifest, type GameManifest } from '../gamepacks/manifest';
+import { inspectJar } from '../../provisioning/JarInspector';
+import { PropertiesParser } from '../../parsers/PropertiesParser';
 import {
+  normalizeDimension,
   isServerReadyLine,
-  parseDimensionResponse,
   parsePlayerJoin,
-  parsePlayerLeave,
-  parsePositionResponse
+  parsePlayerLeave
 } from '../LogLineParser';
-
-const JVM_FLAGS = ['-XX:+UseG1GC'];
 
 export type MinecraftLaunchMode = 'jar' | 'argsFile';
 
@@ -52,135 +54,22 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
   return legacy ? { mode: 'jar', target: legacy } : null;
 }
 
-const MODRINTH_SOURCE: ModSourceSummary = {
-  id: 'modrinth',
-  name: 'Modrinth',
-  type: 'modrinth',
-  baseUrl: 'https://api.modrinth.com/v2',
-  projectUrl: 'https://modrinth.com/project/{slug}',
-  loaderCategories: {
-    fabric: ['fabric'],
-    forge: ['forge'],
-    neoforge: ['neoforge'],
-    paper: ['paper', 'spigot', 'bukkit'],
-    purpur: ['purpur', 'paper', 'spigot', 'bukkit'],
-    spigot: ['spigot', 'bukkit']
-  },
-  installDir: { paper: 'plugins', purpur: 'plugins', spigot: 'plugins' },
-  defaultInstallDir: 'mods'
-};
+const validation = validateManifest(minecraftManifest);
+if (!validation.ok || !validation.manifest) {
+  throw new Error(`Invalid built-in Minecraft manifest: ${validation.errors.join('; ')}`);
+}
 
-const JVM_FLAG_PRESETS: JvmFlagPreset[] = [
-  {
-    id: 'aikar',
-    label: "Aikar's flags",
-    description: 'Tuned G1GC set for Paper-family servers with 4 GB or more. Best for Paper, Purpur and Spigot.',
-    flags: ["-XX:+UseG1GC", "-XX:+ParallelRefProcEnabled", "-XX:MaxGCPauseMillis=200", "-XX:+UnlockExperimentalVMOptions", "-XX:+DisableExplicitGC", "-XX:+AlwaysPreTouch", "-XX:G1NewSizePercent=30", "-XX:G1MaxNewSizePercent=40", "-XX:G1HeapRegionSize=8M", "-XX:G1ReservePercent=20", "-XX:G1HeapWastePercent=5", "-XX:G1MixedGCCountTarget=4", "-XX:InitiatingHeapOccupancyPercent=15", "-XX:G1MixedGCLiveThresholdPercent=90", "-XX:G1RSetUpdatingPauseTimePercent=5", "-XX:SurvivorRatio=32", "-XX:+PerfDisableSharedMem", "-XX:MaxTenuringThreshold=1"],
-    recommendedFor: ['paper', 'purpur', 'spigot']
-  },
-  {
-    id: 'g1-basic',
-    label: 'G1GC basic',
-    description: 'Light, safe G1 tuning for modded and vanilla servers (Fabric, Forge, NeoForge, Vanilla).',
-    flags: ['-XX:+UseG1GC', '-XX:+ParallelRefProcEnabled', '-XX:MaxGCPauseMillis=200', '-XX:+DisableExplicitGC'],
-    recommendedFor: ['fabric', 'forge', 'neoforge', 'vanilla']
-  },
-  {
-    id: 'zgc',
-    label: 'Generational ZGC',
-    description: 'Very low pause times on large heaps. Needs Java 21 or newer.',
-    flags: ['-XX:+UseZGC', '-XX:+ZGenerational']
-  },
-  {
-    id: 'java23-unsafe',
-    label: 'Silence Unsafe warning',
-    description:
-      'Hides the "sun.misc.Unsafe::objectFieldOffset" deprecation warning printed by JOML on Java 23+. Do not use on older Java: it will not start.',
-    flags: ['--sun-misc-unsafe-memory-access=allow']
-  }
-];
-
-export class MinecraftDriver implements IGameDriver {
-  public readonly id = 'minecraft';
-  public readonly name = 'Minecraft: Java Edition';
-
-  public readonly summary: GameDriverSummary = {
-    id: 'minecraft',
-    name: 'Minecraft: Java Edition',
-    category: 'voxel',
-    defaultPort: 25565,
-    defaultMaxPlayers: 20,
-    executableName: 'server.jar',
-    supportsMods: true,
-    modFormat: 'JAR (.jar)',
-    supportsCustomJava: true,
-    configFileName: 'server.properties',
-    badge: 'MC',
-    description: 'Official Mojang, Fabric, Paper, Forge and NeoForge Java servers',
-    status: 'available',
-    setupSchema: [
-      { id: 'install', type: 'custom', labelKey: 'create_server.steps.installation', component: 'minecraft-install' }
-    ],
-    capabilities: { players: true, mods: true, configEditor: true, bridge: true },
-    configFiles: [{ path: 'server.properties', format: 'properties' }],
-    launchDefaults: { memoryMb: 4096 },
-    modSources: [MODRINTH_SOURCE],
-    jvmFlagPresets: JVM_FLAG_PRESETS,
-    source: 'builtin',
-    hasLogo: false
-  };
-
-  public validateInstallation(instanceDir: string): boolean {
-    return resolveMinecraftLaunchTarget(instanceDir) !== null;
+/**
+ * Minecraft is described by `builtin/minecraft.json` (launch discovery, player queries, config sync,
+ * presets, mod catalog). Only what data cannot express lives here: richer log parsing (positions in
+ * login lines), jar inspection and the default `server.properties`.
+ */
+export class MinecraftDriver extends DeclarativeGameDriver {
+  constructor() {
+    super(validation.manifest as GameManifest, null, 'builtin');
   }
 
-  public buildLaunchPlan(config: {
-    workingDir: string;
-    javaPath?: string;
-    jarFile?: string;
-    minRamMb?: number;
-    maxRamMb?: number;
-    jvmArgs?: string[];
-  }): ProcessLaunchPlan {
-    const minRam = config.minRamMb ?? 1024;
-    const maxRam = config.maxRamMb ?? 4096;
-    const cwd = path.resolve(config.workingDir);
-    const customFlags = config.jvmArgs ?? [];
-    const launch = resolveMinecraftLaunchTarget(cwd, config.jarFile || 'server.jar');
-
-    // Only add the default collector when the user did not choose one (two GCs abort the JVM).
-    const choosesCollector = customFlags.some((flag) => /^-XX:\+Use\w+GC$/.test(flag));
-    const defaultFlags = choosesCollector ? [] : JVM_FLAGS;
-    const baseArgs = [
-      `-Xms${minRam}M`,
-      `-Xmx${maxRam}M`,
-      ...defaultFlags,
-      ...customFlags.filter((flag, index) => customFlags.indexOf(flag) === index)
-    ];
-    let args: string[];
-    if (launch?.mode === 'argsFile') {
-      const userArgs = fs.existsSync(path.join(cwd, 'user_jvm_args.txt')) ? ['@user_jvm_args.txt'] : [];
-      args = [...baseArgs, ...userArgs, `@${launch.target}`, 'nogui'];
-    } else {
-      args = [...baseArgs, '-jar', launch?.target ?? (config.jarFile || 'server.jar'), 'nogui'];
-    }
-
-    return {
-      executable: config.javaPath || 'java',
-      args,
-      cwd
-    };
-  }
-
-  public buildStopCommand(): string {
-    return 'stop\n';
-  }
-
-  public buildSaveCommand(): string {
-    return 'save-all\n';
-  }
-
-  public parseLogLine(line: string): ParsedLogEvent | null {
+  public override parseLogLine(line: string): ParsedLogEvent | null {
     if (isServerReadyLine(line)) {
       return { isReady: true };
     }
@@ -193,13 +82,7 @@ export class MinecraftDriver implements IGameDriver {
     const simpleJoinMatch = line.match(/:\s([a-zA-Z0-9_]{3,16})\s+joined the game/i);
     if (simpleJoinMatch && simpleJoinMatch[1]) {
       return {
-        playerJoin: {
-          username: simpleJoinMatch[1],
-          dimension: 'overworld',
-          x: 0,
-          y: 64,
-          z: 0
-        }
+        playerJoin: { username: simpleJoinMatch[1], dimension: 'overworld', x: 0, y: 64, z: 0 }
       };
     }
 
@@ -211,40 +94,35 @@ export class MinecraftDriver implements IGameDriver {
     return null;
   }
 
-  public consumeQueryResponse(
+  public override consumeQueryResponse(
     line: string,
     pendingQueries: Set<string>
   ): { username: string; patch: Record<string, unknown> } | null {
-    const position = parsePositionResponse(line);
-    if (position && pendingQueries.delete(`${position.username}:Pos`)) {
-      return {
-        username: position.username,
-        patch: { x: position.x, y: position.y, z: position.z }
-      };
+    const result = super.consumeQueryResponse(line, pendingQueries);
+    if (result && typeof result.patch.dimension === 'string') {
+      // Bukkit world folders (world_nether...) map to vanilla dimension ids.
+      result.patch.dimension = normalizeDimension(result.patch.dimension);
     }
-
-    const dimension = parseDimensionResponse(line);
-    if (dimension && pendingQueries.delete(`${dimension.username}:Dimension`)) {
-      return {
-        username: dimension.username,
-        patch: { dimension: dimension.dimension }
-      };
-    }
-
-    return null;
+    return result;
   }
 
-  public pollPlayerPositions(
-    stdin: NodeJS.WritableStream,
-    players: string[],
-    pendingQueries: Set<string>
-  ): void {
-    pendingQueries.clear();
-    for (const username of players) {
-      pendingQueries.add(`${username}:Pos`);
-      stdin.write(`data get entity ${username} Pos\n`);
-      pendingQueries.add(`${username}:Dimension`);
-      stdin.write(`data get entity ${username} Dimension\n`);
+  public scaffoldInstance(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void {
+    PropertiesParser.createDefaultProperties(path.join(instanceDir, 'server.properties'), options);
+  }
+
+  public inspectFolder(instanceDir: string): { loader?: string | null; version?: string | null } {
+    const launch = resolveMinecraftLaunchTarget(instanceDir);
+    if (launch?.mode === 'argsFile') {
+      const versionDir = launch.target.split('/').slice(-2, -1)[0] ?? '';
+      return {
+        loader: launch.target.includes('/neoforged/') ? 'neoforge' : 'forge',
+        version: versionDir.split('-')[0] || null
+      };
     }
+    if (launch?.mode === 'jar') {
+      const inspection = inspectJar(path.join(instanceDir, launch.target));
+      return { loader: inspection.loader, version: inspection.mcVersion };
+    }
+    return {};
   }
 }

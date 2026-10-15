@@ -31,7 +31,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
   const [portInUse, setPortInUse] = useState(false);
 
   const isImport = draft.origin === 'import';
-  const isMinecraftLike = game?.configFileName === 'server.properties';
+  const isMinecraftLike = Boolean(game?.configSync);
   const takenByInstance = instances.some((instance) => instance.port === draft.port);
   const ramLimit = maxAllocatableRamMb(systemRamMb);
   // The game's declared default wins; otherwise fall back to a size derived from system memory.

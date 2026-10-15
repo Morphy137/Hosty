@@ -55,6 +55,7 @@ const baseGame: GameDriverSummary = {
   setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'minecraft-install' }],
   capabilities: { players: true, mods: true, configEditor: true, bridge: true },
   configFiles: [{ path: 'server.properties', format: 'properties' }],
+  configSync: { file: 'server.properties', format: 'properties', map: { port: 'server-port', motd: 'motd', maxPlayers: 'max-players' } },
   source: 'builtin',
   hasLogo: false
 };
@@ -65,6 +66,7 @@ const zomboid: GameDriverSummary = {
   name: 'Project Zomboid',
   status: 'beta',
   configFileName: 'servertest.ini',
+  configSync: undefined,
   setupSchema: [
     {
       id: 'pzBranch',

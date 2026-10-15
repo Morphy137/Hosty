@@ -20,12 +20,14 @@ const minecraft: GameDriverSummary = {
   setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'minecraft-install' }],
   capabilities: { players: true, mods: true, configEditor: true, bridge: true },
   configFiles: [{ path: 'server.properties', format: 'properties' }],
+  configSync: { file: 'server.properties', format: 'properties', map: { port: 'server-port', motd: 'motd', maxPlayers: 'max-players' } },
   source: 'builtin',
   hasLogo: false
 };
 
 const baseDraft: WizardDraft = {
   ...INITIAL_DRAFT,
+  gameId: 'minecraft',
   name: 'My Server',
   instanceId: 'my-server',
   motd: '§aHello',
@@ -70,6 +72,7 @@ describe('buildCreationPlan', () => {
       ...minecraft,
       id: 'project-zomboid',
       configFileName: 'servertest.ini',
+      configSync: undefined,
       setupSchema: [],
       provision: { type: 'steamcmd', appId: 380870 }
     };

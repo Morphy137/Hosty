@@ -183,7 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 isActive ? 'bg-surface-3 text-ink' : 'text-body hover:bg-surface-2 hover:text-ink'
               )}
             >
-              <GameLogo gameId={instance.gameId ?? 'minecraft'} size={22} />
+              <GameLogo gameId={instance.gameId ?? ''} size={22} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-medium">{instance.name}</span>
                 <span className="block truncate font-mono text-[11px] text-mute">:{instance.port}</span>

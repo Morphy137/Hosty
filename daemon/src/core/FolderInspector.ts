@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { driverRegistry } from './drivers/GameDriverRegistry';
-import { resolveMinecraftLaunchTarget } from './drivers/MinecraftDriver';
-import { inspectJar } from '../provisioning/JarInspector';
 import { DaemonError } from '../errors';
 
 export interface FolderInspection {
@@ -52,32 +50,27 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
   let gameId: string | null = settings.gameId && driverRegistry.hasDriver(settings.gameId) ? settings.gameId : null;
 
   if (!gameId) {
-    // Specific games first: Minecraft's launch-target check is the most permissive fallback.
+    // Specific games first: the default game's checks are the most permissive, so it goes last.
+    const fallback = driverRegistry.getDefaultGameId();
     const ids = driverRegistry
       .listDrivers()
       .map((summary) => summary.id)
-      .sort((a, b) => (a === 'minecraft' ? 1 : b === 'minecraft' ? -1 : 0));
+      .sort((a, b) => (a === fallback ? 1 : b === fallback ? -1 : 0));
     gameId = ids.find((id) => driverRegistry.getDriver(id).validateInstallation(dir)) ?? null;
   }
-  if (!gameId && fs.existsSync(path.join(dir, 'server.properties'))) gameId = 'minecraft';
 
   let loader: string | null = settings.loader ?? null;
   let mcVersion: string | null = settings.loaderVersion ?? null;
 
-  if (gameId === 'minecraft') {
-    const launch = resolveMinecraftLaunchTarget(dir);
-    if (launch?.mode === 'argsFile') {
-      loader = launch.target.includes('/neoforged/') ? 'neoforge' : 'forge';
-      const versionDir = launch.target.split('/').slice(-2, -1)[0] ?? '';
-      mcVersion = mcVersion ?? versionDir.split('-')[0] ?? null;
-    } else if (launch?.mode === 'jar') {
-      const inspection = inspectJar(path.join(dir, launch.target));
-      loader = inspection.loader ?? loader;
-      mcVersion = inspection.mcVersion ?? mcVersion;
-    }
+  // Game-specific details (loader, version) come from the driver, never from a game check here.
+  if (gameId) {
+    const detected = driverRegistry.getDriver(gameId).inspectFolder?.(dir);
+    loader = detected?.loader ?? loader;
+    mcVersion = detected?.version ?? mcVersion;
   }
 
-  const properties = readProperties(path.join(dir, 'server.properties'));
+  const sync = gameId ? driverRegistry.getDriver(gameId).summary.configSync : undefined;
+  const properties = sync ? readProperties(path.join(dir, sync.file)) : {};
   const toNumber = (value: string | undefined) => {
     const parsed = Number(value);
     return value !== undefined && Number.isFinite(parsed) ? parsed : null;
@@ -89,8 +82,8 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
     gameId,
     loader,
     mcVersion,
-    port: toNumber(properties['server-port']),
-    motd: properties['motd'] ?? null,
-    maxPlayers: toNumber(properties['max-players'])
+    port: toNumber(sync?.map.port ? properties[sync.map.port] : undefined),
+    motd: (sync?.map.motd ? properties[sync.map.motd] : undefined) ?? null,
+    maxPlayers: toNumber(sync?.map.maxPlayers ? properties[sync.map.maxPlayers] : undefined)
   };
 }

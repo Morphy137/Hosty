@@ -99,7 +99,7 @@ export default function App() {
   const metricsHistory = useMetricsHistory(metrics, status);
   const { toast } = useToast();
   const appVersion = useAppVersion();
-  const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
+  const activeGame = games.find((game) => game.id === instances.activeInstance?.gameId);
   const locales = useLocales(connectionState);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
