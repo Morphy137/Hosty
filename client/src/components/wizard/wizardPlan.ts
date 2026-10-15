@@ -55,15 +55,15 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
   const settings = buildInstanceSettings(draft, game);
 
   if (usesLoaderInstall(game)) {
-    const { minecraft } = draft;
-    const usesJar = !LOADER_METADATA[minecraft.loader].isAutomatic || minecraft.useCustomJar;
+    const { loaderInstall } = draft;
+    const usesJar = !LOADER_METADATA[loaderInstall.loader].isAutomatic || loaderInstall.useCustomJar;
 
-    if (usesJar && minecraft.jarFile) {
+    if (usesJar && loaderInstall.jarFile) {
       return {
         kind: 'upload',
-        file: minecraft.jarFile,
-        loader: minecraft.loader,
-        loaderVersion: minecraft.jarInspection?.mcVersion ?? undefined,
+        file: loaderInstall.jarFile,
+        loader: loaderInstall.loader,
+        loaderVersion: loaderInstall.jarInspection?.mcVersion ?? undefined,
         instanceId: draft.instanceId,
         name,
         settings
@@ -71,8 +71,8 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
     }
     return {
       kind: 'install',
-      loader: minecraft.loader,
-      version: minecraft.version,
+      loader: loaderInstall.loader,
+      version: loaderInstall.version,
       instanceId: draft.instanceId,
       name,
       settings
@@ -87,6 +87,6 @@ const BRIDGE_LOADERS = ['paper', 'purpur', 'spigot', 'fabric'];
 /** True when a Telemetry Bridge can be installed for what this wizard run will produce. */
 export const bridgeEligible = (draft: WizardDraft, game: GameDriverSummary | undefined): boolean => {
   if (!game?.capabilities.bridge) return false;
-  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.minecraft.loader : null;
+  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.loaderInstall.loader : null;
   return Boolean(loader && BRIDGE_LOADERS.includes(loader));
 };

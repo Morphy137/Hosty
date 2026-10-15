@@ -7,6 +7,10 @@ import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 
 const defaultGameId = (): string => driverRegistry.getDefaultGameId();
 
+/** Folder names any installed game creates inside an instance (never instances themselves). */
+const declaredFolders = (): Set<string> =>
+  new Set(driverRegistry.listDrivers().flatMap((summary) => summary.instanceFolders ?? []));
+
 /** Pre-0.2.1 instances kept the Steam branch in `pzBranch`; it now lives in `gameConfig`. */
 const legacyGameConfig = (settings: object): Record<string, string> | undefined => {
   const legacy = (settings as { pzBranch?: unknown }).pzBranch;
@@ -138,8 +142,9 @@ export class InstanceManager {
         if (!entry.isDirectory()) continue;
         const id = entry.name;
         const dir = path.join(this.instancesBaseDir, id);
-        // `mods` / `config` at the root are leftovers of mod routes run without an active instance.
-        if ((id === 'mods' || id === 'config') && !fs.existsSync(path.join(dir, INSTANCE_SETTINGS_FILE))) continue;
+        // Folders a game declares (`mods`, `config`...) at the root are leftovers of routes run without an
+        // active instance, not servers.
+        if (declaredFolders().has(id) && !fs.existsSync(path.join(dir, INSTANCE_SETTINGS_FILE))) continue;
         if (!this.isConfiguredDirectory(dir)) continue;
         list.push(this.inspectInstance(id, dir, false));
       }
@@ -171,8 +176,9 @@ export class InstanceManager {
     const driver = driverRegistry.getDriver(gameId);
 
     fs.mkdirSync(targetDir, { recursive: true });
-    fs.mkdirSync(path.join(targetDir, 'mods'), { recursive: true });
-    fs.mkdirSync(path.join(targetDir, 'config'), { recursive: true });
+    for (const folder of driver.summary.instanceFolders ?? []) {
+      fs.mkdirSync(path.join(targetDir, folder), { recursive: true });
+    }
 
     const serverName = name?.trim() || safeId;
     const port = customSettings?.port ?? this.findNextAvailablePort(driver.summary.defaultPort);
@@ -373,7 +379,10 @@ export class InstanceManager {
       gameId,
       // Instances created before `gameConfig` stored the Steam branch in a dedicated key.
       gameConfig: settings.gameConfig ?? legacyGameConfig(settings),
-      bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(dir),
+      bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(
+        dir,
+        Array.from(new Set(Object.values(driver.summary.bridgeTargets ?? { default: { dir: 'mods' } }).map((target) => target.dir)))
+      ),
       bridgeSupported: (driver.summary.bridgeLoaders ?? []).length > 0 && (!settings.loader || (driver.summary.bridgeLoaders ?? []).includes(settings.loader))
     };
   }
@@ -397,15 +406,14 @@ export class InstanceManager {
   }
 
   private isConfiguredDirectory(dir: string): boolean {
-    const settingsPath = path.join(dir, INSTANCE_SETTINGS_FILE);
-    const propsPath = path.join(dir, 'server.properties');
-    const jarPath = path.join(dir, 'server.jar');
-    if (fs.existsSync(settingsPath) || fs.existsSync(propsPath) || fs.existsSync(jarPath)) {
+    if (fs.existsSync(path.join(dir, INSTANCE_SETTINGS_FILE))) return true;
+    // Any installed game recognising the folder (its own markers) makes it a server.
+    if (driverRegistry.listDrivers().some((summary) => driverRegistry.getDriver(summary.id).validateInstallation(dir))) {
       return true;
     }
     try {
-      const files = fs.readdirSync(dir);
-      return files.some((f) => f !== 'mods' && f !== 'config');
+      const declared = declaredFolders();
+      return fs.readdirSync(dir).some((entry) => !declared.has(entry));
     } catch {
       return false;
     }
@@ -415,8 +423,9 @@ export class InstanceManager {
     const dir = path.join(this.instancesBaseDir, id);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-      fs.mkdirSync(path.join(dir, 'mods'), { recursive: true });
-      fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
+      for (const folder of driverRegistry.getDriver().summary.instanceFolders ?? []) {
+        fs.mkdirSync(path.join(dir, folder), { recursive: true });
+      }
       const defaultSettings: InstanceSettings = {
         name: id,
         gameId: defaultGameId(),

@@ -35,7 +35,7 @@ const PHASES: ProvisionPhase[] = ['resolve', 'download', 'install', 'configure']
 export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job, logs, error, onCancel, update }) => {
   const { t } = useTranslation();
   const isImport = draft.origin === 'import';
-  const install = draft.minecraft;
+  const install = draft.loaderInstall;
   const usesJar = !LOADER_METADATA[install.loader].isAutomatic || install.useCustomJar;
 
   const engine = isImport

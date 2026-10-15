@@ -68,3 +68,26 @@ Mistakes made during the 0.2.x work itself:
 
 Each step is additive in the manifest and can ship behind the existing capabilities; the Minecraft pack gets the
 new declarations so nothing changes for users.
+
+## Follow-up status
+
+Implemented after this audit (branch `fix/bundled-logos-reload-dialogs`):
+
+| Finding | Result |
+|---|---|
+| A-1 player commands in the client | Done. `playerActions`, `playerView`, `quickCommands` and `creationSettings` are manifest data; the generic list/dialog render them. The rich Minecraft panels are only reachable through `playerPanel: "minecraft-players"` (bundled packs; user packs that set it are rejected). |
+| A-3 `/api/properties` | Removed. The wizard writes creation settings through the generic config editor. |
+| A-4 / A-7 folders and mods layout | Done. `instanceFolders`, `modLayout`; upload scaffolding goes through the driver's `scaffoldInstance` (default config + EULA live in the Minecraft extension). |
+| A-6 bridge folders | Done. `bridgeTargets` per loader; core only copies the declared asset. |
+| B-1 default game literal | Done. `default: true` on a bundled pack. |
+| B-3 `pzBranch` | Done. `provision.branchField` + `gameConfig`; legacy `pzBranch` is migrated on read. |
+| B-4 per-game i18n and CSP | Done. Descriptions come from manifests; Fabric/Mojang hosts removed from the CSP and the client's direct upstream fallback. |
+| A-2 Minecraft visuals | Contained: textures, MOTD preview and the inventory modal are only used by the rich panel, the inventory bridge capability or games exposing a MOTD. |
+
+Still open:
+
+- The loader catalog (`/api/provisioning/*`, `ServerInstaller`, `MinecraftInstallStep`, `draft.loaderInstall`) is Minecraft-shaped.
+  It is reached through a manifest-declared custom component, but the daemon routes are not game-declared yet.
+- `TelemetryBridgeManager` actions/inventory shape remain Minecraft's (protocol v1).
+- The `minecraft` bundled extension (`BUNDLED_EXTENSIONS`) is compiled into the daemon.
+- `MotdPreview` styling is Minecraft's server list; it appears for any game that maps a MOTD.

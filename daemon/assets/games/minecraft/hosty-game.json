@@ -586,5 +586,32 @@
         }
       ]
     }
-  ]
+  ],
+  "default": true,
+  "instanceFolders": [
+    "mods",
+    "config"
+  ],
+  "modLayout": {
+    "modsDir": "mods",
+    "configDir": "config"
+  },
+  "bridgeTargets": {
+    "paper": {
+      "dir": "plugins",
+      "asset": "mc-nexus-bridge-paper.jar"
+    },
+    "purpur": {
+      "dir": "plugins",
+      "asset": "mc-nexus-bridge-paper.jar"
+    },
+    "spigot": {
+      "dir": "plugins",
+      "asset": "mc-nexus-bridge-paper.jar"
+    },
+    "default": {
+      "dir": "mods",
+      "asset": "mc-nexus-bridge-fabric.jar"
+    }
+  }
 }

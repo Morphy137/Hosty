@@ -120,6 +120,15 @@ export interface CreationSetting {
   key: string;
 }
 
+/** Where a game keeps its mods/plugins and their configuration, relative to the instance. */
+export interface ModLayout {
+  modsDir?: string;
+  configDir?: string;
+}
+
+/** Where (and which packaged file) the Telemetry Bridge is installed per loader; `default` is the fallback. */
+export type BridgeTargets = Record<string, { dir: string; asset: string }>;
+
 export interface QuickCommand {
   label: string;
   command: string;
@@ -160,6 +169,12 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  /** Folders created for a new instance (e.g. `mods`); none by default. */
+  instanceFolders?: string[];
+  modLayout?: ModLayout;
+  bridgeTargets?: BridgeTargets;
+  /** Bundled packs only: the game offered when nothing else is chosen. */
+  default?: boolean;
   playerActions?: PlayerActionSpec[];
   creationSettings?: CreationSetting[];
   quickCommands?: QuickCommand[];
@@ -324,6 +339,33 @@ export function validateManifest(raw: unknown): ManifestValidation {
       )
     ) {
       errors.push('playerActions must be a list of { id, label, command, params? }');
+    }
+  }
+
+  if (raw.instanceFolders !== undefined) {
+    if (!isStringList(raw.instanceFolders) || !(raw.instanceFolders as string[]).every(isSafeRelativePath)) {
+      errors.push('instanceFolders must be a list of relative folder names');
+    }
+  }
+  if (raw.modLayout !== undefined) {
+    const layout = raw.modLayout;
+    if (
+      !isObject(layout) ||
+      (layout.modsDir !== undefined && !isSafeRelativePath(layout.modsDir)) ||
+      (layout.configDir !== undefined && !isSafeRelativePath(layout.configDir))
+    ) {
+      errors.push('modLayout must be { modsDir?, configDir? } with relative paths');
+    }
+  }
+  if (raw.bridgeTargets !== undefined) {
+    const targets = raw.bridgeTargets;
+    if (
+      !isObject(targets) ||
+      !Object.values(targets).every(
+        (target) => isObject(target) && isSafeRelativePath(target.dir) && isSafeRelativePath(target.asset)
+      )
+    ) {
+      errors.push('bridgeTargets must map loaders to { dir, asset } with relative paths');
     }
   }
 

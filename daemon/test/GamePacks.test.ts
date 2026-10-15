@@ -427,3 +427,47 @@ describe('bundled packs', () => {
     expect(() => registry.getDriver('minecraft')).toThrow(/MC_NEXUS_BUNDLED_GAMES_DIR/);
   });
 });
+
+describe('declared layout, actions and defaults', () => {
+  it('lets the bundled Minecraft pack declare folders, mods layout, bridge targets and actions', () => {
+    const summary = new GameDriverRegistry().getDriver('minecraft').summary;
+    expect(summary.instanceFolders).toEqual(['mods', 'config']);
+    expect(summary.modLayout).toEqual({ modsDir: 'mods', configDir: 'config' });
+    expect(summary.bridgeTargets?.paper.dir).toBe('plugins');
+    expect(summary.playerActions?.map((action) => action.id)).toEqual(expect.arrayContaining(['kick', 'ban', 'tp']));
+    expect(summary.creationSettings?.map((setting) => setting.key)).toEqual(['gamemode', 'difficulty']);
+  });
+
+  it('picks the default game from the bundled `default` flag, not from a literal', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-default-'));
+    for (const [id, isDefault] of [['alpha', false], ['omega', true]] as const) {
+      const dir = path.join(root, id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'hosty-game.json'),
+        JSON.stringify({ ...validManifest, id, name: id, ...(isDefault ? { default: true } : {}) })
+      );
+    }
+    const registry = new GameDriverRegistry(root);
+    expect(registry.getDefaultGameId()).toBe('omega');
+    expect(registry.getDriver('does-not-exist').id).toBe('omega');
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('rejects malformed player actions, folders and bridge targets', () => {
+    const result = validateManifest({
+      ...validManifest,
+      playerActions: [{ id: 'x', label: 'X' }],
+      instanceFolders: ['../escape'],
+      bridgeTargets: { default: { dir: '/abs', asset: 'a.jar' } },
+      creationSettings: [{ id: 'g', label: 'G', type: 'select', file: '../x', key: 'k' }]
+    });
+    expect(result.ok).toBe(false);
+    const joined = result.errors.join(' | ');
+    expect(joined).toMatch(/playerActions/);
+    expect(joined).toMatch(/instanceFolders/);
+    expect(joined).toMatch(/bridgeTargets/);
+    expect(joined).toMatch(/creationSettings/);
+  });
+});
+

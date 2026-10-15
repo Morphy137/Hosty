@@ -14,7 +14,8 @@ export class GameDriverRegistry {
   private bundledDir = '';
   private packInfos: PackInfo[] = [];
   private loader: PackLoader | null = null;
-  private readonly defaultDriverId = 'minecraft';
+  /** The bundled pack flagged `default` (else the first bundled one). */
+  private defaultDriverId = '';
 
   constructor(bundledDir: string = DEFAULT_BUNDLED_GAMES_DIR) {
     this.loadBundled(bundledDir);
@@ -28,10 +29,18 @@ export class GameDriverRegistry {
     this.bundledInfos = [];
     this.bundledDir = resolved;
 
+    let firstId = '';
+    this.defaultDriverId = '';
     for (const { info, driver } of loadBundledPacks(resolved)) {
-      if (driver && info.id) this.register(driver, true);
+      if (driver && info.id) {
+        this.register(driver, true);
+        firstId = firstId || info.id.toLowerCase();
+        const manifest = this.getManifest(info.id);
+        if (manifest?.default && !this.defaultDriverId) this.defaultDriverId = info.id.toLowerCase();
+      }
       this.bundledInfos.push(info);
     }
+    this.defaultDriverId = this.defaultDriverId || firstId;
   }
 
   /** Game used when an instance does not declare one (legacy instances, fallback lookups). */

@@ -15,6 +15,13 @@ export interface ModFileInfo {
 const BYTES_PER_KB = 1024;
 const BYTES_PER_MB = 1024 * 1024;
 
+export interface ModLayout {
+  modsDir: string;
+  configDir: string;
+}
+
+export const DEFAULT_MOD_LAYOUT: ModLayout = { modsDir: 'mods', configDir: 'config' };
+
 export class ModJarManager {
   public static validateModFilename(rawFilename: string): string {
     if (!rawFilename || typeof rawFilename !== 'string') {
@@ -33,14 +40,14 @@ export class ModJarManager {
     return base;
   }
 
-  public static listModFiles(instanceDir: string): ModFileInfo[] {
-    const modsDir = path.join(instanceDir, 'mods');
+  public static listModFiles(instanceDir: string, layout: ModLayout = DEFAULT_MOD_LAYOUT): ModFileInfo[] {
+    const modsDir = path.join(instanceDir, layout.modsDir);
     if (!fs.existsSync(modsDir)) {
       fs.mkdirSync(modsDir, { recursive: true });
       return [];
     }
 
-    const configDir = path.join(instanceDir, 'config');
+    const configDir = path.join(instanceDir, layout.configDir);
     const existingConfigFiles = fs.existsSync(configDir) ? fs.readdirSync(configDir) : [];
 
     const files = fs.readdirSync(modsDir);
@@ -78,9 +85,9 @@ export class ModJarManager {
     });
   }
 
-  public static toggleMod(instanceDir: string, rawFilename: string): ModFileInfo {
+  public static toggleMod(instanceDir: string, rawFilename: string, layout: ModLayout = DEFAULT_MOD_LAYOUT): ModFileInfo {
     const safeFilename = this.validateModFilename(rawFilename);
-    const modsDir = path.join(instanceDir, 'mods');
+    const modsDir = path.join(instanceDir, layout.modsDir);
     const currentPath = path.join(modsDir, safeFilename);
 
     if (!fs.existsSync(currentPath)) {
@@ -116,9 +123,9 @@ export class ModJarManager {
     };
   }
 
-  public static deleteMod(instanceDir: string, rawFilename: string): void {
+  public static deleteMod(instanceDir: string, rawFilename: string, layout: ModLayout = DEFAULT_MOD_LAYOUT): void {
     const safeFilename = this.validateModFilename(rawFilename);
-    const modsDir = path.join(instanceDir, 'mods');
+    const modsDir = path.join(instanceDir, layout.modsDir);
     const targetPath = path.join(modsDir, safeFilename);
 
     if (!fs.existsSync(targetPath)) {

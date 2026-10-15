@@ -101,7 +101,10 @@ export class MinecraftDriver extends DeclarativeGameDriver {
   }
 
   public scaffoldInstance(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void {
-    PropertiesParser.createDefaultProperties(path.join(instanceDir, 'server.properties'), options);
+    const propsPath = path.join(instanceDir, 'server.properties');
+    if (!fs.existsSync(propsPath)) PropertiesParser.createDefaultProperties(propsPath, options);
+    const eulaPath = path.join(instanceDir, 'eula.txt');
+    if (!fs.existsSync(eulaPath)) fs.writeFileSync(eulaPath, 'eula=true\n', 'utf-8');
   }
 
   public inspectFolder(instanceDir: string): { loader?: string | null; version?: string | null } {

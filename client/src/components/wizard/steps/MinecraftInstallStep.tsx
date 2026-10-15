@@ -18,7 +18,7 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
   onValidityChange
 }) => {
   const { t } = useTranslation();
-  const install = draft.minecraft;
+  const install = draft.loaderInstall;
   const meta = LOADER_METADATA[install.loader];
   const requiresJar = !meta.isAutomatic;
   const usesJar = requiresJar || install.useCustomJar;
@@ -28,7 +28,7 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
   const [isInspecting, setIsInspecting] = useState(false);
   const [filter, setFilter] = useState('');
 
-  const patch = (changes: Partial<typeof install>) => update({ minecraft: { ...install, ...changes } });
+  const patch = (changes: Partial<typeof install>) => update({ loaderInstall: { ...install, ...changes } });
 
   useEffect(() => {
     if (!meta.isAutomatic || install.useCustomJar) return;
@@ -38,7 +38,7 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
       .then((list) => {
         if (ignore) return;
         setVersions(list);
-        if (!list.includes(install.version)) update({ minecraft: { ...install, version: list[0] ?? '' } });
+        if (!list.includes(install.version)) update({ loaderInstall: { ...install, version: list[0] ?? '' } });
       })
       .catch(() => {
         if (!ignore) setVersions([]);
@@ -64,7 +64,7 @@ export const MinecraftInstallStep: React.FC<CustomSetupProps> = ({
     inspectServerJar(file)
       .then((inspection) => {
         update({
-          minecraft: {
+          loaderInstall: {
             ...install,
             jarFile: file,
             jarInspection: inspection,

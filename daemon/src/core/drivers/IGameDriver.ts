@@ -98,6 +98,9 @@ export interface GameDriverSummary {
     }>;
     danger?: boolean;
   }>;
+  instanceFolders?: string[];
+  modLayout?: { modsDir?: string; configDir?: string };
+  bridgeTargets?: Record<string, { dir: string; asset: string }>;
   creationSettings?: Array<{
     id: string;
     label: string | Record<string, string>;

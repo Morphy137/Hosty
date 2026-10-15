@@ -12,13 +12,12 @@ import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModCatalog } from './provisioning/ModCatalog';
 import { buildProvisionRunner } from './provisioning/InstallProviders';
-import { ModJarManager } from './core/ModJarManager';
+import { ModJarManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
 import { tokensMatch } from './core/bridge/BridgeAuth';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
-import { PropertiesParser } from './parsers/PropertiesParser';
 import { ModConfigParser } from './parsers/ModConfigParser';
 import { ServerInstaller, LoaderType, type ProvisionHooks } from './provisioning/ServerInstaller';
 import { provisionJobs } from './provisioning/ProvisionJobs';
@@ -317,7 +316,11 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
         `There is no Hosty bridge for "${instance.loader ?? instance.gameId}" yet. Supported: ${bridgeLoaders.join(', ') || 'none'}.`
       );
     }
-    const installedPath = telemetryBridge.installBridge(instance.dir, instance.loader);
+    const installedPath = telemetryBridge.installBridge(
+      instance.dir,
+      instance.loader,
+      driverRegistry.getDriver(instance.gameId).summary.bridgeTargets
+    );
     prepareBridgeConfig(instance.id);
     broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".
 
@@ -692,11 +695,12 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
     const jarDest = path.join(targetDir, destName);
     fs.copyFileSync(tempPath, jarDest);
 
-    const propsPath = path.join(targetDir, 'server.properties');
-    fs.writeFileSync(path.join(targetDir, 'eula.txt'), 'eula=true\n', 'utf-8');
-    if (!fs.existsSync(propsPath)) {
-      PropertiesParser.createDefaultProperties(propsPath, { motd: instanceName || instanceId });
-    }
+    // First-run files (default config, licence acceptance...) are the game's business, not core's.
+    driverRegistry.getDriver(target.gameId).scaffoldInstance?.(targetDir, {
+      port: target.port,
+      motd: instanceName || instanceId,
+      maxPlayers: target.maxPlayers
+    });
 
     let jobId: string | null = null;
     if (inspection.kind === 'installer') {
@@ -748,7 +752,7 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
 
 app.get('/api/mods/files', (_req, res, next) => {
   try {
-    res.json(hasActiveInstance() ? ModJarManager.listModFiles(getActiveDir()) : []);
+    res.json(hasActiveInstance() ? ModJarManager.listModFiles(getActiveDir(), activeModLayout()) : []);
   } catch (err) {
     next(err);
   }
@@ -757,7 +761,7 @@ app.get('/api/mods/files', (_req, res, next) => {
 app.post('/api/mods/files/toggle', (req, res, next) => {
   try {
     const { filename } = req.body as { filename: string };
-    const updated = ModJarManager.toggleMod(getActiveDir(), filename);
+    const updated = ModJarManager.toggleMod(getActiveDir(), filename, activeModLayout());
     const action = updated.enabled ? 'enabled' : 'disabled';
     broadcast('CONSOLE', `[Hypervisor] Mod "${updated.originalName}" ${action}.\r\n`);
     res.json({ ok: true, file: updated });
@@ -768,7 +772,7 @@ app.post('/api/mods/files/toggle', (req, res, next) => {
 
 app.delete('/api/mods/files/:filename', (req, res, next) => {
   try {
-    ModJarManager.deleteMod(getActiveDir(), req.params.filename);
+    ModJarManager.deleteMod(getActiveDir(), req.params.filename, activeModLayout());
     broadcast('CONSOLE', `[Hypervisor] Mod file "${req.params.filename}" deleted.\r\n`);
     res.json({ ok: true });
   } catch (err) {
@@ -776,10 +780,17 @@ app.delete('/api/mods/files/:filename', (req, res, next) => {
   }
 });
 
+// Mods/config folders of the active instance, as declared by its game.
+const activeModLayout = (): ModLayout => {
+  const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+  const declared = instance ? driverRegistry.getDriver(instance.gameId).summary.modLayout : undefined;
+  return { ...DEFAULT_MOD_LAYOUT, ...declared };
+};
+
 // Mod Configurations API (/config/*.toml, *.json)
 app.get('/api/mods/configs', (_req, res, next) => {
   try {
-    res.json(hasActiveInstance() ? ModConfigParser.listConfigs(getActiveDir()) : []);
+    res.json(hasActiveInstance() ? ModConfigParser.listConfigs(getActiveDir(), activeModLayout().configDir) : []);
   } catch (err) {
     next(err);
   }
@@ -787,7 +798,7 @@ app.get('/api/mods/configs', (_req, res, next) => {
 
 app.get('/api/mods/configs/:filename', (req, res, next) => {
   try {
-    res.json(ModConfigParser.parseConfig(getActiveDir(), req.params.filename));
+    res.json(ModConfigParser.parseConfig(getActiveDir(), req.params.filename, activeModLayout().configDir));
   } catch (err) {
     next(err);
   }
@@ -795,7 +806,7 @@ app.get('/api/mods/configs/:filename', (req, res, next) => {
 
 app.post('/api/mods/configs/:filename', (req, res, next) => {
   try {
-    ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body);
+    ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body, activeModLayout().configDir);
     broadcast('CONSOLE', `[Hypervisor] Mod config ${req.params.filename} saved.\r\n`);
     res.json({ ok: true });
   } catch (err) {
