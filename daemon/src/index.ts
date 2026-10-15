@@ -12,7 +12,9 @@ import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
-import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
+import { telemetryBridge, TelemetryBridgeManager } from './core/bridge/TelemetryBridgeManager';
+import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
+import { tokensMatch } from './core/bridge/BridgeAuth';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
 import { PropertiesParser } from './parsers/PropertiesParser';
 import { ModConfigParser } from './parsers/ModConfigParser';
@@ -53,6 +55,29 @@ app.use(
 );
 app.use(express.json({ limit: '10mb' }));
 
+// Local API token: any process on this machine can reach 127.0.0.1, so the desktop shell generates a
+// per-run secret that the UI must present (header, bearer or ?token= for <img> and WebSocket URLs).
+const extractRequestToken = (req: Request): string => {
+  const bearer = req.header('authorization');
+  if (bearer?.toLowerCase().startsWith('bearer ')) return bearer.slice(7).trim();
+  const header = req.header('x-hosty-token');
+  if (header) return header;
+  const query = req.query.token;
+  return typeof query === 'string' ? query : '';
+};
+
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  if (!config.apiToken || req.method === 'OPTIONS') {
+    next();
+    return;
+  }
+  if (tokensMatch(config.apiToken, extractRequestToken(req))) {
+    next();
+    return;
+  }
+  res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid API token.' } });
+});
+
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
@@ -81,6 +106,26 @@ const getActiveDir = () => {
 };
 
 // Helper to get or create the ProcessSupervisor for the active instance
+telemetryBridge.setInstanceDirResolver((instanceId) => instanceManager.getInstance(instanceId)?.dir ?? null);
+telemetryBridge.setAllowLegacy(config.allowLegacyBridge);
+telemetryBridge.on('bridge_rejected', (instanceId, reason) => {
+  console.warn(`[TelemetryBridge] Rejected bridge${instanceId ? ` for "${instanceId}"` : ''}: ${reason}`);
+  if (instanceId === instanceManager.getActiveInstanceId()) {
+    broadcast('CONSOLE', `[Hypervisor] Bridge connection rejected (${reason}).\r\n`);
+  }
+});
+
+/** Writes <instance>/.hosty/bridge.json so an installed bridge finds the daemon URL and its token. */
+const prepareBridgeConfig = (instanceId: string): void => {
+  const instance = instanceManager.getInstance(instanceId);
+  if (!instance) return;
+  try {
+    ensureBridgeConfig(instance.dir, instance.id, `ws://127.0.0.1:${config.port}/telemetry/bridge`);
+  } catch (err) {
+    console.warn('[TelemetryBridge] Could not write bridge config:', err);
+  }
+};
+
 const getActiveSupervisor = (): ProcessSupervisor | null => {
   const activeId = instanceManager.getActiveInstanceId();
   if (!activeId) return null;
@@ -202,7 +247,8 @@ app.get('/api/instances', (_req, res, next) => {
       ...inst,
       status: registry.getStatus(inst.id),
       onlinePlayersCount: registry.getPlayers(inst.id).length,
-      bridgeConnected: registry.isBridgeConnected(inst.id)
+      bridgeConnected: registry.isBridgeConnected(inst.id),
+      bridgeCapabilities: telemetryBridge.getSession(inst.id)?.capabilities ?? []
     }));
     res.json({
       instances: list,
@@ -262,7 +308,14 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
     }
+    if (!TelemetryBridgeManager.supportsLoader(instance.loader)) {
+      throw new DaemonError(
+        'INVALID_LOADER',
+        `There is no Hosty bridge for "${instance.loader}" yet. Supported: Paper, Purpur, Spigot and Fabric.`
+      );
+    }
     const ok = telemetryBridge.installBridge(instance.dir, instance.loader);
+    prepareBridgeConfig(instance.id);
     broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".\r\n`);
     res.json({ ok });
   } catch (err) {
@@ -966,6 +1019,14 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
+  if (config.apiToken) {
+    const supplied = new URL(url, 'http://localhost').searchParams.get('token') ?? '';
+    if (!tokensMatch(config.apiToken, supplied)) {
+      ws.close(1008, 'UNAUTHORIZED');
+      return;
+    }
+  }
+
   const activeSup = getActiveSupervisor();
   const activeId = instanceManager.getActiveInstanceId();
   ws.send(JSON.stringify({ type: 'STATUS', payload: activeSup ? activeSup.getStatus() : 'OFFLINE' }));
@@ -1000,7 +1061,10 @@ wss.on('connection', (ws, req) => {
         return;
       }
 
-      if (action === 'START') sup.start();
+      if (action === 'START') {
+        prepareBridgeConfig(instanceManager.getActiveInstanceId());
+        sup.start();
+      }
       if (action === 'STOP') sup.stop();
       if (action === 'KILL') sup.kill();
       if (action === 'COMMAND' && typeof data === 'string') {

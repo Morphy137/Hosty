@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosty.app/schemas/bridge-v1.json",
+  "title": "Hosty bridge protocol v1 message",
+  "oneOf": [
+    { "$ref": "#/$defs/hello" },
+    { "$ref": "#/$defs/helloAck" },
+    { "$ref": "#/$defs/telemetry" },
+    { "$ref": "#/$defs/inventory" },
+    { "$ref": "#/$defs/result" },
+    { "$ref": "#/$defs/action" }
+  ],
+  "$defs": {
+    "localized": {
+      "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": { "type": "string" } }]
+    },
+    "scalarMap": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "hello": {
+      "title": "HELLO (bridge -> daemon, first message)",
+      "type": "object",
+      "required": ["type", "protocolVersion", "instanceId", "token", "game", "implementation", "capabilities"],
+      "properties": {
+        "type": { "const": "HELLO" },
+        "protocolVersion": { "type": "integer", "minimum": 1 },
+        "instanceId": { "type": "string", "minLength": 1 },
+        "token": { "type": "string", "minLength": 1 },
+        "game": { "type": "string", "minLength": 1 },
+        "implementation": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } },
+          "additionalProperties": false
+        },
+        "capabilities": { "type": "array", "items": { "type": "string" } },
+        "customActions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+              "label": { "$ref": "#/$defs/localized" },
+              "params": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "type"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "type": { "enum": ["string", "number", "boolean"] },
+                    "label": { "$ref": "#/$defs/localized" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "helloAck": {
+      "title": "HELLO_ACK (daemon -> bridge)",
+      "type": "object",
+      "required": ["type", "ok"],
+      "properties": {
+        "type": { "const": "HELLO_ACK" },
+        "ok": { "type": "boolean" },
+        "protocolVersion": { "type": "integer" },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "enum": ["UNAUTHORIZED", "UNSUPPORTED_VERSION", "INVALID_MESSAGE"] },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+    "telemetry": {
+      "title": "TELEMETRY (bridge -> daemon, about once per second)",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "TELEMETRY" },
+        "server": {
+          "type": "object",
+          "properties": {
+            "tps": { "type": "number" },
+            "mspt": { "type": "number" },
+            "loadedChunks": { "type": "integer" },
+            "entities": { "type": "integer" },
+            "stats": { "$ref": "#/$defs/scalarMap" }
+          }
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "ping": { "type": "number" },
+              "health": { "type": "number" },
+              "maxHealth": { "type": "number" },
+              "position": {
+                "type": "object",
+                "required": ["x", "y", "z"],
+                "properties": {
+                  "x": { "type": "number" },
+                  "y": { "type": "number" },
+                  "z": { "type": "number" },
+                  "world": { "type": "string" }
+                }
+              },
+              "stats": { "$ref": "#/$defs/scalarMap" }
+            }
+          }
+        }
+      }
+    },
+    "inventory": {
+      "title": "INVENTORY (bridge -> daemon, answer to inventory_view)",
+      "type": "object",
+      "required": ["type", "player", "containers"],
+      "properties": {
+        "type": { "const": "INVENTORY" },
+        "player": {
+          "type": "object",
+          "required": ["name"],
+          "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "slots"],
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "null" },
+                    {
+                      "type": "object",
+                      "required": ["index", "itemId", "count"],
+                      "properties": {
+                        "index": { "type": "integer" },
+                        "itemId": { "type": "string" },
+                        "count": { "type": "integer", "minimum": 0 },
+                        "icon": { "type": "string" },
+                        "meta": { "type": "object" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "result": {
+      "title": "RESULT (bridge -> daemon, outcome of an ACTION)",
+      "type": "object",
+      "required": ["type", "success"],
+      "properties": {
+        "type": { "const": "RESULT" },
+        "actionId": { "type": "string" },
+        "success": { "type": "boolean" },
+        "message": { "type": "string" },
+        "data": {}
+      }
+    },
+    "action": {
+      "title": "ACTION (daemon -> bridge)",
+      "type": "object",
+      "required": ["type", "action"],
+      "properties": {
+        "type": { "const": "ACTION" },
+        "actionId": { "type": "string" },
+        "action": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "target": {
+          "type": "object",
+          "required": ["type", "name"],
+          "properties": { "type": { "const": "player" }, "name": { "type": "string" } }
+        },
+        "params": { "type": "object" }
+      }
+    }
+  }
+}

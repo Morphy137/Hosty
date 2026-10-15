@@ -1,4 +1,4 @@
-import { getDaemonHttpUrl } from '../config/daemon';
+import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
   ConfigEntry,
   ConfigPayload,
@@ -76,7 +76,10 @@ export function toErrorPayload(error: unknown): DaemonErrorPayload {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${getDaemonHttpUrl()}${path}`, init);
+    const token = getDaemonToken();
+    const headers = new Headers(init?.headers);
+    if (token) headers.set('x-hosty-token', token);
+    response = await fetch(`${getDaemonHttpUrl()}${path}`, { ...init, headers });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new DaemonApiError(NETWORK_ERROR_CODE, message, NETWORK_ERROR_STATUS);
@@ -164,7 +167,7 @@ export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: Gam
 }
 
 export function getGameLogoUrl(gameId: string): string {
-  return `${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`;
+  return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }
 
 export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
@@ -202,7 +205,7 @@ export function installInstanceBridge(id: string): Promise<{ ok: boolean }> {
 }
 
 export function getInstanceIconUrl(id: string): string {
-  return `${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon`;
+  return withDaemonToken(`${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon`);
 }
 
 // Properties

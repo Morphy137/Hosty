@@ -116,6 +116,8 @@ export interface Metrics {
   loadedChunks?: number;
   entitiesCount?: number;
   bridgeConnected?: boolean;
+  /** Capabilities advertised by the connected bridge (`action.heal`, `inventory.view`, ...). */
+  bridgeCapabilities?: string[];
 }
 
 export type ConfigValue = string | number | boolean;

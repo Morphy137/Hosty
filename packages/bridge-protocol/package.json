@@ -1,0 +1,16 @@
+{
+  "name": "@hosty/bridge-protocol",
+  "version": "0.1.0",
+  "description": "Hosty bridge protocol v1: JSON Schema, validator and a simulated daemon (hosty-bridge-tester) for building bridges for any game.",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "bin": { "hosty-bridge-tester": "bin/hosty-bridge-tester.js" },
+  "files": ["lib", "bin", "schema", "README.md"],
+  "scripts": {
+    "test": "node bin/hosty-bridge-tester.js --help"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ws": "^8.18.0"
+  }
+}

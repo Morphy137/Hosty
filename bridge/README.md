@@ -12,7 +12,7 @@ High-performance, zero-console-spam server telemetry bridge and administration m
   - Silent Teleportation & Inventory Inspection
   - Kick / Freeze / Kill direct execution
 - **WebSocket IPC**:
-  - Local connection to daemon on `ws://127.0.0.1:4000/telemetry/bridge`
+  - Authenticated connection (per-instance token) to the daemon URL found in `.hosty/bridge.json`; speaks [protocol v1](../docs/bridge-protocol.md)
   - Automatic reconnection with exponential backoff
 - **Universal Multi-Version Support**:
   - **Paper / Purpur / Spigot Plugin**: 1 single `.jar` covers Minecraft 1.16 through 1.21+
@@ -26,12 +26,12 @@ High-performance, zero-console-spam server telemetry bridge and administration m
 ```bash
 cd bridge/paper
 mvn clean package
-# Output: target/mc-nexus-bridge-paper.jar
+# Output: target/mc-nexus-bridge-paper-<version>.jar  (copy to daemon/assets/bridge/mc-nexus-bridge-paper.jar)
 ```
 
 ### Fabric Mod
 ```bash
 cd bridge/fabric
 ./gradlew build
-# Output: build/libs/mc-nexus-bridge-fabric.jar
+# Output: build/libs/mc-nexus-bridge-fabric-<version>.jar  (copy to daemon/assets/bridge/mc-nexus-bridge-fabric.jar)
 ```

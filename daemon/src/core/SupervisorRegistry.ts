@@ -37,13 +37,19 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
 
     telemetryBridge.on('bridge_connected', (instanceId, loader, version) => {
       const sup = this.supervisors.get(instanceId);
-      if (sup) sup.setBridgeActive(true);
+      if (sup) {
+        sup.setBridgeCapabilities(telemetryBridge.getSession(instanceId)?.capabilities ?? []);
+        sup.setBridgeActive(true);
+      }
       this.emit('console', instanceId, `[Hypervisor] MC-Nexus Bridge connected (${loader || 'plugin'} ${version || ''}). Real-time telemetry active.\r\n`);
     });
 
     telemetryBridge.on('bridge_disconnected', (instanceId) => {
       const sup = this.supervisors.get(instanceId);
-      if (sup) sup.setBridgeActive(false);
+      if (sup) {
+        sup.setBridgeCapabilities([]);
+        sup.setBridgeActive(false);
+      }
       this.emit('console', instanceId, `[Hypervisor] MC-Nexus Bridge disconnected. Fallback stdout active.\r\n`);
     });
 
