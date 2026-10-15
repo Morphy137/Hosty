@@ -1,13 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Copy, FolderInput, FolderOpen, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
-import { fetchGamePackManifest, fetchGamePacks, installGamePack, reloadGamePacks, trustGamePack, uninstallGamePack } from '../../api/daemonApi';
+import {
+  fetchGamePackManifest,
+  fetchGamePacks,
+  installGamePack,
+  reloadGamePacks,
+  setGamePackEnabled,
+  trustGamePack,
+  uninstallGamePack
+} from '../../api/daemonApi';
 import { isTauriRuntime } from '../../config/daemon';
 import { Input } from '../ui/Input';
 import type { GamePackInfo } from '../../types/daemon';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
+import { Switch } from '../ui/Switch';
 
 interface GamePacksDialogProps {
   open: boolean;
@@ -147,7 +156,13 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                       <Copy className="h-3.5 w-3.5" />
                     </button>
                   )}
-                  {pack.loaded ? <Badge variant="success">{t('packs.loaded')}</Badge> : <Badge variant="danger">{t('packs.invalid')}</Badge>}
+                  {pack.loaded ? (
+                    <Badge variant="success">{t('packs.loaded')}</Badge>
+                  ) : pack.enabled === false ? (
+                    <Badge variant="neutral">{t('packs.disabled')}</Badge>
+                  ) : (
+                    <Badge variant="danger">{t('packs.invalid')}</Badge>
+                  )}
                   {pack.source === 'external' && pack.id && (
                     <button
                       type="button"
@@ -163,6 +178,15 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                     <Badge variant={pack.trusted ? 'accent' : 'warning'}>
                       {pack.trusted ? t('packs.code_trusted') : t('packs.code_untrusted')}
                     </Badge>
+                  )}
+                  {pack.id && (pack.loaded || pack.enabled === false) && (
+                    <Switch
+                      checked={pack.enabled !== false}
+                      disabled={isBusy}
+                      ariaLabel={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
+                      title={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
+                      onCheckedChange={(next) => void run(() => setGamePackEnabled(pack.id as string, next), true)}
+                    />
                   )}
                 </div>
               </div>

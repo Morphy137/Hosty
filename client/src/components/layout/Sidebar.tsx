@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   FolderInput,
+  FolderOpen,
   Globe,
   MoreHorizontal,
   Moon,
@@ -42,6 +43,7 @@ interface SidebarProps {
   currentLanguage: string;
   onChangeLanguage: (code: string) => void;
   onEditInstance: (id: string) => void;
+  onOpenFolder: (id: string) => void;
   onRenameInstance: (id: string, name: string) => Promise<void> | void;
   onToggleFavorite: (id: string, favorite: boolean) => Promise<void> | void;
   onRemoveInstance: (id: string) => Promise<void> | void;
@@ -66,6 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentLanguage,
   onChangeLanguage,
   onEditInstance,
+  onOpenFolder,
   onRenameInstance,
   onToggleFavorite,
   onRemoveInstance,
@@ -100,6 +103,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t('sidebar.menu_edit'),
       icon: <Settings2 className="h-3.5 w-3.5" />,
       onSelect: () => onEditInstance(instance.id)
+    },
+    {
+      id: 'open-folder',
+      label: t('sidebar.menu_open_folder'),
+      icon: <FolderOpen className="h-3.5 w-3.5" />,
+      onSelect: () => onOpenFolder(instance.id)
     },
     {
       id: 'rename',

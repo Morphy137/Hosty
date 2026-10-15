@@ -10,6 +10,7 @@ import { GamePacksDialog } from './components/modals/GamePacksDialog';
 import { useModConfigs } from './hooks/useModConfigs';
 import {
   provisionInstance,
+  openInstanceFolder,
   toErrorPayload,
   installServer,
   uploadServerJar,
@@ -296,6 +297,16 @@ export default function App() {
           onChangeLanguage={(code) => void locales.select(code)}
           onEditInstance={(id) => {
             void instances.selectInstance(id).then(() => setIsEditModalOpen(true));
+          }}
+          onOpenFolder={(id) => {
+            openInstanceFolder(id).catch((err: unknown) => {
+              const payload = toErrorPayload(err);
+              toast({
+                title: t('sidebar.open_folder_failed'),
+                description: t(`errors.${payload.code}`, { defaultValue: payload.message }),
+                variant: 'error'
+              });
+            });
           }}
           onRenameInstance={async (id, name) => {
             await instances.updateSettings(id, { name }).catch(() => undefined);

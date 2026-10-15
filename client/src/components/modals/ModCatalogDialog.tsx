@@ -35,6 +35,8 @@ interface ModCatalogDialogProps {
 
 const SERVER_DEFAULT = 'instance';
 const ANY = 'any';
+/** Radix Select cannot hold an empty value, so "catalog default" sort gets its own option value. */
+const SORT_DEFAULT = 'default';
 
 const DEFAULT_FILTERS: CatalogFilters = {
   sort: '',
@@ -185,7 +187,7 @@ export const ModCatalogDialog: React.FC<ModCatalogDialogProps> = ({
 
   const sortOptions = useMemo(
     () => [
-      { value: '', label: t('mod_catalog.sort_default') },
+      { value: SORT_DEFAULT, label: t('mod_catalog.sort_default') },
       ...(facets?.sorts ?? ['relevance', 'downloads', 'follows', 'newest', 'updated']).map((sort) => ({
         value: sort,
         label: t(`mod_catalog.sort.${sort}`)
@@ -266,8 +268,10 @@ export const ModCatalogDialog: React.FC<ModCatalogDialogProps> = ({
             <span className="text-[12px] font-medium text-ink">{t('mod_catalog.sort_label')}</span>
             <Select
               ariaLabel={t('mod_catalog.sort_label')}
-              value={filters.sort}
-              onValueChange={(value) => patchFilters({ sort: value as CatalogFilters['sort'] })}
+              value={filters.sort || SORT_DEFAULT}
+              onValueChange={(value) =>
+                patchFilters({ sort: (value === SORT_DEFAULT ? '' : value) as CatalogFilters['sort'] })
+              }
               options={sortOptions}
             />
           </div>
