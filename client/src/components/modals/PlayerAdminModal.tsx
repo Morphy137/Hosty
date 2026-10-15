@@ -131,7 +131,7 @@ export const PlayerAdminModal: React.FC<PlayerAdminModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-surface border border-hairline max-w-lg w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="geist-card bg-surface border border-hairline max-w-lg w-full p-6 shadow-2xl space-y-5 h-[min(40rem,90vh)] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">

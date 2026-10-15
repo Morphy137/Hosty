@@ -24,6 +24,7 @@ import { ServerHeader } from './components/layout/ServerHeader';
 import { Skeleton } from './components/ui/Skeleton';
 import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
 import { useGames } from './hooks/useGames';
+import { renderPlayerCommand } from './utils/playerActions';
 import { useLocales } from './hooks/useLocales';
 import { useAppVersion } from './hooks/useAppVersion';
 import { useMetricsHistory } from './hooks/useMetricsHistory';
@@ -31,7 +32,8 @@ import { useToast } from './components/ui/toastContext';
 import { isTauriRuntime } from './config/daemon';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
-import { PlayersTab } from './components/tabs/PlayersTab';
+import { GenericPlayersTab } from './components/tabs/GenericPlayersTab';
+import { PLAYER_PANELS } from './components/tabs/playerPanels';
 import { ModFilesTab } from './components/tabs/ModFilesTab';
 import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
@@ -103,6 +105,8 @@ export default function App() {
   const locales = useLocales(connectionState);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
+  // Rich panels are looked up by the id the game declares; everything else uses the generic list.
+  const PlayersPanel = (activeGame?.playerPanel && PLAYER_PANELS[activeGame.playerPanel]) || GenericPlayersTab;
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
   // Bridge-only features appear only when the connected bridge advertised them (or in mock mode).
@@ -141,12 +145,13 @@ export default function App() {
 
   const handleClearInspectedInventory = useCallback(() => {
     if (inspectingPlayer) {
-      handleSendCommand(`clear ${inspectingPlayer.username}`);
+      const clear = activeGame?.playerActions?.find((action) => action.id === 'clear');
+      if (clear) handleSendCommand(renderPlayerCommand(clear, inspectingPlayer.username));
       setTimeout(() => {
         sendAction('ACTION', { action: 'INVENTORY_VIEW', username: inspectingPlayer.username });
       }, 200);
     }
-  }, [handleSendCommand, inspectingPlayer, sendAction]);
+  }, [activeGame, handleSendCommand, inspectingPlayer, sendAction]);
 
   const handleRestartServer = useCallback(async () => {
     try {
@@ -342,15 +347,21 @@ export default function App() {
                     onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
                     history={metricsHistory}
                     gameName={activeGame?.name}
+                    quickCommands={activeGame?.quickCommands ?? []}
+                    richPlayers={Boolean(activeGame?.playerPanel && PLAYER_PANELS[activeGame.playerPanel])}
+                    playerActions={activeGame?.playerActions ?? []}
+                    playerView={activeGame?.playerView}
                   />
                 )}
 
                 {currentTab === 'players' && (
-                  <PlayersTab
+                  <PlayersPanel
                     players={players}
                     onSendCommand={handleSendCommand}
                     onSendAction={sendAction}
                     onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
+                    playerActions={activeGame?.playerActions ?? []}
+                    playerView={activeGame?.playerView}
                   />
                 )}
 

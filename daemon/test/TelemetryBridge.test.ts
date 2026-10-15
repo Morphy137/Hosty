@@ -34,6 +34,12 @@ class MockWebSocket extends EventEmitter {
 
 const frame = (ws: MockWebSocket, payload: unknown) => ws.emit('message', Buffer.from(JSON.stringify(payload)));
 
+// Install targets are declared by the game (Minecraft's bundled pack), not known to the manager.
+const TARGETS = {
+  paper: { dir: 'plugins', asset: 'mc-nexus-bridge-paper.jar' },
+  default: { dir: 'mods', asset: 'mc-nexus-bridge-fabric.jar' }
+};
+
 describe('TelemetryBridgeManager (protocol v1)', () => {
   let tmpDir: string;
   let instanceDir: string;
@@ -196,19 +202,19 @@ describe('TelemetryBridgeManager (protocol v1)', () => {
     fs.writeFileSync(path.join(tmpDir, 'mc-nexus-bridge.jar'), 'generic-bytes');
     const serverDir = path.join(tmpDir, 'paper-server');
     fs.mkdirSync(serverDir, { recursive: true });
-    expect(manager.installBridge(serverDir, 'paper')).toBe(path.join(serverDir, 'plugins', 'mc-nexus-bridge.jar'));
+    expect(manager.installBridge(serverDir, 'paper', TARGETS)).toBe(path.join(serverDir, 'plugins', 'mc-nexus-bridge.jar'));
     expect(fs.existsSync(path.join(serverDir, 'plugins', 'mc-nexus-bridge.jar'))).toBe(true);
 
     const fabricDir = path.join(tmpDir, 'fabric-server');
     fs.mkdirSync(fabricDir, { recursive: true });
-    expect(manager.installBridge(fabricDir, 'fabric')).toBe(path.join(fabricDir, 'mods', 'mc-nexus-bridge.jar'));
+    expect(manager.installBridge(fabricDir, 'fabric', TARGETS)).toBe(path.join(fabricDir, 'mods', 'mc-nexus-bridge.jar'));
     expect(fs.existsSync(path.join(fabricDir, 'mods', 'mc-nexus-bridge.jar'))).toBe(true);
   });
 
   it('fails instead of writing a stub when no bridge artifact is packaged', () => {
     const target = path.join(tmpDir, 'no-asset-instance');
     fs.mkdirSync(target, { recursive: true });
-    expect(() => manager.installBridge(target, 'fabric')).toThrow(/missing/);
+    expect(() => manager.installBridge(target, 'fabric', TARGETS)).toThrow(/missing/);
     expect(TelemetryBridgeManager.isBridgeInstalled(target)).toBe(false);
   });
 
@@ -218,9 +224,9 @@ describe('TelemetryBridgeManager (protocol v1)', () => {
     fs.writeFileSync(path.join(tmpDir, 'mc-nexus-bridge-fabric.jar'), 'fabric-bytes');
     fs.writeFileSync(path.join(tmpDir, 'mc-nexus-bridge-paper.jar'), 'paper-bytes');
 
-    manager.installBridge(target, 'fabric');
+    manager.installBridge(target, 'fabric', TARGETS);
     expect(fs.readFileSync(path.join(target, 'mods', 'mc-nexus-bridge.jar'), 'utf8')).toBe('fabric-bytes');
-    manager.installBridge(target, 'paper');
+    manager.installBridge(target, 'paper', TARGETS);
     expect(fs.readFileSync(path.join(target, 'plugins', 'mc-nexus-bridge.jar'), 'utf8')).toBe('paper-bytes');
   });
 });

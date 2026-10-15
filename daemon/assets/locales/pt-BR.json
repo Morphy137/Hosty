@@ -90,18 +90,18 @@
     "console": {
       "title": "Terminal ao vivo",
       "clear": "Limpar",
-      "placeholder": "Digite um comando (ex.: say Olá, give @p diamond)...",
+      "placeholder": "Digite um comando do console...",
       "send": "Enviar"
     },
     "copy_ip_title": "Clique para copiar o IP",
-    "console_source": "stdout — server.jar",
+    "console_source": "stdout",
     "console_ready": "Pronto. Aguardando a saída do processo..."
   },
   "players": {
     "search_placeholder": "Filtrar jogadores por nome...",
     "refresh_list": "Atualizar lista",
     "filter_all": "Todos",
-    "empty_description": "Conecte-se ao servidor com um cliente do jogo ou use Simular telemetria para inspecionar as sessões ativas.",
+    "empty_description": "Conecte-se ao servidor com o jogo ou use Simular telemetria para inspecionar as sessões ativas.",
     "manage_title": "Gerenciar jogador",
     "gamemode_label": "Alterar modo de jogo",
     "permissions_label": "Privilégios de operador",
@@ -256,22 +256,6 @@
       "review": "Revise os parâmetros e crie o servidor."
     },
     "game_engine_label": "Motor do servidor de jogo",
-    "game_minecraft_desc": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-    "game_zomboid_desc": "Servidor dedicado via SteamCMD (AppID 380870)",
-    "game_hytale_desc": "Futuro sandbox de aventura voxel",
-    "zomboid_info_title": "Servidor dedicado de Project Zomboid",
-    "zomboid_info_desc": "Gerenciado via SteamCMD AppID 380870 e servertest.ini. Porta padrão 16261 (UDP/TCP).",
-    "hytale_info_title": "Servidor dedicado de Hytale",
-    "hytale_info_desc": "Configurado para o runtime do Hytale na porta 25565. Pronto para iniciar assim que os binários do servidor forem lançados.",
-    "install_method_label": "Método de instalação",
-    "install_auto": "Download automático",
-    "install_auto_desc": "Baixa e configura os binários do servidor automaticamente",
-    "install_custom": "Instalação personalizada",
-    "install_custom_desc": "Anexe um jar, instalador ou executável manual",
-    "zomboid_branch_label": "Branch do SteamCMD",
-    "zomboid_branch_stable": "Versão pública (Build 41+)",
-    "zomboid_branch_unstable": "Branch instável / beta",
-    "hytale_mode_notice": "Os binários do servidor serão vinculados automaticamente quando a Hypixel Studios lançar as ferramentas públicas. Você também pode informar um caminho personalizado.",
     "summary_title": "Resumo da configuração",
     "summary_game": "Motor do jogo",
     "summary_engine": "Software do servidor",
@@ -517,11 +501,6 @@
       "available": "Disponível",
       "beta": "Beta",
       "coming_soon": "Em breve"
-    },
-    "game_desc": {
-      "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-      "project-zomboid": "Servidor dedicado via SteamCMD (AppID 380870)",
-      "hytale": "Futuro sandbox de aventura voxel"
     },
     "setup_nothing": "Nenhuma configuração extra é necessária para {{game}}.",
     "use_own_jar": "Usar meu próprio .jar (o loader é detectado automaticamente)",

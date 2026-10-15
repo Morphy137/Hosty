@@ -174,11 +174,11 @@ export class PackLoader {
       }
 
       const manifest = validation.manifest;
-      if (manifest.extension) {
+      if (manifest.extension || manifest.playerPanel) {
         info.id = manifest.id;
         info.name = manifest.name;
         info.version = manifest.version;
-        info.errors.push('"extension" is reserved for packs bundled with Hosty');
+        info.errors.push('"extension" and "playerPanel" are reserved for packs bundled with Hosty');
         results.push({ info, driver: null });
         continue;
       }

@@ -87,18 +87,18 @@
     "console": {
       "title": "Live Terminal",
       "clear": "Clear",
-      "placeholder": "Type Minecraft command (e.g., say Hello, give @p diamond)...",
+      "placeholder": "Type a console command...",
       "send": "Send"
     },
     "copy_ip_title": "Click to copy IP",
-    "console_source": "stdout — server.jar",
+    "console_source": "stdout",
     "console_ready": "Ready. Awaiting process output stream..."
   },
   "players": {
     "search_placeholder": "Filter players by username...",
     "refresh_list": "Refresh List",
     "filter_all": "All",
-    "empty_description": "Connect to the server with a Minecraft client or use Simulate Telemetry to inspect active player sessions.",
+    "empty_description": "Connect to the server with the game, or use Simulate Telemetry to inspect active player sessions.",
     "manage_title": "Manage Player",
     "gamemode_label": "Change Game Mode",
     "permissions_label": "Operator Privileges",
@@ -253,22 +253,6 @@
       "review": "Review configuration parameters and bootstrap the server."
     },
     "game_engine_label": "Game Server Engine",
-    "game_minecraft_desc": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-    "game_zomboid_desc": "SteamCMD Dedicated Server (AppID 380870)",
-    "game_hytale_desc": "Upcoming Voxel Adventure Sandbox Engine",
-    "zomboid_info_title": "Project Zomboid Dedicated Server",
-    "zomboid_info_desc": "Managed via SteamCMD AppID 380870 and servertest.ini. Default port 16261 (UDP/TCP).",
-    "hytale_info_title": "Hytale Dedicated Server Engine",
-    "hytale_info_desc": "Configured for Hytale runtime with port 25565. Launch ready as soon as server binaries are released.",
-    "install_method_label": "Installation Setup",
-    "install_auto": "Automated Download",
-    "install_auto_desc": "Automatically fetch and setup server binaries",
-    "install_custom": "Custom Installation",
-    "install_custom_desc": "Attach custom jar, installer, or manual executable",
-    "zomboid_branch_label": "SteamCMD Branch",
-    "zomboid_branch_stable": "Public Release (Build 41+)",
-    "zomboid_branch_unstable": "Unstable / Beta Branch",
-    "hytale_mode_notice": "Server binaries will be auto-linked once Hypixel Studios releases public server tools. You can also specify a custom binary path.",
     "summary_title": "Configuration Summary",
     "summary_game": "Game Engine",
     "summary_engine": "Server Software",
@@ -514,11 +498,6 @@
       "available": "Available",
       "beta": "Beta",
       "coming_soon": "Coming soon"
-    },
-    "game_desc": {
-      "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
-      "project-zomboid": "SteamCMD dedicated server (AppID 380870)",
-      "hytale": "Upcoming voxel adventure sandbox"
     },
     "setup_nothing": "No extra setup is needed for {{game}}.",
     "use_own_jar": "Use my own .jar (the loader is detected automatically)",

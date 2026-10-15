@@ -5,6 +5,7 @@ import type { GameAvailability, GameDriverSummary } from '../../../types/daemon'
 import { GameLogo } from '../../common/GameIcons';
 import { Badge, type BadgeVariant } from '../../ui/Badge';
 import { cn } from '../../../utils/cn';
+import { resolveLocalized } from '../../../utils/localized';
 import type { StepProps } from '../wizardTypes';
 
 interface GameStepProps extends StepProps {
@@ -19,7 +20,7 @@ const STATUS_VARIANT: Record<GameAvailability, BadgeVariant> = {
 };
 
 export const GameStep: React.FC<GameStepProps> = ({ draft, disabled, games, onSelectGame }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <div className="space-y-3">
@@ -48,7 +49,7 @@ export const GameStep: React.FC<GameStepProps> = ({ draft, disabled, games, onSe
                     <Badge variant={STATUS_VARIANT[game.status]}>{t(`wizard.game_status.${game.status}`)}</Badge>
                   </span>
                   <span className="mt-0.5 block truncate text-[12px] text-soft">
-                    {t(`wizard.game_desc.${game.id}`, { defaultValue: game.description })}
+                    {resolveLocalized(game.descriptionI18n, i18n.language) ?? game.description}
                   </span>
                 </span>
               </span>

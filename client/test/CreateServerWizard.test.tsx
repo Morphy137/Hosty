@@ -34,7 +34,7 @@ vi.mock('../src/api/daemonApi', async () => {
     }),
     isPortInUse: vi.fn().mockResolvedValue(false),
     uploadInstanceIcon: vi.fn().mockResolvedValue({ ok: true }),
-    saveServerProperties: vi.fn().mockResolvedValue(undefined)
+    saveConfigEntries: vi.fn().mockResolvedValue(undefined)
   };
 });
 
@@ -162,7 +162,7 @@ describe('CreateServerWizard', () => {
     const [id, displayName, settings] = (actions.createInstance as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(id).toBe('knox-survivors');
     expect(displayName).toBe('Knox Survivors');
-    expect(settings).toMatchObject({ gameId: 'project-zomboid', pzBranch: 'stable', gameConfig: { pzBranch: 'stable' } });
+    expect(settings).toMatchObject({ gameId: 'project-zomboid', gameConfig: { pzBranch: 'stable' } });
     expect(await screen.findByText(/Knox Survivors is ready/)).toBeInTheDocument();
   });
 

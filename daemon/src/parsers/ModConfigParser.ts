@@ -13,8 +13,8 @@ export interface ModConfigEntry {
 const ALLOWED_EXTENSIONS = ['.toml', '.json'] as const;
 
 export class ModConfigParser {
-  public static listConfigs(workingDir: string): string[] {
-    const configDir = path.join(workingDir, 'config');
+  public static listConfigs(workingDir: string, configFolder = 'config'): string[] {
+    const configDir = path.join(workingDir, configFolder);
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
       this.createSampleConfig(configDir);
@@ -32,9 +32,9 @@ export class ModConfigParser {
     return files;
   }
 
-  public static parseConfig(workingDir: string, rawFilename: string): ModConfigEntry[] {
+  public static parseConfig(workingDir: string, rawFilename: string, configFolder = 'config'): ModConfigEntry[] {
     const safeFilename = this.validateFilename(rawFilename);
-    const filePath = path.join(workingDir, 'config', safeFilename);
+    const filePath = path.join(workingDir, configFolder, safeFilename);
     if (!fs.existsSync(filePath)) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Mod config file "${safeFilename}" was not found.`);
     }
@@ -52,11 +52,12 @@ export class ModConfigParser {
   public static saveConfig(
     workingDir: string,
     rawFilename: string,
-    rawUpdates: unknown
+    rawUpdates: unknown,
+    configFolder = 'config'
   ): void {
     const safeFilename = this.validateFilename(rawFilename);
     const updates = parseConfigUpdates(rawUpdates);
-    const filePath = path.join(workingDir, 'config', safeFilename);
+    const filePath = path.join(workingDir, configFolder, safeFilename);
 
     if (!fs.existsSync(filePath)) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Mod config file "${safeFilename}" was not found.`);

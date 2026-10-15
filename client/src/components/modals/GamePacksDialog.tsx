@@ -61,6 +61,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
       open={open}
       onOpenChange={(next) => !next && onClose()}
       size="lg"
+      height="fixed"
       title={t('packs.title')}
       description={t('packs.description')}
       footer={
@@ -74,7 +75,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
         </Button>
       }
     >
-      <div className="min-h-[220px] space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Input
             value={installPath}

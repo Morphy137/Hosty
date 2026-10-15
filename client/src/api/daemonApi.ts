@@ -274,13 +274,6 @@ export function getInstanceIconUrl(id: string): string {
 }
 
 // Properties
-export function fetchServerProperties(): Promise<ConfigEntry[]> {
-  return request<ConfigEntry[]>('/api/properties');
-}
-
-export async function saveServerProperties(entries: ConfigEntry[]): Promise<void> {
-  await postJson<unknown>('/api/properties', toConfigPayload(entries));
-}
 
 // Physical Mods .jar Files
 export function fetchModFiles(): Promise<ModFileInfo[]> {
@@ -332,27 +325,7 @@ export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[
       return data;
     }
   } catch {
-    // Daemon offline or request failed; try direct upstream fetch
-  }
-
-  try {
-    if (loader === 'fabric') {
-      const res = await fetch('https://meta.fabricmc.net/v2/versions/game');
-      if (res.ok) {
-        const data = (await res.json()) as Array<{ version: string; stable: boolean }>;
-        const stable = data.filter((v) => v.stable).map((v) => v.version);
-        if (stable.length > 0) return stable;
-      }
-    } else if (loader === 'vanilla') {
-      const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
-      if (res.ok) {
-        const data = (await res.json()) as { versions: Array<{ id: string; type: string }> };
-        const releases = data.versions.filter((v) => v.type === 'release').map((v) => v.id);
-        if (releases.length > 0) return releases;
-      }
-    }
-  } catch {
-    // Direct upstream failed; fall back to static list
+    // Daemon offline or request failed: use the built-in list (catalogs are only reached through the daemon)
   }
 
   return [...FALLBACK_MC_VERSIONS];

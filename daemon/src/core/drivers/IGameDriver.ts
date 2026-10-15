@@ -85,6 +85,34 @@ export interface GameDriverSummary {
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
+  playerActions?: Array<{
+    id: string;
+    label: string | Record<string, string>;
+    command: string;
+    params?: Array<{
+      id: string;
+      label: string | Record<string, string>;
+      type: 'text' | 'number' | 'select';
+      default?: string | number;
+      options?: Array<{ value: string; label: string | Record<string, string> }>;
+    }>;
+    danger?: boolean;
+  }>;
+  instanceFolders?: string[];
+  modLayout?: { modsDir?: string; configDir?: string };
+  bridgeTargets?: Record<string, { dir: string; asset: string }>;
+  creationSettings?: Array<{
+    id: string;
+    label: string | Record<string, string>;
+    type: 'select' | 'text' | 'number';
+    options?: Array<{ value: string; label: string | Record<string, string> }>;
+    default?: string | number;
+    file: string;
+    key: string;
+  }>;
+  quickCommands?: Array<{ label: string; command: string }>;
+  playerView?: { dimensions?: boolean; coordinates?: boolean; vitals?: boolean; avatarUrl?: string };
+  playerPanel?: string;
   /** Config file kept in sync with the instance's port / motd / player limit. */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
@@ -96,7 +124,7 @@ export interface GameDriverSummary {
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;
-  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number } | { type: 'download'; url: string; filename?: string; sha256?: string };
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number; branchField?: string } | { type: 'download'; url: string; filename?: string; sha256?: string };
   /** Localized description from the pack manifest (overrides `description`). */
   descriptionI18n?: Record<string, string>;
 }

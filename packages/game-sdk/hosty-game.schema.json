@@ -160,6 +160,9 @@
             },
             "appId": {
               "type": "integer"
+            },
+            "branchField": {
+              "type": "string"
             }
           },
           "additionalProperties": false
@@ -606,6 +609,185 @@
     "extension": {
       "type": "string",
       "description": "Reserved for packs bundled with Hosty."
+    },
+    "playerActions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "command"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          },
+          "command": {
+            "type": "string"
+          },
+          "danger": {
+            "type": "boolean"
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "$ref": "#/$defs/localized"
+                },
+                "type": {
+                  "enum": [
+                    "text",
+                    "number",
+                    "select"
+                  ]
+                },
+                "default": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "value",
+                      "label"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "$ref": "#/$defs/localized"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "quickCommands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "command"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "playerView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dimensions": {
+          "type": "boolean"
+        },
+        "coordinates": {
+          "type": "boolean"
+        },
+        "vitals": {
+          "type": "boolean"
+        },
+        "avatarUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "playerPanel": {
+      "type": "string",
+      "description": "Reserved for bundled packs."
+    },
+    "creationSettings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "type",
+          "file",
+          "key"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          },
+          "type": {
+            "enum": [
+              "select",
+              "text",
+              "number"
+            ]
+          },
+          "default": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "file": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "value",
+                "label"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "label": {
+                  "$ref": "#/$defs/localized"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

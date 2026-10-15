@@ -33,7 +33,8 @@ export interface ManifestConfigFile {
 
 export type ProvisionSpec =
   | { type: 'none' }
-  | { type: 'steamcmd'; appId: number }
+  /** `branchField`: id of the setup field whose value is the Steam beta branch. */
+  | { type: 'steamcmd'; appId: number; branchField?: string }
   /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
   | { type: 'download'; url: string; filename?: string; sha256?: string };
 
@@ -89,6 +90,59 @@ export interface ManifestModSource {
   defaultInstallDir?: string;
 }
 
+export interface PlayerActionParam {
+  id: string;
+  label: LocalizedText;
+  type: 'text' | 'number' | 'select';
+  default?: string | number;
+  options?: Array<{ value: string; label: LocalizedText }>;
+}
+
+/** A console command an operator can run against an online player, rendered generically by the UI. */
+export interface PlayerActionSpec {
+  id: string;
+  label: LocalizedText;
+  /** `{{player}}` and `{{<param id>}}` are replaced before the command is sent. */
+  command: string;
+  params?: PlayerActionParam[];
+  danger?: boolean;
+}
+
+/** A creation-time choice written into one of the game's config files (shown in the wizard's customize step). */
+export interface CreationSetting {
+  id: string;
+  label: LocalizedText;
+  type: 'select' | 'text' | 'number';
+  options?: Array<{ value: string; label: LocalizedText }>;
+  default?: string | number;
+  /** Config file (relative to the instance) and key the chosen value is saved to. */
+  file: string;
+  key: string;
+}
+
+/** Where a game keeps its mods/plugins and their configuration, relative to the instance. */
+export interface ModLayout {
+  modsDir?: string;
+  configDir?: string;
+}
+
+/** Where (and which packaged file) the Telemetry Bridge is installed per loader; `default` is the fallback. */
+export type BridgeTargets = Record<string, { dir: string; asset: string }>;
+
+export interface QuickCommand {
+  label: string;
+  command: string;
+}
+
+/** What the generic player list shows for this game. */
+export interface PlayerView {
+  dimensions?: boolean;
+  coordinates?: boolean;
+  vitals?: boolean;
+  /** Avatar image URL template (`{{player}}`); omitted = initials. */
+  avatarUrl?: string;
+}
+
 export interface GameCapabilities {
   players: boolean;
   mods: boolean;
@@ -115,6 +169,18 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  /** Folders created for a new instance (e.g. `mods`); none by default. */
+  instanceFolders?: string[];
+  modLayout?: ModLayout;
+  bridgeTargets?: BridgeTargets;
+  /** Bundled packs only: the game offered when nothing else is chosen. */
+  default?: boolean;
+  playerActions?: PlayerActionSpec[];
+  creationSettings?: CreationSetting[];
+  quickCommands?: QuickCommand[];
+  playerView?: PlayerView;
+  /** Id of a rich players panel registered by the app (bundled packs); generic list otherwise. */
+  playerPanel?: string;
   /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
   extension?: string;
   playerQueries?: PlayerQuery[];
@@ -254,6 +320,86 @@ export function validateManifest(raw: unknown): ManifestValidation {
     }
   }
 
+  if (raw.playerActions !== undefined) {
+    const actions = raw.playerActions;
+    const paramOk = (param: unknown) =>
+      isObject(param) &&
+      typeof param.id === 'string' &&
+      isLocalized(param.label) &&
+      ['text', 'number', 'select'].includes(String(param.type));
+    if (
+      !Array.isArray(actions) ||
+      !actions.every(
+        (action) =>
+          isObject(action) &&
+          typeof action.id === 'string' &&
+          isLocalized(action.label) &&
+          typeof action.command === 'string' &&
+          (action.params === undefined || (Array.isArray(action.params) && action.params.every(paramOk)))
+      )
+    ) {
+      errors.push('playerActions must be a list of { id, label, command, params? }');
+    }
+  }
+
+  if (raw.instanceFolders !== undefined) {
+    if (!isStringList(raw.instanceFolders) || !(raw.instanceFolders as string[]).every(isSafeRelativePath)) {
+      errors.push('instanceFolders must be a list of relative folder names');
+    }
+  }
+  if (raw.modLayout !== undefined) {
+    const layout = raw.modLayout;
+    if (
+      !isObject(layout) ||
+      (layout.modsDir !== undefined && !isSafeRelativePath(layout.modsDir)) ||
+      (layout.configDir !== undefined && !isSafeRelativePath(layout.configDir))
+    ) {
+      errors.push('modLayout must be { modsDir?, configDir? } with relative paths');
+    }
+  }
+  if (raw.bridgeTargets !== undefined) {
+    const targets = raw.bridgeTargets;
+    if (
+      !isObject(targets) ||
+      !Object.values(targets).every(
+        (target) => isObject(target) && isSafeRelativePath(target.dir) && isSafeRelativePath(target.asset)
+      )
+    ) {
+      errors.push('bridgeTargets must map loaders to { dir, asset } with relative paths');
+    }
+  }
+
+  if (raw.creationSettings !== undefined) {
+    const settings = raw.creationSettings;
+    if (
+      !Array.isArray(settings) ||
+      !settings.every(
+        (setting) =>
+          isObject(setting) &&
+          typeof setting.id === 'string' &&
+          isLocalized(setting.label) &&
+          ['select', 'text', 'number'].includes(String(setting.type)) &&
+          isSafeRelativePath(setting.file) &&
+          typeof setting.key === 'string'
+      )
+    ) {
+      errors.push('creationSettings must be a list of { id, label, type, file (relative), key }');
+    }
+  }
+
+  if (raw.quickCommands !== undefined) {
+    const quick = raw.quickCommands;
+    if (
+      !Array.isArray(quick) ||
+      !quick.every((item) => isObject(item) && typeof item.label === 'string' && typeof item.command === 'string')
+    ) {
+      errors.push('quickCommands must be a list of { label, command }');
+    }
+  }
+
+  if (raw.playerView !== undefined && !isObject(raw.playerView)) errors.push('playerView must be an object');
+  if (raw.playerPanel !== undefined && typeof raw.playerPanel !== 'string') errors.push('playerPanel must be a string');
+
   if (raw.extension !== undefined && (typeof raw.extension !== 'string' || !ID_PATTERN.test(raw.extension))) {
     errors.push('extension must be an extension id (lowercase letters, digits and dashes)');
   }
@@ -299,7 +445,9 @@ export function validateManifest(raw: unknown): ManifestValidation {
     const valid =
       isObject(provision) &&
       (provision.type === 'none' ||
-        (provision.type === 'steamcmd' && Number.isInteger(provision.appId)) ||
+        (provision.type === 'steamcmd' &&
+          Number.isInteger(provision.appId) &&
+          (provision.branchField === undefined || typeof provision.branchField === 'string')) ||
         (provision.type === 'download' &&
           typeof provision.url === 'string' &&
           /^https:\/\//i.test(provision.url) &&

@@ -13,7 +13,8 @@ import {
   VolumeX,
   Package
 } from 'lucide-react';
-import type { DaemonAction, PlayerState } from '../../types/daemon';
+import type { PlayersPanelProps } from './GenericPlayersTab';
+import type { PlayerState } from '../../types/daemon';
 import { PlayerAdminModal } from '../modals/PlayerAdminModal';
 import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
 import { DimensionIcon } from '../common/DimensionIcon';
@@ -21,15 +22,11 @@ import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommand
 import { formatDimensionName, normalizeDimension } from '../../utils/format';
 import { SlidingText } from '../common/SlidingText';
 
-interface PlayersTabProps {
-  players: PlayerState[];
-  onSendCommand: (command: string) => void;
-  onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
-  onInspectInventory?: (player: PlayerState) => void;
-}
+type PlayersTabProps = PlayersPanelProps;
 
 type DimensionFilter = string;
 
+/** Rich Minecraft-style players panel (dimensions, vitals, gameplay actions). Registered in `playerPanels.ts`. */
 export const PlayersTab: React.FC<PlayersTabProps> = ({
   players,
   onSendCommand,

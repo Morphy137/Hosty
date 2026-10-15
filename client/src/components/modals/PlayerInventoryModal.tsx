@@ -129,7 +129,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-hidden">
-      <div className="geist-card bg-surface border border-hairline text-ink max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-5">
+      <div className="geist-card bg-surface border border-hairline text-ink max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-5 h-[min(40rem,90vh)] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">

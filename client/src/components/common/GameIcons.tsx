@@ -1,56 +1,11 @@
 import React from 'react';
-import minecraftLogo from '../../assets/minecraft/Grass_Block.png';
+import { Gamepad2 } from 'lucide-react';
 import { useGameLogoUrl } from './gameLogoStore';
-import zomboidLogo from '../../assets/logos/project-zomboid.webp';
-import hytaleLogo from '../../assets/logos/hytale.png';
-
-interface GameIconProps {
-  className?: string;
-  size?: number;
-}
 
 /**
- * Official Minecraft Logo Icon from downloaded assets.
+ * Logo of a game. The image always comes from the game's pack (`/api/games/:id/logo`); until it is
+ * available, or for packs without a logo, a neutral icon is shown. No game is special-cased here.
  */
-export const MinecraftIcon: React.FC<GameIconProps> = ({ className = '', size = 28 }) => (
-  <img
-    src={minecraftLogo}
-    alt="Minecraft"
-    width={size}
-    height={size}
-    className={`shrink-0 object-contain select-none pointer-events-none ${className}`}
-    style={{ width: size, height: size }}
-  />
-);
-
-/**
- * Official Project Zomboid Logo Icon from downloaded assets.
- */
-export const ProjectZomboidIcon: React.FC<GameIconProps> = ({ className = '', size = 28 }) => (
-  <img
-    src={zomboidLogo}
-    alt="Project Zomboid"
-    width={size}
-    height={size}
-    className={`shrink-0 object-contain select-none pointer-events-none ${className}`}
-    style={{ width: size, height: size }}
-  />
-);
-
-/**
- * Official Hytale Logo Icon from downloaded assets.
- */
-export const HytaleIcon: React.FC<GameIconProps> = ({ className = '', size = 28 }) => (
-  <img
-    src={hytaleLogo}
-    alt="Hytale"
-    width={size}
-    height={size}
-    className={`shrink-0 object-contain select-none pointer-events-none ${className}`}
-    style={{ width: size, height: size }}
-  />
-);
-
 export const GameLogo: React.FC<{ gameId: string; className?: string; size?: number }> = ({
   gameId,
   className = '',
@@ -69,14 +24,13 @@ export const GameLogo: React.FC<{ gameId: string; className?: string; size?: num
     );
   }
 
-  switch (gameId) {
-    case 'minecraft':
-      return <MinecraftIcon className={className} size={size} />;
-    case 'project-zomboid':
-      return <ProjectZomboidIcon className={className} size={size} />;
-    case 'hytale':
-      return <HytaleIcon className={className} size={size} />;
-    default:
-      return <MinecraftIcon className={className} size={size} />;
-  }
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center justify-center rounded-[6px] bg-surface-3 text-mute ${className}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <Gamepad2 style={{ width: size * 0.6, height: size * 0.6 }} />
+    </span>
+  );
 };

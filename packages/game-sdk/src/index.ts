@@ -30,7 +30,8 @@ export interface ConfigFileManifest {
 
 export type ProvisionSpec =
   | { type: 'none' }
-  | { type: 'steamcmd'; appId: number }
+  /** `branchField`: id of the setup field whose value is the Steam beta branch. */
+  | { type: 'steamcmd'; appId: number; branchField?: string }
   /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
   | { type: 'download'; url: string; filename?: string; sha256?: string };
 
@@ -94,6 +95,47 @@ export interface ModSource {
   defaultInstallDir?: string;
 }
 
+export interface PlayerActionParam {
+  id: string;
+  label: LocalizedText;
+  type: 'text' | 'number' | 'select';
+  default?: string | number;
+  options?: Array<{ value: string; label: LocalizedText }>;
+}
+
+/** A console command an operator can run on an online player; `{{player}}` and `{{<param id>}}` are replaced. */
+export interface PlayerActionSpec {
+  id: string;
+  label: LocalizedText;
+  command: string;
+  params?: PlayerActionParam[];
+  danger?: boolean;
+}
+
+export interface CreationSetting {
+  id: string;
+  label: LocalizedText;
+  type: 'select' | 'text' | 'number';
+  options?: Array<{ value: string; label: LocalizedText }>;
+  default?: string | number;
+  /** Config file (relative) and key the value is saved to when the server is created. */
+  file: string;
+  key: string;
+}
+
+export interface QuickCommand {
+  label: string;
+  command: string;
+}
+
+export interface PlayerView {
+  dimensions?: boolean;
+  coordinates?: boolean;
+  vitals?: boolean;
+  /** Avatar URL template (`{{player}}`). */
+  avatarUrl?: string;
+}
+
 export interface GameManifest {
   apiVersion: 1;
   /** 2-40 chars: lowercase letters, digits and dashes. Must be unique and cannot reuse a built-in id. */
@@ -117,6 +159,12 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  playerActions?: PlayerActionSpec[];
+  creationSettings?: CreationSetting[];
+  quickCommands?: QuickCommand[];
+  playerView?: PlayerView;
+  /** Rich players panel registered by the app; bundled packs only. */
+  playerPanel?: string;
   /** Reserved for packs bundled with Hosty; user packs that set it are rejected. */
   extension?: string;
   playerQueries?: PlayerQuery[];

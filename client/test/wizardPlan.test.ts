@@ -32,7 +32,7 @@ const baseDraft: WizardDraft = {
   instanceId: 'my-server',
   motd: '§aHello',
   ramMb: 8192,
-  minecraft: { loader: 'fabric', version: '1.21.1', useCustomJar: false, jarFile: null, jarInspection: null }
+  loaderInstall: { loader: 'fabric', version: '1.21.1', useCustomJar: false, jarFile: null, jarInspection: null }
 };
 
 describe('buildCreationPlan', () => {
@@ -49,7 +49,7 @@ describe('buildCreationPlan', () => {
     const plan = buildCreationPlan(
       {
         ...baseDraft,
-        minecraft: {
+        loaderInstall: {
           loader: 'neoforge',
           version: '',
           useCustomJar: true,
@@ -82,7 +82,7 @@ describe('buildCreationPlan', () => {
     );
     expect(plan.kind).toBe('create');
     if (plan.kind === 'create') {
-      expect(plan.settings).toMatchObject({ pzBranch: 'unstable', gameConfig: { pzBranch: 'unstable' } });
+      expect(plan.settings).toMatchObject({ gameConfig: { pzBranch: 'unstable' } });
       expect(plan.settings.motd).toBeUndefined();
     }
   });

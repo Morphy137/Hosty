@@ -8,10 +8,10 @@ import { defaultMinRamMb, maxAllocatableRamMb, recommendedRamMb } from '../../..
 import { MotdPreview } from '../../common/MotdPreview';
 import { Button } from '../../ui/Button';
 import { Input, NumberInput } from '../../ui/Input';
-import { Select } from '../../ui/Select';
 import { Slider } from '../../ui/Slider';
 import { cn } from '../../../utils/cn';
 import { slugifyInstanceId, type StepProps } from '../wizardTypes';
+import { SchemaFields } from './SchemaFields';
 
 interface CustomizeStepProps extends StepProps {
   game: GameDriverSummary | undefined;
@@ -19,8 +19,6 @@ interface CustomizeStepProps extends StepProps {
   systemRamMb: number | undefined;
 }
 
-const GAMEMODES = ['survival', 'creative', 'adventure', 'spectator'] as const;
-const DIFFICULTIES = ['peaceful', 'easy', 'normal', 'hard'] as const;
 const PORT_DEBOUNCE_MS = 400;
 
 export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, disabled, game, instances, systemRamMb }) => {
@@ -183,7 +181,7 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
             </p>
           </div>
 
-          <div className={cn('grid gap-3', isMinecraftLike ? 'grid-cols-3' : 'grid-cols-1')}>
+          <div className="grid grid-cols-1 gap-3">
             {field('edit_server.max_players_label', 'wizard-max-players',
               <NumberInput
                 id="wizard-max-players"
@@ -194,29 +192,22 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
                 onValueChange={(value) => update({ maxPlayers: value })}
               />
             )}
-            {isMinecraftLike && (
-              <>
-                {field('wizard.gamemode', 'wizard-gamemode',
-                  <Select
-                    ariaLabel={t('wizard.gamemode')}
-                    value={draft.gamemode}
-                    disabled={disabled}
-                    onValueChange={(value) => update({ gamemode: value as typeof draft.gamemode })}
-                    options={GAMEMODES.map((mode) => ({ value: mode, label: t(`wizard.gamemodes.${mode}`) }))}
-                  />
-                )}
-                {field('wizard.difficulty', 'wizard-difficulty',
-                  <Select
-                    ariaLabel={t('wizard.difficulty')}
-                    value={draft.difficulty}
-                    disabled={disabled}
-                    onValueChange={(value) => update({ difficulty: value as typeof draft.difficulty })}
-                    options={DIFFICULTIES.map((level) => ({ value: level, label: t(`wizard.difficulties.${level}`) }))}
-                  />
-                )}
-              </>
-            )}
           </div>
+
+          {(game?.creationSettings?.length ?? 0) > 0 && (
+            <SchemaFields
+              fields={(game?.creationSettings ?? []).map((setting) => ({
+                id: setting.id,
+                type: setting.type,
+                label: setting.label,
+                options: setting.options,
+                default: setting.default
+              }))}
+              values={draft.creationValues}
+              disabled={disabled}
+              onChange={(id, value) => update({ creationValues: { ...draft.creationValues, [id]: String(value) } })}
+            />
+          )}
         </>
       )}
 

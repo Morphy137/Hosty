@@ -8,7 +8,7 @@ export const IMPORT_STEPS: WizardStepId[] = ['game', 'origin', 'customize', 'rev
 
 export type SetupValue = string | number | boolean;
 
-export interface MinecraftInstallDraft {
+export interface LoaderInstallDraft {
   loader: ServerLoader;
   version: string;
   /** User chose "use my own .jar" instead of downloading. */
@@ -23,7 +23,7 @@ export interface WizardDraft {
   importPath: string;
   importInfo: FolderInspection | null;
   setupValues: Record<string, SetupValue>;
-  minecraft: MinecraftInstallDraft;
+  loaderInstall: LoaderInstallDraft;
   name: string;
   instanceId: string;
   idTouched: boolean;
@@ -31,8 +31,8 @@ export interface WizardDraft {
   maxPlayers: number;
   port: number;
   ramMb: number;
-  gamemode: 'survival' | 'creative' | 'adventure' | 'spectator';
-  difficulty: 'peaceful' | 'easy' | 'normal' | 'hard';
+  /** Values of the game's `creationSettings`, written to its config files after creation. */
+  creationValues: Record<string, string>;
   iconBase64: string | null;
   /** Install the Telemetry Bridge right after creation (when the loader supports it). */
   installBridge: boolean;
@@ -44,7 +44,7 @@ export const INITIAL_DRAFT: WizardDraft = {
   importPath: '',
   importInfo: null,
   setupValues: {},
-  minecraft: { loader: 'paper', version: '', useCustomJar: false, jarFile: null, jarInspection: null },
+  loaderInstall: { loader: 'paper', version: '', useCustomJar: false, jarFile: null, jarInspection: null },
   name: '',
   instanceId: '',
   idTouched: false,
@@ -52,8 +52,7 @@ export const INITIAL_DRAFT: WizardDraft = {
   maxPlayers: 20,
   port: 25565,
   ramMb: 4096,
-  gamemode: 'survival',
-  difficulty: 'normal',
+  creationValues: {},
   iconBase64: null,
   installBridge: true
 };

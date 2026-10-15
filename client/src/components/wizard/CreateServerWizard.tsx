@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Download, FolderInput, Play, PanelRight } from 'lucide-react';
 import type {
+  ConfigEntry,
   GameDriverSummary,
   InstanceInfo,
   InstanceSettings,
@@ -12,7 +13,7 @@ import type {
 import {
   fetchSystemEnvironment,
   installInstanceBridge,
-  saveServerProperties,
+  saveConfigEntries,
   uploadInstanceIcon
 } from '../../api/daemonApi';
 import { maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
@@ -132,6 +133,9 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
     return {
       gameId: selected.id,
       setupValues: defaults,
+      creationValues: Object.fromEntries(
+        (selected.creationSettings ?? []).map((setting) => [setting.id, String(setting.default ?? '')])
+      ),
       name,
       instanceId: slugifyInstanceId(name),
       idTouched: false,
@@ -267,12 +271,16 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           problems.push(t('wizard.warn_icon'));
         }
       }
-      if (draft.origin === 'create' && Boolean(game?.configSync) && plan.kind !== 'create') {
+      if (draft.origin === 'create' && plan.kind !== 'create' && (game?.creationSettings?.length ?? 0) > 0) {
         try {
-          await saveServerProperties([
-            { key: 'gamemode', value: draft.gamemode, type: 'string' },
-            { key: 'difficulty', value: draft.difficulty, type: 'string' }
-          ]);
+          const byFile = new Map<string, ConfigEntry[]>();
+          for (const setting of game?.creationSettings ?? []) {
+            const value = draft.creationValues[setting.id] ?? String(setting.default ?? '');
+            const entries = byFile.get(setting.file) ?? [];
+            entries.push({ key: setting.key, value, type: 'string' });
+            byFile.set(setting.file, entries);
+          }
+          for (const [file, entries] of byFile) await saveConfigEntries(file, entries);
         } catch {
           problems.push(t('wizard.warn_properties'));
         }
@@ -314,6 +322,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       open={isOpen}
       onOpenChange={(open) => !open && onClose()}
       size="lg"
+      height="fixed"
       dismissible={!isBusy}
       title={draft.origin === 'import' ? t('import_server.modal_title') : t('create_server.modal_title')}
       description={isDone ? undefined : t(`wizard.step_desc.${step}`)}

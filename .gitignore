@@ -36,4 +36,4 @@ Thumbs.db
 client/src-tauri/binaries/
 
 # Local game packs used in development
-games/
+/games/

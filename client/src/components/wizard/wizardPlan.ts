@@ -31,9 +31,7 @@ export const usesLoaderInstall = (game: GameDriverSummary | undefined): boolean 
 /** Derives the instance settings shared by every creation path from the wizard draft. */
 export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummary | undefined): Partial<InstanceSettings> {
   const isMinecraftLike = Boolean(game?.configSync);
-  const isProvisioned = game?.provision?.type === 'steamcmd';
   const gameConfig = Object.keys(draft.setupValues).length > 0 ? { ...draft.setupValues } : undefined;
-  const branch = draft.setupValues.pzBranch;
 
   return {
     gameId: draft.gameId,
@@ -42,8 +40,7 @@ export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummar
     minRamMb: defaultMinRamMb(draft.ramMb),
     maxRamMb: draft.ramMb,
     ...(isMinecraftLike && draft.motd.trim() ? { motd: draft.motd.trim() } : {}),
-    ...(gameConfig ? { gameConfig } : {}),
-    ...(isProvisioned && (branch === 'stable' || branch === 'unstable') ? { pzBranch: branch } : {})
+    ...(gameConfig ? { gameConfig } : {})
   };
 }
 
@@ -58,15 +55,15 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
   const settings = buildInstanceSettings(draft, game);
 
   if (usesLoaderInstall(game)) {
-    const { minecraft } = draft;
-    const usesJar = !LOADER_METADATA[minecraft.loader].isAutomatic || minecraft.useCustomJar;
+    const { loaderInstall } = draft;
+    const usesJar = !LOADER_METADATA[loaderInstall.loader].isAutomatic || loaderInstall.useCustomJar;
 
-    if (usesJar && minecraft.jarFile) {
+    if (usesJar && loaderInstall.jarFile) {
       return {
         kind: 'upload',
-        file: minecraft.jarFile,
-        loader: minecraft.loader,
-        loaderVersion: minecraft.jarInspection?.mcVersion ?? undefined,
+        file: loaderInstall.jarFile,
+        loader: loaderInstall.loader,
+        loaderVersion: loaderInstall.jarInspection?.mcVersion ?? undefined,
         instanceId: draft.instanceId,
         name,
         settings
@@ -74,8 +71,8 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
     }
     return {
       kind: 'install',
-      loader: minecraft.loader,
-      version: minecraft.version,
+      loader: loaderInstall.loader,
+      version: loaderInstall.version,
       instanceId: draft.instanceId,
       name,
       settings
@@ -90,6 +87,6 @@ const BRIDGE_LOADERS = ['paper', 'purpur', 'spigot', 'fabric'];
 /** True when a Telemetry Bridge can be installed for what this wizard run will produce. */
 export const bridgeEligible = (draft: WizardDraft, game: GameDriverSummary | undefined): boolean => {
   if (!game?.capabilities.bridge) return false;
-  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.minecraft.loader : null;
+  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.loaderInstall.loader : null;
   return Boolean(loader && BRIDGE_LOADERS.includes(loader));
 };

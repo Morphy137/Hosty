@@ -264,28 +264,26 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     return true;
   }
 
-  /** Loaders a bridge artifact exists for. Forge / NeoForge have none yet (see docs/bridge-protocol.md). */
-  public static supportsLoader(loader?: string): boolean {
-    return !loader || ['paper', 'purpur', 'spigot', 'fabric'].includes(loader);
-  }
-
   /**
-   * Copies the bridge artifact into the instance. Returns the written file path.
-   * Throws when the loader is unsupported or the packaged artifact is missing (never writes a stub).
+   * Copies the bridge artifact into the instance and returns the written file path.
+   * `targets` (declared by the game) maps a loader to the folder and packaged file to use; `default`
+   * is the fallback. Throws when the packaged artifact is missing (never writes a stub).
    */
-  public installBridge(instanceDir: string, loader?: string): string {
-    if (!TelemetryBridgeManager.supportsLoader(loader)) {
-      throw new DaemonError('INVALID_LOADER', `There is no Hosty bridge for "${loader}" yet.`);
+  public installBridge(instanceDir: string, loader?: string, targets?: BridgeInstallTargets): string {
+    const fallback = targets?.default ?? { dir: 'mods', asset: 'mc-nexus-bridge.jar' };
+    let target = loader ? (targets?.[loader] ?? fallback) : fallback;
+    if (!loader && targets) {
+      // Imported servers may have no stored loader: prefer a target folder that already exists.
+      const known = Object.values(targets);
+      target = known.find((candidate) => fs.existsSync(path.join(instanceDir, candidate.dir)) && candidate !== fallback) ?? fallback;
+      if (fs.existsSync(path.join(instanceDir, fallback.dir))) target = fallback;
     }
-    // Imported servers may have no stored loader: a plugins/ folder means a Bukkit-style server.
-    const isPlugin = loader
-      ? loader === 'paper' || loader === 'purpur' || loader === 'spigot'
-      : fs.existsSync(path.join(instanceDir, 'plugins')) && !fs.existsSync(path.join(instanceDir, 'mods'));
-    const targetFolder = isPlugin ? path.join(instanceDir, 'plugins') : path.join(instanceDir, 'mods');
+
+    const targetFolder = path.join(instanceDir, target.dir);
     fs.mkdirSync(targetFolder, { recursive: true });
 
     const targetFile = path.join(targetFolder, 'mc-nexus-bridge.jar');
-    const specificPath = path.join(this.baseAssetsDir, isPlugin ? 'mc-nexus-bridge-paper.jar' : 'mc-nexus-bridge-fabric.jar');
+    const specificPath = path.join(this.baseAssetsDir, target.asset);
     const source = [specificPath, this.bridgeJarPath].find((candidate) => fs.existsSync(candidate));
     if (!source) {
       throw new DaemonError('BRIDGE_ASSET_MISSING', 'The bridge file is missing from this Hosty installation.');
@@ -294,11 +292,13 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     return targetFile;
   }
 
-  /** True when a bridge jar is present in the instance's plugins/ or mods/ folder. */
-  public static isBridgeInstalled(instanceDir: string): boolean {
-    return ['plugins', 'mods'].some((folder) => fs.existsSync(path.join(instanceDir, folder, 'mc-nexus-bridge.jar')));
+  /** True when a bridge jar is present in any of the given folders (defaults to `mods`). */
+  public static isBridgeInstalled(instanceDir: string, folders: string[] = ['mods']): boolean {
+    return folders.some((folder) => fs.existsSync(path.join(instanceDir, folder, 'mc-nexus-bridge.jar')));
   }
 }
+
+export type BridgeInstallTargets = Record<string, { dir: string; asset: string }>;
 
 const LEGACY_CAPABILITIES = [
   'telemetry.server',

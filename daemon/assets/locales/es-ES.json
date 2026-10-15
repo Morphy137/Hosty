@@ -1,11 +1,17 @@
 {
-  "_meta": { "name": "Español (España)" },
-  "header": { "mock_button": "Simular telemetría" },
+  "_meta": {
+    "name": "Español (España)"
+  },
+  "header": {
+    "mock_button": "Simular telemetría"
+  },
   "edit_server": {
     "icon_hint": "La imagen debe ser un .png de 64x64.",
     "bridge_installed_restart": "Telemetry Bridge instalado. Reinicia el servidor para activarlo."
   },
-  "mod_files": { "empty": "No se han encontrado archivos .jar en la carpeta /mods." },
+  "mod_files": {
+    "empty": "No se han encontrado archivos .jar en la carpeta /mods."
+  },
   "wizard": {
     "default_name": "Mi servidor de {{game}}",
     "icon_hint": "Vale cualquier imagen: se recorta y se redimensiona a 64×64 automáticamente.",
@@ -14,5 +20,7 @@
   "errors": {
     "UPSTREAM_ERROR": "No se ha podido contactar con los servidores de descarga. Comprueba tu conexión a internet."
   },
-  "players": { "empty_description": "Conéctate al servidor con un cliente del juego o usa Simular telemetría para inspeccionar las sesiones activas." }
+  "players": {
+    "empty_description": "Conéctate al servidor con el juego o usa Simular telemetría para inspeccionar las sesiones activas."
+  }
 }

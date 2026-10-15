@@ -124,7 +124,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
               id="wizard-import-path"
               value={draft.importPath}
               disabled={disabled}
-              placeholder="C:\Servers\MyMinecraftServer"
+              placeholder="C:\Servers\MyServer"
               className="font-mono text-[12px]"
               onChange={(event) => update({ importPath: event.target.value, importInfo: null })}
               onBlur={() => draft.importPath.trim() && !draft.importInfo && void runInspection(draft.importPath)}
