@@ -83,7 +83,7 @@ export const ImportServerModal: React.FC<ImportServerModalProps> = ({
               type="text"
               value={serverName}
               onChange={(e) => setServerName(e.target.value)}
-              placeholder="Custom Display Name (optional)"
+              placeholder={t('import_server.display_name_placeholder')}
               className="w-full h-9 px-3 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
             />
           </div>

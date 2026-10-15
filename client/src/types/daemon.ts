@@ -49,14 +49,14 @@ export const LOADER_METADATA: Record<ServerLoader, LoaderInfo> = {
     id: 'forge',
     name: 'Forge',
     category: 'modded',
-    isAutomatic: false,
+    isAutomatic: true,
     officialUrl: 'https://files.minecraftforge.net/net/minecraftforge/forge/'
   },
   neoforge: {
     id: 'neoforge',
     name: 'NeoForge',
     category: 'modded',
-    isAutomatic: false,
+    isAutomatic: true,
     officialUrl: 'https://neoforged.net/'
   },
   spigot: {
@@ -156,6 +156,8 @@ export interface InstanceSettings {
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
+  /** Project Zomboid Steam branch chosen at creation time. */
+  pzBranch?: 'stable' | 'unstable';
 }
 
 export interface GameDriverSummary {
@@ -219,6 +221,7 @@ export type DaemonMessage =
   | { type: 'PLAYERS'; payload: PlayerState[] }
   | { type: 'CONSOLE'; payload: string }
   | { type: 'PROVISION_LOG'; payload: string }
+  | { type: 'PROVISION_PROGRESS'; payload: ProvisionJobState }
   | { type: 'ERROR'; payload: DaemonErrorPayload }
   | { type: 'INSTANCE_STATUS'; payload: { instanceId: string; status: ServerStatus } }
   | { type: 'INVENTORY_DATA'; payload: PlayerInventoryData };
@@ -241,5 +244,32 @@ export interface SystemEnvironmentResponse {
   platform: string;
   arch: string;
   nodeVersion: string;
+  totalMemMb?: number;
+  freeMemMb?: number;
 }
 
+
+export type ProvisionPhase = 'queued' | 'resolve' | 'download' | 'install' | 'configure';
+export type ProvisionJobStatus = 'running' | 'done' | 'failed' | 'cancelled';
+
+export interface ProvisionJobState {
+  id: string;
+  instanceId: string;
+  loader: string;
+  version: string;
+  status: ProvisionJobStatus;
+  phase: ProvisionPhase;
+  bytesReceived: number;
+  bytesTotal: number | null;
+  percent: number | null;
+  error: DaemonErrorPayload | null;
+}
+
+export type JarKind = 'server' | 'installer' | 'unknown';
+
+export interface JarInspection {
+  loader: ServerLoader | null;
+  mcVersion: string | null;
+  loaderVersion: string | null;
+  kind: JarKind;
+}

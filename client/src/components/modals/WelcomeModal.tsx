@@ -51,7 +51,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-[6px] text-[#888888] hover:text-[#171717] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#1a1a1a] transition cursor-pointer"
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -111,7 +111,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 bg-[#fafafa] dark:bg-[#111111] border-t border-[#ebebeb] dark:border-[#262626] flex items-center justify-between text-[12px] text-[#888888]">
-          <span>Hosty • Multi-game Server Supervisor</span>
+          <span>{t('onboarding.footer_tagline')}</span>
           <span>v0.1.1</span>
         </div>
       </div>

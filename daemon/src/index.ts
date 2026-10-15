@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { finished } from 'stream/promises';
 import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSupervisor';
@@ -15,7 +16,10 @@ import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
 import { PropertiesParser } from './parsers/PropertiesParser';
 import { ModConfigParser } from './parsers/ModConfigParser';
-import { ServerInstaller, LoaderType } from './provisioning/ServerInstaller';
+import { ServerInstaller, LoaderType, type ProvisionHooks } from './provisioning/ServerInstaller';
+import { provisionJobs } from './provisioning/ProvisionJobs';
+import { inspectJar, type JarInspection } from './provisioning/JarInspector';
+import { runServerInstaller } from './provisioning/JavaInstallerRunner';
 import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment } from './core/EnvironmentDetector';
@@ -59,8 +63,6 @@ const registry = new SupervisorRegistry({
   metricsIntervalMs: config.metricsIntervalMs,
   positionPollIntervalMs: config.positionPollIntervalMs
 });
-
-let isInstalling = false;
 
 // Helper to get currently active working directory
 const getActiveDir = () => instanceManager.getActiveInstanceDir();
@@ -141,7 +143,9 @@ app.get('/api/system/environment', (_req, res) => {
     java: javaInfo,
     platform: process.platform,
     arch: process.arch,
-    nodeVersion: process.version
+    nodeVersion: process.version,
+    totalMemMb: Math.round(os.totalmem() / (1024 * 1024)),
+    freeMemMb: Math.round(os.freemem() / (1024 * 1024))
   });
 });
 
@@ -361,47 +365,199 @@ app.post('/api/instances/import', (req, res, next) => {
   }
 });
 
+/** Parses the optional `settings` query parameter (URL-encoded JSON) sent with raw jar uploads. */
+const parseSettingsQuery = (raw: unknown): Partial<InstanceSettings> => {
+  if (typeof raw !== 'string' || !raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Partial<InstanceSettings>) : {};
+  } catch {
+    throw new DaemonError('INVALID_PAYLOAD', 'The "settings" query parameter must be valid JSON.');
+  }
+};
+
+/** Streams the raw request body to a temporary file and classifies it. */
+const inspectRequestJar = async (req: Request): Promise<{ tempPath: string; inspection: JarInspection }> => {
+  const tempPath = path.join(os.tmpdir(), `hosty-upload-${Date.now()}-${Math.random().toString(36).slice(2)}.jar`);
+  await finished(req.pipe(fs.createWriteStream(tempPath)));
+  return { tempPath, inspection: inspectJar(tempPath) };
+};
+
+let lastProgressBroadcast = 0;
+provisionJobs.on('update', (job) => {
+  const now = Date.now();
+  const isFinal = job.status !== 'running';
+  // Byte-level updates arrive per chunk; keep the socket quiet unless something meaningful changed.
+  if (!isFinal && job.phase === 'download' && now - lastProgressBroadcast < 150) return;
+  lastProgressBroadcast = now;
+  broadcast('PROVISION_PROGRESS', job);
+});
+
+interface ProvisionRunContext {
+  instanceId: string;
+  loader: string;
+  version: string;
+  /** When set, a failed or cancelled job removes the instance this request created. */
+  rollbackInstanceId?: string;
+  run: (hooks: ProvisionHooks) => Promise<void>;
+  javaPath: string;
+}
+
+/** Starts a tracked background provisioning job and returns its id immediately. */
+const startProvisionJob = (ctx: ProvisionRunContext): string => {
+  const { job, signal } = provisionJobs.create({
+    instanceId: ctx.instanceId,
+    loader: ctx.loader,
+    version: ctx.version
+  });
+
+  const log = (msg: string) => {
+    broadcast('CONSOLE', `${msg}\r\n`);
+    broadcast('PROVISION_LOG', msg);
+  };
+
+  void (async () => {
+    try {
+      await ctx.run({
+        signal,
+        javaPath: ctx.javaPath,
+        onLog: log,
+        onPhase: (phase) => provisionJobs.update(job.id, { phase }),
+        onBytes: (received, total) => provisionJobs.update(job.id, { bytesReceived: received, bytesTotal: total })
+      });
+
+      if (instanceManager.getActiveInstanceId() !== ctx.instanceId) {
+        instanceManager.setActiveInstanceId(ctx.instanceId);
+      }
+      provisionJobs.finish(job.id, 'done');
+    } catch (err) {
+      if (ctx.rollbackInstanceId) {
+        try {
+          instanceManager.deleteInstance(ctx.rollbackInstanceId);
+        } catch (rollbackErr) {
+          console.error('Failed to roll back instance after failed install:', rollbackErr);
+        }
+      }
+      const cancelled = err instanceof DaemonError && err.code === 'INSTALL_CANCELLED';
+      const { body } = toErrorResponse(err);
+      log(`[Provisioner] ${cancelled ? 'Installation cancelled.' : `Installation failed: ${body.error.message}`}`);
+      provisionJobs.finish(job.id, cancelled ? 'cancelled' : 'failed', body.error);
+    }
+  })();
+
+  return job.id;
+};
+
+const assertInstanceIdle = (instanceId: string | undefined, action: string): void => {
+  const sup = instanceId ? registry.getSupervisor(instanceId) : getActiveSupervisor();
+  if (sup && sup.getStatus() !== 'OFFLINE') {
+    throw new DaemonError('SERVER_RUNNING', `Cannot ${action} while server is running.`);
+  }
+};
+
+app.post('/api/provisioning/inspect-jar', async (req, res, next) => {
+  let tempPath: string | null = null;
+  try {
+    const result = await inspectRequestJar(req);
+    tempPath = result.tempPath;
+    res.json(result.inspection);
+  } catch (err) {
+    next(err);
+  } finally {
+    if (tempPath) fs.rmSync(tempPath, { force: true });
+  }
+});
+
 app.post('/api/instances/upload-server-jar', async (req, res, next) => {
+  let tempPath: string | null = null;
+  let createdInstanceId: string | undefined;
   try {
     const instanceId = req.query.instanceId as string;
     const instanceName = (req.query.name as string) || undefined;
     if (!instanceId) {
       throw new DaemonError('INVALID_PAYLOAD', 'instanceId query parameter is required.');
     }
-
-    const sup = registry.getSupervisor(instanceId);
-    if (sup && sup.getStatus() !== 'OFFLINE') {
-      throw new DaemonError('SERVER_RUNNING', 'Cannot upload server jar while server is running.');
+    assertInstanceIdle(instanceId, 'upload a server jar');
+    if (provisionJobs.hasRunning()) {
+      throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
     }
 
-    let targetDir = getActiveDir();
-    const existing = instanceManager.getInstance(instanceId);
-    if (existing) {
-      targetDir = existing.dir;
-    } else {
-      const created = instanceManager.createInstance(instanceId, instanceName);
-      targetDir = created.dir;
+    const settings = parseSettingsQuery(req.query.settings);
+    const overrideLoader = typeof req.query.loader === 'string' ? req.query.loader : undefined;
+    const overrideVersion = typeof req.query.loaderVersion === 'string' ? req.query.loaderVersion : undefined;
+
+    const inspected = await inspectRequestJar(req);
+    tempPath = inspected.tempPath;
+    const { inspection } = inspected;
+
+    const loader = overrideLoader || inspection.loader || settings.loader || undefined;
+    const loaderVersion = overrideVersion || inspection.mcVersion || settings.loaderVersion || undefined;
+    const mergedSettings: Partial<InstanceSettings> = { ...settings, loader, loaderVersion };
+
+    let target = instanceManager.getInstance(instanceId);
+    if (!target) {
+      target = instanceManager.createInstance(instanceId, instanceName, mergedSettings);
+      createdInstanceId = target.id;
+    } else if (loader || loaderVersion) {
+      instanceManager.updateInstanceSettings(instanceId, { loader, loaderVersion });
     }
+    const targetDir = target.dir;
 
-    const jarDest = path.join(targetDir, 'server.jar');
-    const writeStream = fs.createWriteStream(jarDest);
-    await finished(req.pipe(writeStream));
+    const destName = inspection.kind === 'installer' ? 'installer.jar' : 'server.jar';
+    const jarDest = path.join(targetDir, destName);
+    fs.copyFileSync(tempPath, jarDest);
 
-    // Sign EULA and generate full properties if missing
-    fs.writeFileSync(path.join(targetDir, 'eula.txt'), 'eula=true\n', 'utf-8');
     const propsPath = path.join(targetDir, 'server.properties');
+    fs.writeFileSync(path.join(targetDir, 'eula.txt'), 'eula=true\n', 'utf-8');
     if (!fs.existsSync(propsPath)) {
       PropertiesParser.createDefaultProperties(propsPath, { motd: instanceName || instanceId });
     }
 
-    if (instanceManager.getActiveInstanceId() !== instanceId) {
-      instanceManager.setActiveInstanceId(instanceId);
+    let jobId: string | null = null;
+    if (inspection.kind === 'installer') {
+      const javaPath = target.javaPath || config.javaPath;
+      jobId = startProvisionJob({
+        instanceId: target.id,
+        loader: loader || 'forge',
+        version: loaderVersion || '',
+        rollbackInstanceId: createdInstanceId,
+        javaPath,
+        run: async (hooks) => {
+          hooks.onPhase?.('install');
+          hooks.onLog('[Provisioner] Running the uploaded installer (this can take a few minutes)...');
+          try {
+            await runServerInstaller({
+              javaPath: hooks.javaPath || 'java',
+              installerJar: jarDest,
+              cwd: targetDir,
+              signal: hooks.signal,
+              onLine: (line) => hooks.onLog(`[Installer] ${line}`)
+            });
+          } finally {
+            fs.rmSync(jarDest, { force: true });
+            fs.rmSync(path.join(targetDir, 'installer.jar.log'), { force: true });
+          }
+          hooks.onPhase?.('configure');
+        }
+      });
+      createdInstanceId = undefined; // ownership moved to the job (rolled back there on failure)
+    } else if (instanceManager.getActiveInstanceId() !== target.id) {
+      instanceManager.setActiveInstanceId(target.id);
     }
 
-    broadcast('CONSOLE', `[Hypervisor] server.jar uploaded and registered for instance "${instanceId}".\r\n`);
-    res.json({ ok: true, instanceId: instanceManager.getActiveInstanceId() });
+    broadcast('CONSOLE', `[Hypervisor] Server jar uploaded and registered for instance "${target.id}".\r\n`);
+    res.json({ ok: true, instanceId: target.id, jobId, inspection });
   } catch (err) {
+    if (createdInstanceId) {
+      try {
+        instanceManager.deleteInstance(createdInstanceId);
+      } catch {
+        // Best effort rollback
+      }
+    }
     next(err);
+  } finally {
+    if (tempPath) fs.rmSync(tempPath, { force: true });
   }
 });
 
@@ -504,58 +660,60 @@ app.post('/api/provisioning/install', async (req, res, next) => {
       settings?: Partial<InstanceSettings>;
     };
 
-    if (instanceId) {
-      const sup = registry.getSupervisor(instanceId);
-      if (sup && sup.getStatus() !== 'OFFLINE') {
-        throw new DaemonError('SERVER_RUNNING', 'Cannot install server software while server is running.');
-      }
-    } else {
-      const sup = getActiveSupervisor();
-      if (sup && sup.getStatus() !== 'OFFLINE') {
-        throw new DaemonError('SERVER_RUNNING', 'Cannot install server software while server is running.');
-      }
-    }
-
-    if (isInstalling) {
+    assertInstanceIdle(instanceId, 'install server software');
+    if (provisionJobs.hasRunning()) {
       throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
     }
 
-    let targetDir = getActiveDir();
-    if (instanceId) {
-      const existing = instanceManager.getInstance(instanceId);
-      if (existing) {
-        targetDir = existing.dir;
-      } else {
-        const created = instanceManager.createInstance(instanceId, instanceName, {
-          ...settings,
-          loader,
-          loaderVersion: version
-        });
-        targetDir = created.dir;
-      }
-    }
-
-    isInstalling = true;
-    try {
-      await ServerInstaller.provisionServer(targetDir, loader, version, (msg) => {
-        broadcast('CONSOLE', `${msg}\r\n`);
-        broadcast('PROVISION_LOG', msg);
+    let target = instanceId ? instanceManager.getInstance(instanceId) : instanceManager.getInstance(instanceManager.getActiveInstanceId());
+    let createdInstanceId: string | undefined;
+    if (!target && instanceId) {
+      // Loader and version are persisted in the same step that creates the instance.
+      target = instanceManager.createInstance(instanceId, instanceName, {
+        ...settings,
+        loader,
+        loaderVersion: version
       });
-
-      // Update instance settings with loader and version
-      if (instanceId) {
-        instanceManager.updateInstanceSettings(instanceId, { loader, loaderVersion: version });
-      }
-
-      // If installation targeted another instance, auto-select it
-      if (instanceId && instanceManager.getActiveInstanceId() !== instanceId) {
-        instanceManager.setActiveInstanceId(instanceId);
-      }
-
-      res.json({ ok: true, instanceId: instanceManager.getActiveInstanceId() });
-    } finally {
-      isInstalling = false;
+      createdInstanceId = target.id;
+    } else if (target) {
+      instanceManager.updateInstanceSettings(target.id, { loader, loaderVersion: version });
     }
+    if (!target) {
+      throw new DaemonError('CONFIG_NOT_FOUND', 'No instance available to install into.');
+    }
+
+    const targetDir = target.dir;
+    const jobId = startProvisionJob({
+      instanceId: target.id,
+      loader,
+      version,
+      rollbackInstanceId: createdInstanceId,
+      javaPath: target.javaPath || config.javaPath,
+      run: (hooks) => ServerInstaller.provisionServer(targetDir, loader, version, hooks)
+    });
+
+    res.status(202).json({ ok: true, jobId, instanceId: target.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/provisioning/jobs/:jobId', (req, res, next) => {
+  try {
+    const job = provisionJobs.get(req.params.jobId);
+    if (!job) throw new DaemonError('CONFIG_NOT_FOUND', `Installation job "${req.params.jobId}" not found.`);
+    res.json(job);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/provisioning/jobs/:jobId/cancel', (req, res, next) => {
+  try {
+    if (!provisionJobs.get(req.params.jobId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Installation job "${req.params.jobId}" not found.`);
+    }
+    res.json({ ok: provisionJobs.cancel(req.params.jobId) });
   } catch (err) {
     next(err);
   }
