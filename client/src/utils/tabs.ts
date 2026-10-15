@@ -1,8 +1,8 @@
 import type { GameDriverSummary } from '../types/daemon';
 
-export type TabId = 'overview' | 'players' | 'mod_files' | 'mods' | 'properties' | 'backups';
+export type TabId = 'overview' | 'players' | 'mod_files' | 'mods' | 'properties' | 'backups' | 'network';
 
-const ALL_TABS: TabId[] = ['overview', 'players', 'mod_files', 'mods', 'properties', 'backups'];
+const ALL_TABS: TabId[] = ['overview', 'players', 'mod_files', 'mods', 'properties', 'backups', 'network'];
 
 /**
  * Tabs a server exposes, derived only from the driver's declared capabilities and config files.

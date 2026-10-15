@@ -38,6 +38,7 @@ import { ModFilesTab } from './components/tabs/ModFilesTab';
 import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
 import type { WizardOrigin } from './components/wizard/wizardTypes';
+import { NetworkTab } from './components/tabs/NetworkTab';
 import { BackupsTab } from './components/tabs/BackupsTab';
 import { EditServerModal } from './components/modals/EditServerModal';
 import { ModCatalogDialog } from './components/modals/ModCatalogDialog';
@@ -426,6 +427,10 @@ export default function App() {
                     currentVariant={instances.activeInstance.loader}
                     currentVersion={instances.activeInstance.loaderVersion}
                   />
+                )}
+
+                {currentTab === 'network' && instances.activeInstance && (
+                  <NetworkTab instanceId={instances.activeInstance.id} port={instances.activeInstance.port} />
                 )}
 
                 {currentTab === 'properties' && (

@@ -452,3 +452,8 @@ export interface BackupInfo {
   sizeBytes: number;
   createdAt: string;
 }
+
+export interface NetworkInfo {
+  lanAddresses: string[];
+  publicIp: string | null;
+}

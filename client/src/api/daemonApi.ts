@@ -1,5 +1,6 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  NetworkInfo,
   BackupInfo,
   CatalogFilters,
   ModFacets,
@@ -101,6 +102,14 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
 
 function deleteRequest<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
+}
+
+export function fetchNetworkInfo(): Promise<NetworkInfo> {
+  return request<NetworkInfo>('/api/system/network');
+}
+
+export function openFirewall(instanceId: string): Promise<{ ok: boolean; port: number }> {
+  return postJson<{ ok: boolean; port: number }>(`/api/instances/${encodeURIComponent(instanceId)}/firewall`, {});
 }
 
 export function fetchBackups(instanceId: string): Promise<{ backups: BackupInfo[] }> {

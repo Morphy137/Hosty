@@ -11,7 +11,8 @@
     "mods": "Mod Configs",
     "properties": "server.properties",
     "status": "STATUS",
-    "backups": "Backups"
+    "backups": "Backups",
+    "network": "Network"
   },
   "header": {
     "title": "Hosty",
@@ -502,5 +503,18 @@
     "version_confirm": "Update the server version? A backup is created first.",
     "version_update": "Update",
     "version_started": "Update started"
+  },
+  "network": {
+    "title": "Network access",
+    "description": "Addresses other players can use to join this server.",
+    "lan": "Same network (LAN)",
+    "public": "Internet (public IP)",
+    "copy": "Copy address",
+    "public_unknown": "Could not detect your public IP (offline?).",
+    "forwarding_title": "Playing over the internet",
+    "forwarding_hint": "Forward port {{port}} (TCP and UDP) on your router to this computer, and allow it in the firewall.",
+    "firewall_button": "Allow port {{port}} in the firewall",
+    "firewall_confirm": "Create inbound firewall rules for port {{port}}? Needs administrator rights.",
+    "firewall_done": "Firewall rules added for port {{port}}"
   }
 }

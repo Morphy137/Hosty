@@ -14,7 +14,8 @@
     "mods": "Configs dos mods",
     "properties": "server.properties",
     "status": "STATUS",
-    "backups": "Backups"
+    "backups": "Backups",
+    "network": "Rede"
   },
   "header": {
     "title": "Hosty",
@@ -505,5 +506,18 @@
     "version_confirm": "Atualizar a versão do servidor? Um backup é criado antes.",
     "version_update": "Atualizar",
     "version_started": "Atualização iniciada"
+  },
+  "network": {
+    "title": "Acesso de rede",
+    "description": "Endereços que outros jogadores podem usar para entrar neste servidor.",
+    "lan": "Mesma rede (LAN)",
+    "public": "Internet (IP público)",
+    "copy": "Copiar endereço",
+    "public_unknown": "Não foi possível detectar seu IP público (offline?).",
+    "forwarding_title": "Jogar pela internet",
+    "forwarding_hint": "Encaminhe a porta {{port}} (TCP e UDP) no roteador para este computador e libere-a no firewall.",
+    "firewall_button": "Permitir a porta {{port}} no firewall",
+    "firewall_confirm": "Criar regras de entrada no firewall para a porta {{port}}? Exige administrador.",
+    "firewall_done": "Regras de firewall adicionadas para a porta {{port}}"
   }
 }

@@ -14,7 +14,8 @@
     "mods": "模组配置",
     "properties": "server.properties",
     "status": "状态",
-    "backups": "备份"
+    "backups": "备份",
+    "network": "网络"
   },
   "header": {
     "title": "Hosty",
@@ -505,5 +506,18 @@
     "version_confirm": "更新服务器版本？会先创建备份。",
     "version_update": "更新",
     "version_started": "更新已开始"
+  },
+  "network": {
+    "title": "网络访问",
+    "description": "其他玩家加入此服务器可使用的地址。",
+    "lan": "同一网络（局域网）",
+    "public": "互联网（公网 IP）",
+    "copy": "复制地址",
+    "public_unknown": "无法检测公网 IP（是否离线？）。",
+    "forwarding_title": "通过互联网游玩",
+    "forwarding_hint": "在路由器上将端口 {{port}}（TCP 和 UDP）转发到此电脑，并在防火墙中放行。",
+    "firewall_button": "在防火墙中允许端口 {{port}}",
+    "firewall_confirm": "为端口 {{port}} 创建入站防火墙规则？需要管理员权限。",
+    "firewall_done": "已为端口 {{port}} 添加防火墙规则"
   }
 }

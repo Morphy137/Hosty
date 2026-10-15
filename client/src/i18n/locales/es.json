@@ -11,7 +11,8 @@
     "mods": "Configuración Mods",
     "properties": "server.properties",
     "status": "ESTADO",
-    "backups": "Copias"
+    "backups": "Copias",
+    "network": "Red"
   },
   "header": {
     "title": "Hosty",
@@ -502,5 +503,18 @@
     "version_confirm": "¿Actualizar la versión del servidor? Antes se crea una copia.",
     "version_update": "Actualizar",
     "version_started": "Actualización iniciada"
+  },
+  "network": {
+    "title": "Acceso de red",
+    "description": "Direcciones que otros jugadores pueden usar para entrar a este servidor.",
+    "lan": "Misma red (LAN)",
+    "public": "Internet (IP pública)",
+    "copy": "Copiar dirección",
+    "public_unknown": "No se pudo detectar tu IP pública (¿sin conexión?).",
+    "forwarding_title": "Jugar por internet",
+    "forwarding_hint": "Redirige el puerto {{port}} (TCP y UDP) en tu router a este equipo y permítelo en el firewall.",
+    "firewall_button": "Permitir el puerto {{port}} en el firewall",
+    "firewall_confirm": "¿Crear reglas de entrada del firewall para el puerto {{port}}? Requiere permisos de administrador.",
+    "firewall_done": "Reglas de firewall añadidas para el puerto {{port}}"
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, Archive, Copy, Ellipsis, FileCode, Loader2, Package, Play, RotateCcw, Settings, Skull, Square, Users, Sliders } from 'lucide-react';
+import { Activity, Archive, Copy, Globe, Ellipsis, FileCode, Loader2, Package, Play, RotateCcw, Settings, Skull, Square, Users, Sliders } from 'lucide-react';
 import type { DaemonAction, GameDriverSummary, InstanceInfo, ServerStatus } from '../../types/daemon';
 import type { TabId } from '../../utils/tabs';
 import { GameLogo } from '../common/GameIcons';
@@ -19,7 +19,8 @@ const TAB_ICONS: Record<TabId, React.ReactNode> = {
   mod_files: <Package className="h-4 w-4" />,
   mods: <FileCode className="h-4 w-4" />,
   properties: <Sliders className="h-4 w-4" />,
-  backups: <Archive className="h-4 w-4" />
+  backups: <Archive className="h-4 w-4" />,
+  network: <Globe className="h-4 w-4" />
 };
 
 const STATUS_BADGE: Record<ServerStatus, BadgeVariant> = {

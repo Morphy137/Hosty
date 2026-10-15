@@ -28,6 +28,7 @@ import { detectJavaEnvironment, resolveJavaExecutable } from './core/Environment
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
 import { BackupManager } from './core/BackupManager';
+import { fetchPublicIp, firewallRuleName, isValidPort, listLanAddresses, openFirewallPort } from './core/NetworkInfo';
 import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
 import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
@@ -394,6 +395,30 @@ app.delete('/api/instances/:id/backups/:name', (req, res, next) => {
       throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
     }
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/system/network', async (_req, res, next) => {
+  try {
+    res.json({ lanAddresses: listLanAddresses(), publicIp: await fetchPublicIp() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Allows inbound traffic for the server port in the Windows firewall (needs administrator rights).
+app.post('/api/instances/:id/firewall', async (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    if (!isValidPort(instance.port)) throw new DaemonError('INVALID_PAYLOAD', 'The server has no valid port.');
+    try {
+      await openFirewallPort(firewallRuleName(instance.name, instance.port), instance.port);
+    } catch (error) {
+      throw new DaemonError('INTERNAL_ERROR', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, port: instance.port });
   } catch (err) {
     next(err);
   }
