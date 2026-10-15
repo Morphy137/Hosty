@@ -94,17 +94,13 @@ export class GameDriverRegistry {
 
   /**
    * Switches a game (bundled or installed) on or off. A disabled game is not registered, so it disappears from
-   * the game list. Throws a readable message for unknown games or when it would leave no game enabled.
+   * the game list; every game may be off. Throws a readable message for unknown games.
    */
   public setPackEnabled(packId: string, enabled: boolean): PackInfo[] {
     if (!this.gamesDir) throw new Error('Game packs are not enabled.');
     const id = packId.toLowerCase();
     const known = this.getPackInfos().some((info) => info.id?.toLowerCase() === id);
     if (!known) throw new Error(`Game "${packId}" is not installed.`);
-    if (!enabled && !this.disabledIds.has(id)) {
-      const othersEnabled = [...this.drivers.keys()].some((driverId) => driverId !== id);
-      if (!othersEnabled) throw new Error('At least one game must stay enabled.');
-    }
     if (enabled) this.disabledIds.delete(id);
     else this.disabledIds.add(id);
     this.writeDisabled();

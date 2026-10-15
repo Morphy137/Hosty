@@ -481,6 +481,8 @@
     "command_sent": "命令已发送"
   },
   "wizard": {
+    "no_games_title": "没有已启用的游戏",
+    "no_games_desc": "在侧边栏的 Game packs 中启用一个游戏即可为它创建服务器。",
     "steps": {
       "origin": "来源",
       "game": "游戏",

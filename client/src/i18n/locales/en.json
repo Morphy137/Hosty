@@ -478,6 +478,8 @@
     "command_sent": "Command sent"
   },
   "wizard": {
+    "no_games_title": "No games enabled",
+    "no_games_desc": "Turn a game on in Game packs (sidebar) to create a server for it.",
     "steps": {
       "origin": "Source",
       "game": "Game",

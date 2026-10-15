@@ -33,6 +33,8 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [installPath, setInstallPath] = useState('');
+  // Toggles are optimistic and only lock their own switch, so the rest of the dialog never flashes.
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Kept in a ref so a new parent callback identity never retriggers the fetch effect.
   const onChangedRef = useRef(onChanged);
@@ -58,6 +60,26 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
     },
     []
   );
+
+  const togglePack = async (packId: string, enabled: boolean) => {
+    if (togglingId) return;
+    setTogglingId(packId);
+    setError(null);
+    setPacks((current) => current.map((pack) => (pack.id === packId ? { ...pack, enabled, loaded: enabled } : pack)));
+    try {
+      const result = await setGamePackEnabled(packId, enabled);
+      setPacks(result.packs);
+      onChangedRef.current();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      // Put the real state back.
+      void fetchGamePacks()
+        .then((result) => setPacks(result.packs))
+        .catch(() => undefined);
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -182,10 +204,11 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                   {pack.id && (pack.loaded || pack.enabled === false) && (
                     <Switch
                       checked={pack.enabled !== false}
+                      busy={togglingId === pack.id}
                       disabled={isBusy}
                       ariaLabel={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
                       title={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
-                      onCheckedChange={(next) => void run(() => setGamePackEnabled(pack.id as string, next), true)}
+                      onCheckedChange={(next) => void togglePack(pack.id as string, next)}
                     />
                   )}
                 </div>

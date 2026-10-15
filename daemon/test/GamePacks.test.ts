@@ -441,15 +441,21 @@ describe('bundled packs', () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
-  it('keeps at least one game enabled and moves the default away from a disabled one', () => {
+  it('lets every game be switched off and moves the default away from a disabled one', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-toggle-last-'));
     const registry = new GameDriverRegistry();
     registry.loadPacks(path.join(root, 'games'));
     registry.setPackEnabled('minecraft', false);
     expect(registry.getDefaultGameId()).not.toBe('minecraft');
     registry.setPackEnabled('hytale', false);
-    expect(() => registry.setPackEnabled('project-zomboid', false)).toThrow(/At least one game/);
-    expect(registry.hasDriver('project-zomboid')).toBe(true);
+    registry.setPackEnabled('project-zomboid', false);
+    expect(registry.listDrivers()).toEqual([]);
+    expect(registry.getDefaultGameId()).toBe('');
+    expect(() => registry.getDriver('minecraft')).toThrow(/No game drivers/);
+
+    // Turning one back on makes it the default again.
+    registry.setPackEnabled('hytale', true);
+    expect(registry.getDefaultGameId()).toBe('hytale');
     fs.rmSync(root, { recursive: true, force: true });
   });
 
