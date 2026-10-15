@@ -1,105 +1,209 @@
 @import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Design tokens. Components use the semantic utilities generated from @theme below
+ * (bg-surface, text-ink, border-hairline, ...). Dark mode only swaps the values here,
+ * so components never need `dark:` colour pairs. This is the only file allowed to hold hex.
+ */
 :root {
-  --ds-primary: #171717;
-  --ds-on-primary: #ffffff;
-  --ds-ink: #171717;
-  --ds-body: #4d4d4d;
-  --ds-mute: #888888;
-  --ds-hairline: #ebebeb;
-  --ds-hairline-strong: #d4d4d4;
-  --ds-canvas: #ffffff;
-  --ds-canvas-soft: #fafafa;
-  --ds-canvas-soft-2: #f5f5f5;
-  --ds-link: #0070f3;
-  --ds-error: #ee0000;
-  --ds-error-soft: #f7d4d6;
-  --ds-warning: #f5a623;
-  --ds-warning-soft: #ffefcf;
+  --canvas: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f5f5f5;
+  --ink: #171717;
+  --ink-hover: #333333;
+  --on-ink: #ffffff;
+  --body: #4d4d4d;
+  --soft: #666666;
+  --mute: #888888;
+  --hairline: #ebebeb;
+  --hairline-strong: #d4d4d4;
+  --accent: #0070f3;
+  --accent-fg: #0070f3;
+  --danger: #ee0000;
+  --danger-fg: #ee0000;
+  --danger-soft: #fff0f0;
+  --success: #50e3c2;
+  --success-fg: #0f8c70;
+  --success-soft: #e6fff7;
+  --warning: #f5a623;
+  --warning-fg: #c2410c;
+  --warning-soft: #fff8eb;
+  --info-soft: #e6f7ff;
+  --on-dark: #e5e5e5;
+  --console: #171717;
+  --scrollbar: #e0e0e0;
+  --scrollbar-hover: #a1a1a1;
+  --shadow-color: rgba(0, 0, 0, 0.06);
 }
 
 .dark {
-  --ds-primary: #ededed;
-  --ds-on-primary: #000000;
-  --ds-ink: #ededed;
-  --ds-body: #a1a1a1;
-  --ds-mute: #707070;
-  --ds-hairline: #262626;
-  --ds-hairline-strong: #383838;
-  --ds-canvas: #0d0d0d;
-  --ds-canvas-soft: #050505;
-  --ds-canvas-soft-2: #141414;
-  --ds-link: #0070f3;
-  --ds-error: #ee0000;
-  --ds-error-soft: #381215;
-  --ds-warning: #f5a623;
-  --ds-warning-soft: #3b280c;
+  --canvas: #050505;
+  --surface: #0d0d0d;
+  --surface-2: #141414;
+  --surface-3: #1f1f1f;
+  --ink: #ededed;
+  --ink-hover: #ffffff;
+  --on-ink: #171717;
+  --body: #a1a1a1;
+  --soft: #a1a1a1;
+  --mute: #a1a1a1;
+  --hairline: #262626;
+  --hairline-strong: #333333;
+  --accent: #0070f3;
+  --accent-fg: #3291ff;
+  --danger: #ee0000;
+  --danger-fg: #ff6b6b;
+  --danger-soft: #381215;
+  --success: #50e3c2;
+  --success-fg: #50e3c2;
+  --success-soft: #062d22;
+  --warning: #f5a623;
+  --warning-fg: #fdba74;
+  --warning-soft: #3b280c;
+  --info-soft: #071f38;
+  --on-dark: #e5e5e5;
+  --console: #0a0a0a;
+  --scrollbar: #2a2a2a;
+  --scrollbar-hover: #404040;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-on-ink: var(--on-ink);
+  --color-body: var(--body);
+  --color-soft: var(--soft);
+  --color-mute: var(--mute);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-soft: var(--warning-soft);
+  --color-info-soft: var(--info-soft);
+  --color-on-dark: var(--on-dark);
+  --color-console: var(--console);
+
+  --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --shadow-card: 0 1px 1px var(--shadow-color);
+  --shadow-pop: 0 8px 24px var(--shadow-color), 0 2px 6px var(--shadow-color);
+
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root {
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
-    background-color: var(--ds-canvas-soft);
-    color: var(--ds-ink);
-    font-family: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
-    font-feature-settings: "ss01", "ss02";
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color var(--duration-base) ease, color var(--duration-base) ease;
   }
 
-  code, pre, .font-mono {
-    font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  code,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 }
 
-/* Level 2 — Subtle Drop + Inset Hairline */
 .geist-card {
-  background-color: var(--ds-canvas);
-  border: 1px solid var(--ds-hairline);
-  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.04);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
   border-radius: 8px;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.dark .geist-card {
-  background-color: #0d0d0d;
-  border-color: #262626;
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-/* Level 3 — Soft Stack */
 .geist-card-elevated {
-  background-color: var(--ds-canvas);
-  border: 1px solid var(--ds-hairline);
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06);
+  background-color: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-pop);
   border-radius: 8px;
 }
 
-.dark .geist-card-elevated {
-  background-color: #0d0d0d;
-  border-color: #262626;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+/* Entrance helpers used by existing markup (`animate-in fade-in ...`). */
+@keyframes hosty-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-y, 0)) scale(var(--enter-scale, 1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-in {
+  animation: hosty-enter var(--duration-base) var(--ease-soft) both;
+}
+.slide-in-from-bottom-4 {
+  --enter-y: 1rem;
+}
+.slide-in-from-top-2 {
+  --enter-y: -0.5rem;
+}
+.zoom-in-95 {
+  --enter-scale: 0.95;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e0e0e0;
+  background: var(--scrollbar);
   border-radius: 9999px;
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
-}
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: var(--scrollbar-hover);
 }

@@ -23,6 +23,8 @@ export interface DaemonSocketState {
   provisionLogs: string[];
   /** Latest installation job reported by the daemon (progress, phase, outcome). */
   provisionJob: ProvisionJobState | null;
+  /** Latest status pushed by the daemon for each instance id. */
+  instanceStatuses: Record<string, ServerStatus>;
   lastError: DaemonErrorPayload | null;
 }
 
@@ -40,6 +42,7 @@ export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   logs: [],
   provisionLogs: [],
   provisionJob: null,
+  instanceStatuses: {},
   lastError: null
 };
 
@@ -99,7 +102,9 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
     case 'ERROR':
       return { ...state, lastError: message.payload };
     case 'INSTANCE_STATUS':
-      return state;
+      return isServerStatus(message.payload.status)
+        ? { ...state, instanceStatuses: { ...state.instanceStatuses, [message.payload.instanceId]: message.payload.status } }
+        : state;
     case 'INVENTORY_DATA':
       return { ...state, inventory: message.payload };
   }

@@ -65,6 +65,8 @@ const CODE_LIKE = /[()?`=;]|&&|\|\||=>/;
 function isTranslatable(text: string): boolean {
   const trimmed = text.replace(/&[a-z]+;/gi, ' ').trim();
   if (CODE_LIKE.test(trimmed)) return false;
+  // Object literals holding JSX (`}, key: <Icon />`) look like text between two tags.
+  if (/^[,;}]/.test(trimmed) || /^\w+:\s*$/.test(trimmed)) return false;
   // Technical samples (Windows paths, JVM flags) are the same in every language.
   if (/^[A-Za-z]:\\/.test(trimmed) || trimmed.startsWith('-X')) return false;
   if (!/[A-Za-z]{2,}/.test(trimmed)) return false;

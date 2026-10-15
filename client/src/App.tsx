@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDaemonSocket } from './hooks/useDaemonSocket';
 import { useDaemonHealth } from './hooks/useDaemonHealth';
 import { useInstances } from './hooks/useInstances';
@@ -14,7 +14,14 @@ import {
 } from './api/daemonApi';
 import type { DaemonErrorPayload, ServerLoader, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
-import { Header, type TabId } from './components/layout/Header';
+import { TitleBar } from './components/layout/TitleBar';
+import { Sidebar } from './components/layout/Sidebar';
+import { ServerHeader } from './components/layout/ServerHeader';
+import { Skeleton } from './components/ui/Skeleton';
+import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
+import { useGames } from './hooks/useGames';
+import { useAppVersion } from './hooks/useAppVersion';
+import { isTauriRuntime } from './config/daemon';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { PlayersTab } from './components/tabs/PlayersTab';
@@ -25,7 +32,6 @@ import { CreateServerModal } from './components/modals/CreateServerModal';
 import { ImportServerModal } from './components/modals/ImportServerModal';
 import { EditServerModal } from './components/modals/EditServerModal';
 import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
-import { WelcomeModal } from './components/modals/WelcomeModal';
 import { WelcomeEmptyState } from './components/common/WelcomeEmptyState';
 import { useAppUpdater } from './hooks/useAppUpdater';
 import { UpdateBanner } from './components/common/UpdateBanner';
@@ -38,7 +44,6 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isWelcomeModalDismissed, setIsWelcomeModalDismissed] = useState(false);
   const [inspectingPlayer, setInspectingPlayer] = useState<PlayerState | null>(null);
 
   const {
@@ -50,6 +55,7 @@ export default function App() {
     logs,
     provisionLogs,
     provisionJob,
+    instanceStatuses,
     lastError,
     connectionState,
     sendAction,
@@ -70,8 +76,19 @@ export default function App() {
 
   const instances = useInstances(connectionState, handleError);
   const hasNoServers = !instances.isLoading && instances.instances.length === 0;
-  const isWelcomeModalOpen =
-    hasNoServers && !isWelcomeModalDismissed && !isCreateModalOpen && !isImportModalOpen;
+
+  // Servers exist but none is active (fresh registry): pick the first so the panel is never empty.
+  const { instances: instanceList, activeInstance, isLoading: isLoadingInstances, selectInstance } = instances;
+  useEffect(() => {
+    if (!isLoadingInstances && instanceList.length > 0 && !activeInstance) {
+      void selectInstance(instanceList[0].id);
+    }
+  }, [activeInstance, instanceList, isLoadingInstances, selectInstance]);
+  const games = useGames(connectionState);
+  const appVersion = useAppVersion();
+  const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
+  const tabs = availableTabs(activeGame);
+  const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
   const serverProperties = useServerProperties(connectionState, handleError);
   const modConfigs = useModConfigs(connectionState, handleError);
@@ -200,93 +217,121 @@ export default function App() {
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#fafafa] dark:bg-[#050505] text-[#171717] dark:text-[#ededed] select-none overflow-hidden transition-colors">
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        status={status}
-        mockEnabled={import.meta.env.DEV && (health?.mockEnabled ?? false)}
-        onSendAction={sendAction}
-        onRestart={handleRestartServer}
-        instances={instances.instances}
-        activeInstanceId={instances.activeId}
-        onSelectInstance={instances.selectInstance}
-        onOpenCreateModal={() => setIsCreateModalOpen(true)}
-        onOpenImportModal={() => setIsImportModalOpen(true)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+    <div className="h-screen w-screen flex flex-col bg-canvas text-ink select-none overflow-hidden transition-colors">
+      {isTauriRuntime() && <TitleBar />}
 
-      <ErrorAlert error={activeError} onDismiss={handleDismissError} />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar
+          instances={instances.instances}
+          activeInstanceId={instances.activeId}
+          statuses={instanceStatuses}
+          onSelectInstance={(id) => {
+            void instances.selectInstance(id);
+          }}
+          onCreate={() => setIsCreateModalOpen(true)}
+          onImport={() => setIsImportModalOpen(true)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          appVersion={appVersion}
+          onCheckUpdates={isTauriRuntime() ? updater.checkForUpdates : undefined}
+          isCheckingUpdates={updater.isChecking}
+          onMock={import.meta.env.DEV && health?.mockEnabled ? () => sendAction('MOCK') : undefined}
+        />
 
-      <main className="flex-1 overflow-hidden">
-        {hasNoServers ? (
-          <WelcomeEmptyState
-            onCreateServer={() => setIsCreateModalOpen(true)}
-            onImportServer={() => setIsImportModalOpen(true)}
-          />
-        ) : (
-          <div className="max-w-[1400px] mx-auto h-full p-6 flex flex-col gap-6">
-            {activeTab === 'overview' && (
-              <OverviewTab
-                metrics={metrics}
-                players={players}
-                logs={logs}
-                instance={instances.activeInstance}
-                status={status}
-                onSendCommand={handleSendCommand}
-                onSendAction={sendAction}
-                onOpenEditModal={() => setIsEditModalOpen(true)}
-                onRestart={handleRestartServer}
-                onInspectInventory={handleInspectInventory}
-              />
+        <div className="flex min-w-0 flex-1 flex-col">
+          {instances.activeInstance && !hasNoServers && (
+            <ServerHeader
+              instance={instances.activeInstance}
+              status={status}
+              game={activeGame}
+              tabs={tabs}
+              activeTab={currentTab}
+              onTabChange={setActiveTab}
+              onSendAction={sendAction}
+              onRestart={handleRestartServer}
+              onEdit={() => setIsEditModalOpen(true)}
+            />
+          )}
+
+          <ErrorAlert error={activeError} onDismiss={handleDismissError} />
+
+          <main className="flex-1 overflow-hidden">
+            {hasNoServers || !instances.activeInstance ? (
+              instances.isLoading ? (
+                <div className="space-y-4 p-6">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                </div>
+              ) : (
+                <WelcomeEmptyState
+                  onCreateServer={() => setIsCreateModalOpen(true)}
+                  onImportServer={() => setIsImportModalOpen(true)}
+                />
+              )
+            ) : (
+              <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-6 p-6">
+                {currentTab === 'overview' && (
+                  <OverviewTab
+                    metrics={metrics}
+                    players={players}
+                    logs={logs}
+                    instance={instances.activeInstance}
+                    status={status}
+                    onSendCommand={handleSendCommand}
+                    onSendAction={sendAction}
+                    onOpenEditModal={() => setIsEditModalOpen(true)}
+                    onRestart={handleRestartServer}
+                    onInspectInventory={handleInspectInventory}
+                  />
+                )}
+
+                {currentTab === 'players' && (
+                  <PlayersTab
+                    players={players}
+                    onSendCommand={handleSendCommand}
+                    onSendAction={sendAction}
+                    onInspectInventory={handleInspectInventory}
+                  />
+                )}
+
+                {currentTab === 'mod_files' && (
+                  <ModFilesTab
+                    files={modFiles.files}
+                    filter={modFiles.filter}
+                    onFilterChange={modFiles.setFilter}
+                    onToggleMod={modFiles.toggleMod}
+                    onDeleteMod={modFiles.deleteMod}
+                    onOpenConfigTab={() => setActiveTab('mods')}
+                  />
+                )}
+
+                {currentTab === 'mods' && (
+                  <ModsTab
+                    files={modConfigs.files}
+                    selectedFile={modConfigs.selectedFile}
+                    entries={modConfigs.entries}
+                    filter={modConfigs.filter}
+                    onFilterChange={modConfigs.setFilter}
+                    onSelectFile={modConfigs.selectFile}
+                    onUpdateEntry={modConfigs.updateEntry}
+                    onSave={modConfigs.save}
+                  />
+                )}
+
+                {currentTab === 'properties' && (
+                  <PropertiesTab
+                    entries={serverProperties.entries}
+                    filter={serverProperties.filter}
+                    onFilterChange={serverProperties.setFilter}
+                    onUpdateEntry={serverProperties.updateEntry}
+                    onSave={serverProperties.save}
+                  />
+                )}
+              </div>
             )}
-
-            {activeTab === 'players' && (
-              <PlayersTab
-                players={players}
-                onSendCommand={handleSendCommand}
-                onSendAction={sendAction}
-                onInspectInventory={handleInspectInventory}
-              />
-            )}
-
-            {activeTab === 'mod_files' && (
-              <ModFilesTab
-                files={modFiles.files}
-                filter={modFiles.filter}
-                onFilterChange={modFiles.setFilter}
-                onToggleMod={modFiles.toggleMod}
-                onDeleteMod={modFiles.deleteMod}
-                onOpenConfigTab={() => setActiveTab('mods')}
-              />
-            )}
-
-            {activeTab === 'mods' && (
-              <ModsTab
-                files={modConfigs.files}
-                selectedFile={modConfigs.selectedFile}
-                entries={modConfigs.entries}
-                filter={modConfigs.filter}
-                onFilterChange={modConfigs.setFilter}
-                onSelectFile={modConfigs.selectFile}
-                onUpdateEntry={modConfigs.updateEntry}
-                onSave={modConfigs.save}
-              />
-            )}
-
-            {activeTab === 'properties' && (
-              <PropertiesTab
-                entries={serverProperties.entries}
-                filter={serverProperties.filter}
-                onFilterChange={serverProperties.setFilter}
-                onUpdateEntry={serverProperties.updateEntry}
-                onSave={serverProperties.save}
-              />
-            )}
-          </div>
-        )}
-      </main>
+          </main>
+        </div>
+      </div>
 
       {/* Creation, Import, and Edit Modals */}
       <CreateServerModal
@@ -312,21 +357,6 @@ export default function App() {
         serverStatus={status}
         onSaveSettings={instances.updateSettings}
         onRefreshInstances={instances.refresh}
-      />
-
-      {/* Onboarding Welcome Choice Modal */}
-      <WelcomeModal
-        isOpen={isWelcomeModalOpen}
-        onClose={() => setIsWelcomeModalDismissed(true)}
-        onCreateServer={() => {
-          setIsWelcomeModalDismissed(true);
-          setIsCreateModalOpen(true);
-        }}
-        onImportServer={() => {
-          setIsWelcomeModalDismissed(true);
-          setIsImportModalOpen(true);
-        }}
-        canDismiss={true}
       />
 
       {/* Auto-updater Notification Banner */}

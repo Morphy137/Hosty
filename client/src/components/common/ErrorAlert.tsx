@@ -36,15 +36,15 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
 
   return (
     <div className="fixed top-5 right-6 z-50 max-w-md w-[calc(100vw-3rem)] pointer-events-auto animate-in slide-in-from-top-2 fade-in duration-200">
-      <div className="rounded-[8px] bg-white dark:bg-[#141414] border border-[#f7d4d6] dark:border-[#ee0000]/40 p-3.5 shadow-xl flex items-start justify-between gap-3 text-[13px] text-[#ee0000] dark:text-[#ff6b6b]">
+      <div className="rounded-[8px] bg-surface border border-danger-soft dark:border-danger/40 p-3.5 shadow-xl flex items-start justify-between gap-3 text-[13px] text-danger-fg">
         <div className="flex items-start gap-2.5 min-w-0">
-          <AlertCircle className="w-4 h-4 shrink-0 text-[#ee0000] mt-0.5" />
+          <AlertCircle className="w-4 h-4 shrink-0 text-danger-fg mt-0.5" />
           <div className="space-y-1.5 min-w-0">
             <div>
-              <span className="inline-block font-mono text-[11px] font-semibold uppercase bg-[#fff0f0] dark:bg-[#381215] px-1.5 py-0.5 rounded-[4px] border border-[#f7d4d6] dark:border-[#ee0000]/30 mr-1.5">
+              <span className="inline-block font-mono text-[11px] font-semibold uppercase bg-danger-soft px-1.5 py-0.5 rounded-[4px] border border-danger-soft dark:border-danger/30 mr-1.5">
                 {error.code}
               </span>
-              <span className="text-[#171717] dark:text-[#ededed] leading-snug break-words">
+              <span className="text-ink leading-snug break-words">
                 {translatedMessage}
               </span>
             </div>
@@ -55,7 +55,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
                   href="https://adoptium.net/temurin/releases/?version=21"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-[4px] bg-[#ee0000] text-white hover:bg-[#d00000] transition no-underline"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-[4px] bg-danger text-white hover:bg-danger transition no-underline"
                 >
                   <ExternalLink className="w-3 h-3" />
                   {t('environment.java_download_btn')}
@@ -68,7 +68,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
         <button
           type="button"
           onClick={onDismiss}
-          className="p-1 rounded-[4px] hover:bg-[#fff0f0] dark:hover:bg-[#262626] text-[#888888] hover:text-[#ee0000] dark:hover:text-white transition cursor-pointer shrink-0 ml-1"
+          className="p-1 rounded-[4px] hover:bg-danger-soft text-mute hover:text-danger-fg transition cursor-pointer shrink-0 ml-1"
           aria-label={t('errors.dismiss')}
         >
           <X className="w-4 h-4" />

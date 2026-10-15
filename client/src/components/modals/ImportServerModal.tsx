@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, FolderInput, Folder } from 'lucide-react';
+import { FolderInput, FolderOpen } from 'lucide-react';
+import { isTauriRuntime } from '../../config/daemon';
+import { Button } from '../ui/Button';
+import { Dialog } from '../ui/Dialog';
+import { Input } from '../ui/Input';
 
 interface ImportServerModalProps {
   isOpen: boolean;
@@ -8,96 +12,107 @@ interface ImportServerModalProps {
   onImport: (folderPath: string, name?: string) => Promise<void>;
 }
 
-export const ImportServerModal: React.FC<ImportServerModalProps> = ({
-  isOpen,
-  onClose,
-  onImport
-}) => {
+/** Opens the native folder picker (desktop shell only). Returns null when cancelled or unavailable. */
+async function pickFolder(title: string): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const selected = await open({ directory: true, multiple: false, title });
+  return typeof selected === 'string' ? selected : null;
+}
+
+export const ImportServerModal: React.FC<ImportServerModalProps> = ({ isOpen, onClose, onImport }) => {
   const { t } = useTranslation();
   const [folderPath, setFolderPath] = useState('');
   const [serverName, setServerName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
+  const handleBrowse = async () => {
+    try {
+      const selected = await pickFolder(t('import_server.picker_title'));
+      if (selected) setFolderPath(selected);
+    } catch {
+      // The picker is a convenience; the path can still be typed.
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     const trimmedPath = folderPath.trim();
     if (!trimmedPath) return;
 
     setIsSubmitting(true);
     try {
       await onImport(trimmedPath, serverName.trim() || undefined);
-      setIsSubmitting(false);
+      setFolderPath('');
+      setServerName('');
       onClose();
     } catch {
+      // The error is surfaced by the caller; keep the form open for another try.
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-white dark:bg-[#111111] border border-[#ebebeb] dark:border-[#262626] max-w-lg w-full p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between border-b border-[#ebebeb] dark:border-[#262626] pb-4">
-          <div className="flex items-center gap-2.5">
-            <FolderInput className="w-5 h-5 text-[#171717] dark:text-[#ededed]" />
-            <h2 className="text-[17px] font-semibold text-[#171717] dark:text-[#ededed] tracking-[-0.3px]">
-              {t('import_server.modal_title')}
-            </h2>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      title={t('import_server.modal_title')}
+      dismissible={!isSubmitting}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="font-mono text-[11px] uppercase text-mute" htmlFor="import-folder">
+            {t('import_server.path_label')}
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="import-folder"
+              type="text"
+              value={folderPath}
+              onChange={(event) => setFolderPath(event.target.value)}
+              placeholder="C:\Servers\MyMinecraftServer"
+              required
+              className="font-mono text-[12px]"
+            />
+            {isTauriRuntime() && (
+              <Button
+                variant="secondary"
+                onClick={handleBrowse}
+                leadingIcon={<FolderOpen className="h-3.5 w-3.5" />}
+              >
+                {t('import_server.browse')}
+              </Button>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#888888] hover:text-[#171717] dark:hover:text-[#ededed] transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <p className="text-[12px] text-mute">{t('import_server.path_hint')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
-              {t('import_server.path_label')}
-            </label>
-            <div className="relative">
-              <Folder className="w-4 h-4 text-[#888888] dark:text-[#a1a1a1] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={folderPath}
-                onChange={(e) => setFolderPath(e.target.value)}
-                placeholder="C:\Servers\MyMinecraftServer"
-                required
-                className="w-full h-9 pl-9 pr-3 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
-              />
-            </div>
-            <p className="text-[12px] text-[#888888] dark:text-[#a1a1a1]">
-              {t('import_server.path_hint')}
-            </p>
-          </div>
+        <div className="space-y-1.5">
+          <label className="font-mono text-[11px] uppercase text-mute" htmlFor="import-name">
+            {t('import_server.name_label')}
+          </label>
+          <Input
+            id="import-name"
+            type="text"
+            value={serverName}
+            onChange={(event) => setServerName(event.target.value)}
+            placeholder={t('import_server.display_name_placeholder')}
+          />
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
-              {t('import_server.name_label')}
-            </label>
-            <input
-              type="text"
-              value={serverName}
-              onChange={(e) => setServerName(e.target.value)}
-              placeholder={t('import_server.display_name_placeholder')}
-              className="w-full h-9 px-3 rounded-[6px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting || !folderPath.trim()}
-            className="w-full h-10 rounded-[6px] bg-[#171717] hover:bg-[#333333] dark:bg-[#ededed] dark:hover:bg-[#ffffff] text-white dark:text-[#171717] disabled:opacity-40 text-[14px] font-medium flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs"
-          >
-            <FolderInput className="w-4 h-4" />
-            {isSubmitting ? t('import_server.submitting') : t('import_server.submit_button')}
-          </button>
-        </form>
-      </div>
-    </div>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          className="w-full"
+          loading={isSubmitting}
+          disabled={!folderPath.trim()}
+          leadingIcon={<FolderInput className="h-4 w-4" />}
+        >
+          {isSubmitting ? t('import_server.submitting') : t('import_server.submit_button')}
+        </Button>
+      </form>
+    </Dialog>
   );
 };

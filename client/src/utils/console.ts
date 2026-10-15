@@ -1,8 +1,8 @@
 export const CONSOLE_LINE_CLASSES = {
-  warning: 'text-[#f5a623]',
-  error: 'text-[#ee0000]',
-  command: 'text-[#50e3c2]',
-  default: 'text-[#e5e5e5]'
+  warning: 'text-warning',
+  error: 'text-danger-fg',
+  command: 'text-success-fg',
+  default: 'text-on-dark'
 } as const;
 
 const COMMAND_ECHO_PREFIX = '>';
