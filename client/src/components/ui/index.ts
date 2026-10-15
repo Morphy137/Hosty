@@ -22,3 +22,4 @@ export type { StepItem } from './Stepper';
 export { Slider } from './Slider';
 export type { SliderVariant } from './Slider';
 export { Dropzone } from './Dropzone';
+export { Switch } from './Switch';

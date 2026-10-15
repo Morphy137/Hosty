@@ -134,6 +134,11 @@ export async function isPortInUse(port: number): Promise<boolean> {
   return response.inUse;
 }
 
+/** Shows the server folder in the file manager of the machine running the daemon. */
+export function openInstanceFolder(id: string): Promise<{ ok: boolean; dir: string }> {
+  return postJson<{ ok: boolean; dir: string }>(`/api/instances/${encodeURIComponent(id)}/open-folder`, {});
+}
+
 /** Identifies the game and loader of an existing server folder. */
 export function inspectFolder(folderPath: string, gameId?: string): Promise<FolderInspection> {
   return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath, gameId });
@@ -174,6 +179,16 @@ export function installGamePack(sourcePath: string): Promise<{ ok: boolean; game
   return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/install', {
     path: sourcePath
   });
+}
+
+export function setGamePackEnabled(
+  packId: string,
+  enabled: boolean
+): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>(
+    `/api/game-packs/${encodeURIComponent(packId)}/enabled`,
+    { enabled }
+  );
 }
 
 export function uninstallGamePack(packId: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {

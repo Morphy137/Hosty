@@ -27,6 +27,7 @@ import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
+import { openFolder } from './core/FolderOpener';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
 import net from 'net';
 
@@ -419,10 +420,13 @@ app.delete('/api/instances/:id', (req, res, next) => {
 });
 
 // ---- Mod catalog: sources are declared by the game driver, the core stays game-agnostic ----------
+const modSourcesOf = (gameId: string) =>
+  (driverRegistry.getDriver(gameId).summary.modSources ?? []).filter((source) => ModCatalog.supports(source));
+
 const resolveModSource = (instanceId: string, sourceId: unknown) => {
   const instance = instanceManager.getInstance(instanceId);
   if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${instanceId}" not found.`);
-  const sources = driverRegistry.getDriver(instance.gameId).summary.modSources ?? [];
+  const sources = modSourcesOf(instance.gameId);
   const source = sources.find((candidate) => candidate.id === sourceId) ?? sources[0];
   if (!source) throw new DaemonError('INVALID_PAYLOAD', 'This game has no mod catalog.');
   return { instance, source, sources };
@@ -432,7 +436,7 @@ app.get('/api/instances/:id/mods/sources', (req, res, next) => {
   try {
     const instance = instanceManager.getInstance(req.params.id);
     if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
-    res.json({ sources: driverRegistry.getDriver(instance.gameId).summary.modSources ?? [] });
+    res.json({ sources: modSourcesOf(instance.gameId) });
   } catch (err) {
     next(err);
   }
@@ -526,6 +530,21 @@ app.post('/api/instances/:id/mods/install', async (req, res, next) => {
     const { instance, source } = resolveModSource(req.params.id, sourceId);
     const installed = await ModCatalog.install(source, modContextOf(instance), projectId, versionId);
     res.json({ ok: true, ...installed, restartRequired: registry.getSupervisor(instance.id)?.isRunning() ?? false });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/open-folder', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    try {
+      openFolder(instance.dir);
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, dir: instance.dir });
   } catch (err) {
     next(err);
   }
@@ -931,6 +950,28 @@ app.post('/api/game-packs/install', (req, res, next) => {
       res.json({ ok: true, gamesDir: config.gamesDir, packs });
     } catch (error) {
       throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/game-packs/:packId/enabled', (req, res, next) => {
+  try {
+    const packId = req.params.packId;
+    const { enabled } = req.body as { enabled?: unknown };
+    if (typeof enabled !== 'boolean') throw new DaemonError('INVALID_PAYLOAD', '"enabled" must be a boolean.');
+    if (!enabled) {
+      const inUse = instanceManager.listInstances().some((instance) => instance.gameId.toLowerCase() === packId.toLowerCase());
+      if (inUse) {
+        throw new DaemonError('SERVER_RUNNING', `Remove the "${packId}" servers before disabling this game.`);
+      }
+    }
+    try {
+      const packs = driverRegistry.setPackEnabled(packId, enabled);
+      res.json({ ok: true, gamesDir: config.gamesDir, packs });
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
     }
   } catch (err) {
     next(err);

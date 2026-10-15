@@ -158,7 +158,14 @@ const toVersionInfo = (version: ModrinthVersion): ModVersionInfo => {
 
 const facetsCache = new Map<string, { at: number; value: ModFacets }>();
 
+/** API dialects this module speaks. A pack declaring any other `type` gets no catalog instead of wrong requests. */
+export const MOD_SOURCE_DIALECTS: ReadonlyArray<ModSourceSummary['type']> = ['modrinth'];
+
 export class ModCatalog {
+  public static supports(source: { type?: string }): boolean {
+    return (MOD_SOURCE_DIALECTS as readonly string[]).includes(source.type ?? '');
+  }
+
   /** Sort options, categories, environments, game versions and loaders the catalog can filter by. */
   public static async getFacets(source: ModSourceSummary): Promise<ModFacets> {
     const cached = facetsCache.get(source.baseUrl);

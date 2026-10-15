@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import type { IGameDriver, GameDriverSummary } from './IGameDriver';
 import type { GameManifest } from '../gamepacks/manifest';
@@ -6,6 +7,8 @@ import { PackLoader, loadBundledPacks, type PackInfo } from '../gamepacks/PackLo
 // Bundled single-file builds (Node SEA) have no meaningful __dirname; they pass the folder explicitly.
 const moduleDir = typeof __dirname === 'string' ? __dirname : process.cwd();
 const DEFAULT_BUNDLED_GAMES_DIR = path.resolve(moduleDir, '../../../assets/games');
+/** Ids of the games the user switched off (bundled or installed), kept next to the user packs. */
+export const DISABLED_FILE = '.disabled.json';
 
 export class GameDriverRegistry {
   private readonly drivers = new Map<string, IGameDriver>();
@@ -14,6 +17,8 @@ export class GameDriverRegistry {
   private bundledDir = '';
   private packInfos: PackInfo[] = [];
   private loader: PackLoader | null = null;
+  private gamesDir = '';
+  private disabledIds = new Set<string>();
   /** The bundled pack flagged `default` (else the first bundled one). */
   private defaultDriverId = '';
 
@@ -33,8 +38,17 @@ export class GameDriverRegistry {
     this.defaultDriverId = '';
     for (const { info, driver } of loadBundledPacks(resolved)) {
       if (driver && info.id) {
+        const id = info.id.toLowerCase();
+        // Disabled built-ins still reserve their id so no pack can take it over.
+        this.builtinIds.add(id);
+        if (this.disabledIds.has(id)) {
+          info.enabled = false;
+          info.loaded = false;
+          this.bundledInfos.push(info);
+          continue;
+        }
         this.register(driver, true);
-        firstId = firstId || info.id.toLowerCase();
+        firstId = firstId || id;
         const manifest = this.getManifest(info.id);
         if (manifest?.default && !this.defaultDriverId) this.defaultDriverId = info.id.toLowerCase();
       }
@@ -56,9 +70,50 @@ export class GameDriverRegistry {
 
   /** Loads user game packs from `gamesDir`; built-in drivers can never be replaced by a pack. */
   public loadPacks(gamesDir: string, bundledDir?: string): PackInfo[] {
-    if (bundledDir && path.resolve(bundledDir) !== this.bundledDir) this.loadBundled(bundledDir);
+    this.gamesDir = path.resolve(gamesDir);
+    this.disabledIds = this.readDisabled();
+    // Always reloaded: the disabled list lives in the games folder, unknown until now.
+    this.loadBundled(bundledDir ?? this.bundledDir);
     this.loader = new PackLoader(gamesDir);
     return this.reloadPacks();
+  }
+
+  private readDisabled(): Set<string> {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(path.join(this.gamesDir, DISABLED_FILE), 'utf-8')) as unknown;
+      return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string').map((id) => id.toLowerCase()) : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private writeDisabled(): void {
+    fs.mkdirSync(this.gamesDir, { recursive: true });
+    fs.writeFileSync(path.join(this.gamesDir, DISABLED_FILE), JSON.stringify([...this.disabledIds].sort(), null, 2), 'utf-8');
+  }
+
+  /**
+   * Switches a game (bundled or installed) on or off. A disabled game is not registered, so it disappears from
+   * the game list. Throws a readable message for unknown games or when it would leave no game enabled.
+   */
+  public setPackEnabled(packId: string, enabled: boolean): PackInfo[] {
+    if (!this.gamesDir) throw new Error('Game packs are not enabled.');
+    const id = packId.toLowerCase();
+    const known = this.getPackInfos().some((info) => info.id?.toLowerCase() === id);
+    if (!known) throw new Error(`Game "${packId}" is not installed.`);
+    if (!enabled && !this.disabledIds.has(id)) {
+      const othersEnabled = [...this.drivers.keys()].some((driverId) => driverId !== id);
+      if (!othersEnabled) throw new Error('At least one game must stay enabled.');
+    }
+    if (enabled) this.disabledIds.delete(id);
+    else this.disabledIds.add(id);
+    this.writeDisabled();
+    this.loadBundled(this.bundledDir);
+    return this.reloadAll();
+  }
+
+  public isPackEnabled(packId: string): boolean {
+    return !this.disabledIds.has(packId.toLowerCase());
   }
 
   public reloadPacks(): PackInfo[] {
@@ -74,6 +129,9 @@ export class GameDriverRegistry {
         if (this.builtinIds.has(info.id.toLowerCase())) {
           info.loaded = false;
           info.errors.push(`"${info.id}" is a built-in game and cannot be replaced by a pack`);
+        } else if (this.disabledIds.has(info.id.toLowerCase())) {
+          info.enabled = false;
+          info.loaded = false;
         } else {
           this.register(driver);
         }
@@ -109,7 +167,10 @@ export class GameDriverRegistry {
   public uninstallPack(packId: string): boolean {
     if (!this.loader || this.builtinIds.has(packId.toLowerCase())) return false;
     const ok = this.loader.uninstall(packId);
-    if (ok) this.reloadPacks();
+    if (ok) {
+      if (this.disabledIds.delete(packId.toLowerCase())) this.writeDisabled();
+      this.reloadPacks();
+    }
     return ok;
   }
 

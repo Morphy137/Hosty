@@ -405,6 +405,45 @@ describe('bundled packs', () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
+  it('switches bundled and user games off and on, remembering the choice', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-toggle-'));
+    const games = path.join(root, 'games');
+    fs.mkdirSync(path.join(games, 'valheim'), { recursive: true });
+    fs.writeFileSync(path.join(games, 'valheim', 'hosty-game.json'), JSON.stringify(validManifest));
+
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(games);
+    registry.setPackEnabled('hytale', false);
+    const infos = registry.setPackEnabled('valheim', false);
+    expect(registry.hasDriver('hytale')).toBe(false);
+    expect(registry.hasDriver('valheim')).toBe(false);
+    expect(registry.listDrivers().map((game) => game.id)).not.toContain('hytale');
+    expect(infos.find((pack) => pack.id === 'hytale')).toMatchObject({ enabled: false, loaded: false, errors: [] });
+
+    // Persisted in the games folder and applied on the next start.
+    const restarted = new GameDriverRegistry();
+    restarted.loadPacks(games);
+    expect(restarted.hasDriver('hytale')).toBe(false);
+    expect(restarted.hasDriver('valheim')).toBe(false);
+
+    restarted.setPackEnabled('hytale', true);
+    expect(restarted.hasDriver('hytale')).toBe(true);
+    expect(() => restarted.setPackEnabled('unknown-game', false)).toThrow(/not installed/);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('keeps at least one game enabled and moves the default away from a disabled one', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-toggle-last-'));
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(path.join(root, 'games'));
+    registry.setPackEnabled('minecraft', false);
+    expect(registry.getDefaultGameId()).not.toBe('minecraft');
+    registry.setPackEnabled('hytale', false);
+    expect(() => registry.setPackEnabled('project-zomboid', false)).toThrow(/At least one game/);
+    expect(registry.hasDriver('project-zomboid')).toBe(true);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
   it('rejects the bundled-only `extension` field in user packs', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-ext-'));
     const pack = path.join(root, 'games', 'sneaky');

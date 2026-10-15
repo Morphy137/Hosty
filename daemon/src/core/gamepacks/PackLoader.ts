@@ -22,6 +22,8 @@ export interface PackInfo {
   /** Code packs only run after the user approved this exact `driver.js` (by hash). */
   trusted: boolean;
   loaded: boolean;
+  /** False when the user switched the game off: it is not registered and cannot be used for new servers. */
+  enabled: boolean;
   errors: string[];
 }
 
@@ -154,6 +156,7 @@ export class PackLoader {
         hasCode: fs.existsSync(path.join(dir, DRIVER_FILE)),
         trusted: false,
         loaded: false,
+        enabled: true,
         errors: []
       };
 
@@ -251,6 +254,7 @@ export function loadBundledPacks(bundledDir: string): Array<{ info: PackInfo; dr
       hasCode: false,
       trusted: true,
       loaded: false,
+      enabled: true,
       errors: []
     };
 

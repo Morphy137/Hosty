@@ -25,6 +25,14 @@ describe('isAllowedDownloadHost', () => {
   });
 });
 
+describe('ModCatalog.supports', () => {
+  it('only accepts the API dialects it speaks', () => {
+    expect(ModCatalog.supports({ type: 'modrinth' })).toBe(true);
+    expect(ModCatalog.supports({ type: 'curseforge' })).toBe(false);
+    expect(ModCatalog.supports({})).toBe(false);
+  });
+});
+
 describe('ModCatalog.search', () => {
   it('filters by the loader categories and game version declared for the instance', async () => {
     const fetchMock = vi.fn().mockResolvedValue({

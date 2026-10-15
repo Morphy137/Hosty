@@ -338,6 +338,8 @@ export interface GamePackInfo {
   hasCode: boolean;
   trusted: boolean;
   loaded: boolean;
+  /** False when the user switched the game off (hidden from the game list). */
+  enabled: boolean;
   errors: string[];
 }
 
