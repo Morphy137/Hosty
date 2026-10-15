@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
-import { PropertiesParser } from '../parsers/PropertiesParser';
 import { driverRegistry } from './drivers/GameDriverRegistry';
 import { readSyncedValues, writeSyncedValues } from './ConfigSync';
 import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';

@@ -34,7 +34,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `logo` | | Relative path to an image inside the pack. |
 | `status` | | `available` (default), `beta` or `coming_soon` (shown but not selectable). |
 | `defaults` | yes | `{ "port": 27015, "maxPlayers": 16 }`. |
-| `provision` | | `{ "type": "none" }` or `{ "type": "steamcmd", "appId": 896660 }` (anonymous SteamCMD install). |
+| `provision` | | How the server files are obtained: `{ "type": "none" }`, `{ "type": "steamcmd", "appId": 896660 }` (anonymous SteamCMD) or `{ "type": "download", "url": "https://...", "filename"?, "sha256"? }` (one verified https file). |
 | `launch` | yes | `executable` (string or per-platform object, `a\|b` = fallbacks), `runtime` (`native` / `java`), `args`. |
 | `detect` | | Files that mark an installed server; also used to recognise folders when importing. |
 | `logs` | | Regex strings for `ready`, `join`, `leave` (player name in group `username`) and a `dimension` label. |

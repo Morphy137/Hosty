@@ -241,7 +241,7 @@ export interface GameDriverSummary {
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;
   descriptionI18n?: Record<string, string>;
-  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number };
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number } | { type: 'download'; url: string; filename?: string; sha256?: string };
 }
 
 export interface GameCapabilities {

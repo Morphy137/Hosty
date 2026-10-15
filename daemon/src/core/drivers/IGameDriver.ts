@@ -96,7 +96,7 @@ export interface GameDriverSummary {
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;
-  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number };
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number } | { type: 'download'; url: string; filename?: string; sha256?: string };
   /** Localized description from the pack manifest (overrides `description`). */
   descriptionI18n?: Record<string, string>;
 }

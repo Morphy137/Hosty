@@ -31,7 +31,11 @@ export interface ManifestConfigFile {
   label?: LocalizedText;
 }
 
-export type ProvisionSpec = { type: 'none' } | { type: 'steamcmd'; appId: number };
+export type ProvisionSpec =
+  | { type: 'none' }
+  | { type: 'steamcmd'; appId: number }
+  /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
+  | { type: 'download'; url: string; filename?: string; sha256?: string };
 
 /** An argument; objects are only included when `ifExists` (a path relative to the instance) exists. */
 export type LaunchArg = string | { arg: string; ifExists: string };
@@ -294,8 +298,18 @@ export function validateManifest(raw: unknown): ManifestValidation {
     const provision = raw.provision;
     const valid =
       isObject(provision) &&
-      (provision.type === 'none' || (provision.type === 'steamcmd' && Number.isInteger(provision.appId)));
-    if (!valid) errors.push('provision must be { "type": "none" } or { "type": "steamcmd", "appId": <number> }');
+      (provision.type === 'none' ||
+        (provision.type === 'steamcmd' && Number.isInteger(provision.appId)) ||
+        (provision.type === 'download' &&
+          typeof provision.url === 'string' &&
+          /^https:\/\//i.test(provision.url) &&
+          (provision.filename === undefined || typeof provision.filename === 'string') &&
+          (provision.sha256 === undefined || /^[a-f0-9]{64}$/i.test(String(provision.sha256)))));
+    if (!valid) {
+      errors.push(
+        'provision must be { "type": "none" }, { "type": "steamcmd", "appId": <number> } or { "type": "download", "url": "https://...", "sha256"?: <hex> }'
+      );
+    }
   }
 
   if (raw.detect !== undefined && !(isStringList(raw.detect) && (raw.detect as string[]).every(isSafeRelativePath))) {

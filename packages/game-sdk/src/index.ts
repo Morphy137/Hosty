@@ -28,7 +28,11 @@ export interface ConfigFileManifest {
   label?: LocalizedText;
 }
 
-export type ProvisionSpec = { type: 'none' } | { type: 'steamcmd'; appId: number };
+export type ProvisionSpec =
+  | { type: 'none' }
+  | { type: 'steamcmd'; appId: number }
+  /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
+  | { type: 'download'; url: string; filename?: string; sha256?: string };
 
 export interface GameCapabilities {
   players: boolean;
