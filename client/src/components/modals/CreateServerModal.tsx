@@ -18,9 +18,10 @@ import {
   Gamepad2,
   AlertCircle
 } from 'lucide-react';
-import type { ServerLoader, InstanceSettings } from '../../types/daemon';
+import type { ServerLoader, InstanceSettings, JarInspection, ProvisionJobState } from '../../types/daemon';
 import { SERVER_LOADERS, LOADER_METADATA } from '../../types/daemon';
-import { fetchLoaderVersions, fetchSystemEnvironment } from '../../api/daemonApi';
+import { fetchLoaderVersions, fetchSystemEnvironment, inspectServerJar } from '../../api/daemonApi';
+import { defaultMinRamMb, maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
 import { GameLogo } from '../common/GameIcons';
 
 interface CreateServerModalProps {
@@ -38,8 +39,12 @@ interface CreateServerModalProps {
     instanceId: string;
     instanceName: string;
     settings?: Partial<InstanceSettings>;
+    loader?: ServerLoader;
+    loaderVersion?: string;
   }) => Promise<void>;
   provisionLogs: string[];
+  provisionJob: ProvisionJobState | null;
+  onCancelInstall: () => void;
 }
 
 interface SupportedGameOption {
@@ -107,7 +112,9 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   onClose,
   onInstall,
   onUploadJar,
-  provisionLogs
+  provisionLogs,
+  provisionJob,
+  onCancelInstall
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +140,9 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   const [useCustomJar, setUseCustomJar] = useState(false);
   const [pzBranch, setPzBranch] = useState<'stable' | 'unstable'>('stable');
   const [isJavaMissing, setIsJavaMissing] = useState(false);
+  const [detected, setDetected] = useState<JarInspection | null>(null);
+  const [isInspecting, setIsInspecting] = useState(false);
+  const [systemRamMb, setSystemRamMb] = useState<number | undefined>(undefined);
 
   const currentLoaderMeta = LOADER_METADATA[selectedLoader];
   const requiresManualJar = selectedGame === 'minecraft' && !currentLoaderMeta.isAutomatic;
@@ -147,8 +157,12 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     let ignore = false;
     fetchSystemEnvironment()
       .then((env) => {
-        if (!ignore && env?.java) {
-          setIsJavaMissing(!env.java.detected);
+        if (ignore) return;
+        if (env?.java) setIsJavaMissing(!env.java.detected);
+        if (env?.totalMemMb) {
+          setSystemRamMb(env.totalMemMb);
+          setRamValue(Math.round(recommendedRamMb(env.totalMemMb) / 1024));
+          setRamUnit('GB');
         }
       })
       .catch(() => {
@@ -224,19 +238,29 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     }
   };
 
+  const attachJar = (file: File | undefined) => {
+    if (!file || !file.name.toLowerCase().endsWith('.jar')) return;
+    setAttachedFile(file);
+    setDetected(null);
+    setIsInspecting(true);
+    inspectServerJar(file)
+      .then((inspection) => {
+        setDetected(inspection);
+        if (inspection.loader) setSelectedLoader(inspection.loader);
+      })
+      .catch(() => {
+        // Detection is advisory; the user can still pick the loader manually.
+      })
+      .finally(() => setIsInspecting(false));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.name.endsWith('.jar')) {
-      setAttachedFile(file);
-    }
+    attachJar(e.target.files?.[0]);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.name.endsWith('.jar')) {
-      setAttachedFile(file);
-    }
+    attachJar(e.dataTransfer.files?.[0]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,14 +271,15 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     const safeName = serverName.trim();
 
     const calculatedMaxRamMb = ramUnit === 'GB' ? ramValue * 1024 : ramValue;
-    const calculatedMinRamMb = Math.min(1024, calculatedMaxRamMb);
+    const calculatedMinRamMb = defaultMinRamMb(calculatedMaxRamMb);
     const settings: Partial<InstanceSettings> = {
       motd: motd.trim(),
       port: Number(port) || (selectedGame === 'project-zomboid' ? 16261 : 25565),
       maxPlayers: Number(maxPlayers) || (selectedGame === 'project-zomboid' ? 32 : 20),
       minRamMb: calculatedMinRamMb,
       maxRamMb: calculatedMaxRamMb,
-      gameId: selectedGame
+      gameId: selectedGame,
+      ...(selectedGame === 'project-zomboid' ? { pzBranch } : {})
     };
 
     setIsInstalling(true);
@@ -266,7 +291,9 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
             file: attachedFile,
             instanceId: safeId,
             instanceName: safeName,
-            settings
+            settings,
+            loader: selectedLoader,
+            loaderVersion: detected?.mcVersion ?? undefined
           });
         } else {
           if (!selectedVersion) return;
@@ -308,7 +335,11 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     (!requiresManualJar && !useCustomJar && Boolean(selectedVersion)) ||
     ((requiresManualJar || useCustomJar) && Boolean(attachedFile));
 
-  const isSettingsValid = Boolean(serverName.trim() && instanceId.trim() && port > 0 && maxPlayers > 0 && ramValue > 0);
+  const ramLimitMb = maxAllocatableRamMb(systemRamMb);
+  const requestedRamMb = ramUnit === 'GB' ? ramValue * 1024 : ramValue;
+  const isSettingsValid = Boolean(
+    serverName.trim() && instanceId.trim() && port > 0 && maxPlayers > 0 && ramValue > 0 && requestedRamMb <= ramLimitMb
+  );
 
   const getStepIndex = (s: WizardStep) => WIZARD_STEPS.findIndex((item) => item.id === s);
   const currentStepIndex = getStepIndex(step);
@@ -491,9 +522,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     </div>
                   </div>
 
-                  {/* AUTOMATED DOWNLOAD FLOW */}
-                  {!useCustomJar && (
-                    <div className="space-y-3.5">
+                  {/* LOADER GRID (always visible) + automated version selector */}
+                  <div className="space-y-3.5">
                       <div className="space-y-1.5">
                         <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1]">
                           {t('provisioning.loader_label')}
@@ -507,12 +537,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                               <button
                                 key={loader}
                                 type="button"
-                                onClick={() => {
-                                  setSelectedLoader(loader);
-                                  if (!meta.isAutomatic) {
-                                    setUseCustomJar(true);
-                                  }
-                                }}
+                                onClick={() => setSelectedLoader(loader)}
                                 disabled={isInstalling}
                                 className={`p-2.5 rounded-[4px] border text-left transition cursor-pointer flex flex-col justify-between ${
                                   isSelected
@@ -533,7 +558,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                                         : 'bg-[#fafafa] dark:bg-[#1f1f1f] border border-[#ebebeb] dark:border-[#262626] text-[#888888] dark:text-[#a1a1a1]'
                                     }`}
                                   >
-                                    {meta.isAutomatic ? 'Auto' : 'Jar'}
+                                    {meta.isAutomatic ? t('create_server.badge_auto') : t('create_server.badge_manual')}
                                   </span>
                                 </div>
                                 <span
@@ -552,7 +577,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       </div>
 
                       {/* Version Selector */}
-                      {!requiresManualJar && (
+                      {!requiresManualJar && !useCustomJar && (
                         <div className="space-y-1.5">
                           <label className="font-mono text-[11px] uppercase text-[#888888] dark:text-[#a1a1a1] flex items-center justify-between">
                             <span>{t('provisioning.version_label')}</span>
@@ -573,7 +598,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                             >
                               {versions.map((v) => (
                                 <option key={v} value={v}>
-                                  Minecraft {v} ({selectedLoader.toUpperCase()})
+                                  {t('create_server.version_option', { version: v, loader: selectedLoader.toUpperCase() })}
                                 </option>
                               ))}
                             </select>
@@ -581,8 +606,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                           </div>
                         </div>
                       )}
-                    </div>
-                  )}
+                  </div>
 
                   {/* CUSTOM / MANUAL JAR DROPZONE */}
                   {(requiresManualJar || useCustomJar) && (
@@ -644,6 +668,35 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                           </div>
                         )}
                       </div>
+
+                      {attachedFile && (
+                        <div className="flex items-center gap-2 text-[12px] text-[#4d4d4d] dark:text-[#a1a1a1]">
+                          {isInspecting ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              {t('create_server.detecting_jar')}
+                            </>
+                          ) : detected?.loader ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#50e3c2]" />
+                              {t(
+                                detected.kind === 'installer'
+                                  ? 'create_server.detected_installer'
+                                  : 'create_server.detected_server',
+                                {
+                                  loader: LOADER_METADATA[detected.loader].name,
+                                  version: detected.mcVersion ?? '?'
+                                }
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3.5 h-3.5 text-[#f5a623]" />
+                              {t('create_server.detected_unknown')}
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -765,7 +818,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                   value={motd}
                   onChange={(e) => setMotd(e.target.value)}
                   disabled={isInstalling}
-                  placeholder="A Game Server"
+                  placeholder={t('create_server.motd_placeholder')}
                   className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                 />
               </div>
@@ -808,7 +861,7 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     <input
                       type="number"
                       min={1}
-                      max={64}
+                      max={ramUnit === 'GB' ? Math.max(1, Math.floor(ramLimitMb / 1024)) : ramLimitMb}
                       value={ramValue}
                       onChange={(e) => setRamValue(Math.max(1, Number(e.target.value)))}
                       disabled={isInstalling}
@@ -867,11 +920,11 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                     <span className="font-medium text-[#171717] dark:text-[#ededed]">
                       {selectedGame === 'minecraft'
                         ? requiresManualJar || useCustomJar
-                          ? attachedFile ? attachedFile.name : 'Custom JAR'
+                          ? attachedFile ? attachedFile.name : t('create_server.engine_custom_jar')
                           : `${selectedLoader.toUpperCase()} (${selectedVersion})`
                         : selectedGame === 'project-zomboid'
                         ? `SteamCMD (${pzBranch})`
-                        : 'Native Engine'}
+                        : t('create_server.engine_native')}
                     </span>
                   </div>
 
@@ -889,11 +942,42 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
                       {t('create_server.summary_network')}
                     </span>
                     <span className="font-mono font-medium text-[#171717] dark:text-[#ededed]">
-                      Port {port} / Max {maxPlayers}
+                      {t('create_server.network_summary', { port, max: maxPlayers })}
                     </span>
                   </div>
                 </div>
               </div>
+
+              {/* Installation progress */}
+              {isInstalling && provisionJob && provisionJob.status === 'running' && (
+                <div className="p-3.5 rounded-[6px] bg-[#fafafa] dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] space-y-2.5">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="font-medium text-[#171717] dark:text-[#ededed]">
+                      {t(`provisioning.phase.${provisionJob.phase}`)}
+                    </span>
+                    {provisionJob.percent !== null && (
+                      <span className="font-mono text-[#888888] dark:text-[#a1a1a1]">{provisionJob.percent}%</span>
+                    )}
+                  </div>
+                  <div className="h-1.5 rounded-full bg-[#ebebeb] dark:bg-[#262626] overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-[#0070f3] transition-all duration-200 ${
+                        provisionJob.percent === null ? 'w-1/3 animate-pulse' : ''
+                      }`}
+                      style={provisionJob.percent !== null ? { width: `${provisionJob.percent}%` } : undefined}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={onCancelInstall}
+                      className="h-7 px-3 rounded-[4px] border border-[#ebebeb] dark:border-[#333333] text-[12px] font-medium text-[#666666] dark:text-[#a1a1a1] hover:text-[#e5484d] cursor-pointer transition"
+                    >
+                      {t('provisioning.cancel_install')}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Provisioning Logs Feed */}
               {provisionLogs.length > 0 && (

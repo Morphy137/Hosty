@@ -30,7 +30,7 @@ hosty/
 - `core/drivers/` — **game driver abstraction**: `IGameDriver` (summary metadata, `validateInstallation`, `buildLaunchPlan`, stop/save commands, `parseLogLine`, optional query/position polling) registered in `GameDriverRegistry`. Implementations: `MinecraftDriver`, `ProjectZomboidDriver`, `HytaleDriver`.
 - `core/` — `InstanceManager` (instance CRUD/persistence), `ProcessSupervisor` + `SupervisorRegistry` (process lifecycle, metrics via `pidusage`), `LogLineParser`/`LineBuffer`, `ModJarManager`, `EnvironmentDetector` (Java detection), `bridge/` (`BridgeProtocol`, `TelemetryBridgeManager`).
 - `parsers/` — `.properties`, mod config (TOML via `@iarna/toml`, etc.) parsing and update helpers.
-- `provisioning/ServerInstaller.ts` — downloads server jars. Automatic loaders: `paper`, `purpur`, `fabric`, `vanilla`. Manual (external installer / uploaded jar): Forge, NeoForge, Spigot.
+- `provisioning/` — `ServerInstaller` downloads server jars (automatic loaders: `paper`, `purpur`, `fabric`, `vanilla`, plus `forge`/`neoforge` whose official installers are downloaded from Maven and run with `--installServer`; Spigot stays manual). `JarInspector` identifies an uploaded jar (loader, MC version, installer vs server). `ProvisionJobs` tracks installs as background jobs: `POST /api/provisioning/install` returns `{ jobId }`, progress is broadcast as `PROVISION_PROGRESS`, `GET /api/provisioning/jobs/:id` and `POST .../jobs/:id/cancel` exist. `MinecraftDriver` launches Forge/NeoForge via the generated `libraries/**/win_args.txt` (`@args` mode) and everything else with `-jar server.jar`.
 
 ### Client (`client/src`)
 

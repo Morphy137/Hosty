@@ -9,7 +9,9 @@ import type {
   ModFileInfo,
   ServerLoader,
   InstanceSettings,
-  GameDriverSummary
+  GameDriverSummary,
+  JarInspection,
+  ProvisionJobState
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
 
@@ -239,14 +241,20 @@ export async function fetchLoaderVersions(loader: ServerLoader): Promise<string[
   return [...FALLBACK_MC_VERSIONS];
 }
 
+export interface InstallStarted {
+  jobId: string;
+  instanceId: string;
+}
+
+/** Starts a background installation job; progress arrives over the socket and via `waitForProvisionJob`. */
 export async function installServer(
   loader: ServerLoader,
   version: string,
   instanceId?: string,
   instanceName?: string,
   settings?: Partial<InstanceSettings>
-): Promise<void> {
-  await postJson<unknown>('/api/provisioning/install', {
+): Promise<InstallStarted> {
+  return postJson<InstallStarted>('/api/provisioning/install', {
     loader,
     version,
     instanceId,
@@ -255,22 +263,76 @@ export async function installServer(
   });
 }
 
+export interface UploadResult {
+  ok: boolean;
+  instanceId: string;
+  /** Present when the jar was an installer that now runs as a background job. */
+  jobId: string | null;
+  inspection: JarInspection;
+}
+
+export interface UploadOverrides {
+  loader?: ServerLoader;
+  loaderVersion?: string;
+}
+
+/** Uploads a server jar; settings are applied in the same request that creates the instance. */
 export async function uploadServerJar(
   file: File,
   instanceId: string,
-  instanceName?: string
-): Promise<{ ok: boolean; instanceId: string }> {
+  instanceName?: string,
+  settings?: Partial<InstanceSettings>,
+  overrides?: UploadOverrides
+): Promise<UploadResult> {
   const query = new URLSearchParams({ instanceId });
   if (instanceName) query.set('name', instanceName);
+  if (settings) query.set('settings', JSON.stringify(settings));
+  if (overrides?.loader) query.set('loader', overrides.loader);
+  if (overrides?.loaderVersion) query.set('loaderVersion', overrides.loaderVersion);
 
-  return request<{ ok: boolean; instanceId: string }>(
-    `/api/instances/upload-server-jar?${query.toString()}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: file
+  return request<UploadResult>(`/api/instances/upload-server-jar?${query.toString()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: file
+  });
+}
+
+/** Asks the daemon to identify a jar (loader, Minecraft version, installer vs server). */
+export async function inspectServerJar(file: File): Promise<JarInspection> {
+  return request<JarInspection>('/api/provisioning/inspect-jar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: file
+  });
+}
+
+export function fetchProvisionJob(jobId: string): Promise<ProvisionJobState> {
+  return request<ProvisionJobState>(`/api/provisioning/jobs/${encodeURIComponent(jobId)}`);
+}
+
+export async function cancelProvisionJob(jobId: string): Promise<void> {
+  await postJson<unknown>(`/api/provisioning/jobs/${encodeURIComponent(jobId)}/cancel`, {});
+}
+
+const JOB_POLL_INTERVAL_MS = 500;
+
+/** Resolves when the job succeeds; rejects with the job error (or a cancellation error) otherwise. */
+export async function waitForProvisionJob(
+  jobId: string,
+  onUpdate?: (job: ProvisionJobState) => void
+): Promise<ProvisionJobState> {
+  for (;;) {
+    const job = await fetchProvisionJob(jobId);
+    onUpdate?.(job);
+    if (job.status === 'done') return job;
+    if (job.status === 'cancelled') {
+      throw new DaemonApiError('INSTALL_CANCELLED', 'Installation cancelled.', 409);
     }
-  );
+    if (job.status === 'failed') {
+      throw new DaemonApiError(job.error?.code ?? UNKNOWN_ERROR_CODE, job.error?.message ?? 'Installation failed', 500);
+    }
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
+  }
 }
 
 export async function fetchSystemEnvironment(): Promise<import('../types/daemon').SystemEnvironmentResponse> {

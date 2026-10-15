@@ -295,7 +295,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                     type="text"
                     value={motd}
                     onChange={(e) => setMotd(e.target.value)}
-                    placeholder="A Minecraft Server"
+                    placeholder={t('create_server.motd_placeholder')}
                     className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] text-[13px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                   />
                 </div>
@@ -316,7 +316,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       type="button"
                       onClick={handleCopyPath}
                       className="h-8 px-2 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] hover:bg-[#fafafa] dark:hover:bg-[#1f1f1f] text-[#4d4d4d] dark:text-[#a1a1a1] flex items-center justify-center transition cursor-pointer"
-                      title="Copy Path"
+                      title={t('edit_server.copy_path')}
                     >
                       {copiedPath ? <Check className="w-3.5 h-3.5 text-[#50e3c2]" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -359,7 +359,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       {iconPreview ? (
                         <img
                           src={iconPreview}
-                          alt="Server Icon"
+                          alt={t('edit_server.icon_alt')}
                           className="w-full h-full object-contain image-rendering-pixelated"
                         />
                       ) : (
@@ -478,7 +478,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   type="text"
                   value={javaPath}
                   onChange={(e) => setJavaPath(e.target.value)}
-                  placeholder="e.g. C:\Program Files\Java\jdk-21\bin\java.exe"
+                  placeholder="C:\Program Files\Java\jdk-21\bin\java.exe"
                   className="w-full h-9 px-3 rounded-[4px] bg-white dark:bg-[#141414] border border-[#ebebeb] dark:border-[#262626] font-mono text-[12px] text-[#171717] dark:text-[#ededed] placeholder-[#888888] focus:outline-none focus:border-[#171717] dark:focus:border-[#ededed]"
                 />
                 <p className="text-[11px] text-[#888888] dark:text-[#a1a1a1]">
@@ -554,7 +554,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
                 <div className="pt-2 flex items-center justify-between">
                   <div className="text-[11px] font-mono text-[#888888]">
-                    Engine: <span className="font-semibold text-[#171717] dark:text-[#ededed] uppercase">{instance.loader || 'vanilla'}</span>
+                    {t('edit_server.engine_label')}: <span className="font-semibold text-[#171717] dark:text-[#ededed] uppercase">{instance.loader || 'vanilla'}</span>
                   </div>
 
                   <button

@@ -5,6 +5,7 @@ import type {
   Metrics,
   PlayerInventoryData,
   PlayerState,
+  ProvisionJobState,
   ServerStatus
 } from '../types/daemon';
 import { SERVER_STATUSES } from '../types/daemon';
@@ -20,6 +21,8 @@ export interface DaemonSocketState {
   inventory: PlayerInventoryData | null;
   logs: string[];
   provisionLogs: string[];
+  /** Latest installation job reported by the daemon (progress, phase, outcome). */
+  provisionJob: ProvisionJobState | null;
   lastError: DaemonErrorPayload | null;
 }
 
@@ -36,6 +39,7 @@ export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   inventory: null,
   logs: [],
   provisionLogs: [],
+  provisionJob: null,
   lastError: null
 };
 
@@ -45,6 +49,7 @@ const KNOWN_MESSAGE_TYPES: ReadonlySet<DaemonMessageType> = new Set([
   'PLAYERS',
   'CONSOLE',
   'PROVISION_LOG',
+  'PROVISION_PROGRESS',
   'ERROR',
   'INSTANCE_STATUS',
   'INVENTORY_DATA'
@@ -89,6 +94,8 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
         ...state,
         provisionLogs: appendCapped(state.provisionLogs, message.payload, MAX_PROVISION_LOG_LINES)
       };
+    case 'PROVISION_PROGRESS':
+      return { ...state, provisionJob: message.payload };
     case 'ERROR':
       return { ...state, lastError: message.payload };
     case 'INSTANCE_STATUS':
@@ -107,6 +114,6 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
     case 'clearInventory':
       return { ...state, inventory: null };
     case 'resetProvisionLogs':
-      return { ...state, provisionLogs: event.lines.slice(-MAX_PROVISION_LOG_LINES) };
+      return { ...state, provisionLogs: event.lines.slice(-MAX_PROVISION_LOG_LINES), provisionJob: null };
   }
 }

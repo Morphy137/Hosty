@@ -61,4 +61,37 @@ describe('daemonSocketReducer', () => {
     const cleared = daemonSocketReducer(state, { kind: 'clearError' });
     expect(cleared.lastError).toBeNull();
   });
+
+  it('tracks installation job progress and clears it on reset', () => {
+    const job = {
+      id: 'job-1',
+      instanceId: 'survival',
+      loader: 'neoforge',
+      version: '1.21.1',
+      status: 'running' as const,
+      phase: 'download' as const,
+      bytesReceived: 50,
+      bytesTotal: 100,
+      percent: 50,
+      error: null
+    };
+    const state = daemonSocketReducer(INITIAL_DAEMON_SOCKET_STATE, {
+      kind: 'message',
+      message: { type: 'PROVISION_PROGRESS', payload: job }
+    });
+    expect(state.provisionJob?.percent).toBe(50);
+
+    const reset = daemonSocketReducer(state, { kind: 'resetProvisionLogs', lines: [] });
+    expect(reset.provisionJob).toBeNull();
+  });
+
+  it('computes RAM suggestions from system memory', async () => {
+    const { defaultMinRamMb, maxAllocatableRamMb, recommendedRamMb } = await import('../src/utils/ram');
+    expect(defaultMinRamMb(512)).toBe(512);
+    expect(defaultMinRamMb(4096)).toBe(1024);
+    expect(defaultMinRamMb(16384)).toBe(2048);
+    expect(recommendedRamMb(16384)).toBe(8192);
+    expect(recommendedRamMb(4096)).toBe(2048);
+    expect(maxAllocatableRamMb(16384)).toBe(14336);
+  });
 });

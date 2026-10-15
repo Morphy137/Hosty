@@ -36,7 +36,7 @@ export const ProvisioningTab: React.FC<ProvisioningTabProps> = ({
         <div className="space-y-6">
           <div>
             <span className="font-mono text-[11px] uppercase text-[#888888]">
-              Automated Setup
+              {t('provisioning.automated_setup')}
             </span>
             <h2 className="text-[20px] font-semibold tracking-[-0.6px] text-[#171717] mt-1">
               {t('provisioning.title')}
@@ -155,8 +155,8 @@ export const ProvisioningTab: React.FC<ProvisioningTabProps> = ({
         </div>
 
         <div className="pt-3 border-t border-[#2e2e2e] text-[11px] text-[#888888] flex justify-between">
-          <span>Auto-EULA: Enabled</span>
-          <span>Target: server.jar</span>
+          <span>{t('provisioning.auto_eula')}</span>
+          <span>{t('provisioning.target_jar')}</span>
         </div>
       </div>
     </div>
