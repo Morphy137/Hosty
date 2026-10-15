@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
-import type { ProvisionPhase } from './ServerInstaller';
+import type { ProvisionPhase } from './download';
 
 export type ProvisionJobStatus = 'running' | 'done' | 'failed' | 'cancelled';
 

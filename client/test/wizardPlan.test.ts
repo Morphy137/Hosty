@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCreationPlan, buildInstanceSettings } from '../src/components/wizard/wizardPlan';
+import { bridgeEligible, buildCreationPlan, buildInstanceSettings } from '../src/components/wizard/wizardPlan';
 import { INITIAL_DRAFT, slugifyInstanceId, type WizardDraft } from '../src/components/wizard/wizardTypes';
 import type { GameDriverSummary } from '../src/types/daemon';
 
@@ -17,7 +17,16 @@ const minecraft: GameDriverSummary = {
   badge: 'MC',
   description: '',
   status: 'available',
-  setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'minecraft-install' }],
+  setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'installer' }],
+  installer: {
+    variants: [
+      { id: 'fabric', name: 'Fabric', automatic: true },
+      { id: 'neoforge', name: 'NeoForge', automatic: true },
+      { id: 'spigot', name: 'SpigotMC', automatic: false }
+    ],
+    defaultVariant: 'fabric'
+  },
+  bridgeLoaders: ['fabric'],
   capabilities: { players: true, mods: true, configEditor: true, bridge: true },
   configFiles: [{ path: 'server.properties', format: 'properties' }],
   configSync: { file: 'server.properties', format: 'properties', map: { port: 'server-port', motd: 'motd', maxPlayers: 'max-players' } },
@@ -32,34 +41,42 @@ const baseDraft: WizardDraft = {
   instanceId: 'my-server',
   motd: '§aHello',
   ramMb: 8192,
-  loaderInstall: { loader: 'fabric', version: '1.21.1', useCustomJar: false, jarFile: null, jarInspection: null }
+  install: { variant: 'fabric', version: '1.21.1', useOwnFile: false, file: null, fileInfo: null }
 };
 
 describe('buildCreationPlan', () => {
-  it('installs automatic loaders from a version', () => {
+  it('installs automatic variants from a version', () => {
     const plan = buildCreationPlan(baseDraft, minecraft);
-    expect(plan).toMatchObject({ kind: 'install', loader: 'fabric', version: '1.21.1', instanceId: 'my-server' });
+    expect(plan).toMatchObject({ kind: 'install', variant: 'fabric', version: '1.21.1', instanceId: 'my-server' });
     if (plan.kind === 'install') {
       expect(plan.settings).toMatchObject({ maxRamMb: 8192, minRamMb: 2048, motd: '§aHello', gameId: 'minecraft' });
     }
   });
 
-  it('uploads when the user brings their own jar, keeping the detected version', () => {
+  it('uploads when the user brings their own file, keeping the detected version', () => {
     const file = new File(['x'], 'neoforge-installer.jar');
     const plan = buildCreationPlan(
       {
         ...baseDraft,
-        loaderInstall: {
-          loader: 'neoforge',
+        install: {
+          variant: 'neoforge',
           version: '',
-          useCustomJar: true,
-          jarFile: file,
-          jarInspection: { loader: 'neoforge', mcVersion: '1.21.1', loaderVersion: '21.1.172', kind: 'installer' }
+          useOwnFile: true,
+          file,
+          fileInfo: { variant: 'neoforge', gameVersion: '1.21.1', variantVersion: '21.1.172', kind: 'installer' }
         }
       },
       minecraft
     );
-    expect(plan).toMatchObject({ kind: 'upload', loader: 'neoforge', loaderVersion: '1.21.1' });
+    expect(plan).toMatchObject({ kind: 'upload', variant: 'neoforge', gameVersion: '1.21.1' });
+  });
+
+  it('falls back to the default variant and requires a file for manual ones', () => {
+    const empty = { ...baseDraft, install: { ...baseDraft.install, variant: '' } };
+    expect(buildCreationPlan(empty, minecraft)).toMatchObject({ kind: 'install', variant: 'fabric' });
+    const file = new File(['x'], 'spigot.jar');
+    const manual = { ...baseDraft, install: { ...baseDraft.install, variant: 'spigot', file } };
+    expect(buildCreationPlan(manual, minecraft)).toMatchObject({ kind: 'upload', variant: 'spigot' });
   });
 
   it('imports an existing folder', () => {
@@ -73,6 +90,7 @@ describe('buildCreationPlan', () => {
       id: 'project-zomboid',
       configFileName: 'servertest.ini',
       configSync: undefined,
+      installer: undefined,
       setupSchema: [],
       provision: { type: 'steamcmd', appId: 380870 }
     };
@@ -96,5 +114,10 @@ describe('wizard helpers', () => {
 
   it('omits empty game config', () => {
     expect(buildInstanceSettings(baseDraft, minecraft).gameConfig).toBeUndefined();
+  });
+
+  it('offers the bridge only for variants the game has one for', () => {
+    expect(bridgeEligible(baseDraft, minecraft)).toBe(true);
+    expect(bridgeEligible({ ...baseDraft, install: { ...baseDraft.install, variant: 'neoforge' } }, minecraft)).toBe(false);
   });
 });

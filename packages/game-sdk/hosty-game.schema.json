@@ -632,6 +632,26 @@
         }
       }
     },
+    "modLayout": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where the Mods tabs look and which files are mods.",
+      "properties": {
+        "modsDir": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "configDir": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "fileTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extensions of mod files (e.g. \".jar\"); empty = any file."
+        }
+      }
+    },
     "extension": {
       "type": "string",
       "description": "Reserved for packs bundled with Hosty."
@@ -870,6 +890,105 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "description": "Ticks per second the server targets; enables the TPS card when the bridge reports TPS."
+        }
+      }
+    },
+    "motd": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "colorCodes": {
+          "type": "boolean",
+          "description": "§ / & formatting codes in the MOTD."
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Server-list style preview with the server icon."
+        }
+      }
+    },
+    "devMock": {
+      "$ref": "#/$defs/relativePath",
+      "description": "Development only: JSON with sample players / inventory for simulated telemetry."
+    },
+    "installer": {
+      "type": "object",
+      "required": [
+        "variants"
+      ],
+      "additionalProperties": false,
+      "description": "Bundled packs whose extension implements an installer: variants offered by the generic installer step.",
+      "properties": {
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "automatic"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "group": {
+                "$ref": "#/$defs/localized"
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "defaultVariant": {
+          "type": "string"
+        },
+        "fileTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "javaRequirements": {
+          "type": "object",
+          "required": [
+            "default",
+            "versions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "type": "integer"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "java"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "java": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

@@ -118,6 +118,30 @@ export interface PlayerActionSpec {
   icon?: string;
 }
 
+/** One flavour of a game's server software the installer can set up (e.g. a mod loader). */
+export interface InstallerVariant {
+  id: string;
+  name: string;
+  /** Short grouping label shown under the name (e.g. "Modded"). */
+  group?: LocalizedText;
+  /** Hosty downloads it; otherwise the user supplies the server file (`url` says where to get it). */
+  automatic: boolean;
+  url?: string;
+}
+
+/**
+ * Data for the generic installer step (variant, version, or the user's own file). The download and
+ * install logic itself comes from the game's bundled extension (`IGameDriver.installer`).
+ */
+export interface InstallerSpec {
+  variants: InstallerVariant[];
+  defaultVariant?: string;
+  /** File extensions accepted when the user brings their own server file. */
+  fileTypes?: string[];
+  /** Runtime (Java) major version needed per game version: the last entry whose `from` <= version wins. */
+  javaRequirements?: { default: number; versions: Array<{ from: string; java: number }> };
+}
+
 /** A world/dimension players can be in: shown as a filter chip, label and icon. */
 export interface DimensionSpec {
   id: string;
@@ -146,6 +170,8 @@ export interface CreationSetting {
 export interface ModLayout {
   modsDir?: string;
   configDir?: string;
+  /** Extensions of mod files (e.g. `.jar`); empty or absent = any file. */
+  fileTypes?: string[];
 }
 
 /** Where (and which packaged file) the Telemetry Bridge is installed per loader; `default` is the fallback. */
@@ -213,6 +239,15 @@ export interface GameManifest {
   dimensions?: DimensionSpec[];
   /** Ticks per second the server targets; enables the TPS card when the bridge reports TPS. */
   performance?: { tickRate: number };
+  /**
+   * How the message of the day (mapped by `configSync.map.motd`) is shown: `colorCodes` = § / & formatting codes,
+   * `preview` = a server-list style preview with the server icon.
+   */
+  motd?: { colorCodes?: boolean; preview?: boolean };
+  /** Development only: JSON file in the pack with sample `players` (and `inventory`) for simulated telemetry. */
+  devMock?: string;
+  /** Variants the bundled installer offers (requires a bundled `extension` that implements it). */
+  installer?: InstallerSpec;
   /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
   extension?: string;
   playerQueries?: PlayerQuery[];
@@ -390,6 +425,45 @@ export function validateManifest(raw: unknown): ManifestValidation {
     }
   }
 
+  if (raw.devMock !== undefined && !isSafeRelativePath(raw.devMock)) errors.push('devMock must be a relative path inside the pack');
+
+  if (raw.motd !== undefined) {
+    const motd = raw.motd;
+    if (
+      !isObject(motd) ||
+      (motd.colorCodes !== undefined && typeof motd.colorCodes !== 'boolean') ||
+      (motd.preview !== undefined && typeof motd.preview !== 'boolean')
+    ) {
+      errors.push('motd must be { colorCodes?: boolean, preview?: boolean }');
+    }
+  }
+
+  if (raw.installer !== undefined) {
+    const installer = raw.installer;
+    const variantOk = (variant: unknown) =>
+      isObject(variant) &&
+      typeof variant.id === 'string' &&
+      typeof variant.name === 'string' &&
+      typeof variant.automatic === 'boolean' &&
+      (variant.group === undefined || isLocalized(variant.group)) &&
+      (variant.url === undefined || typeof variant.url === 'string');
+    const java = isObject(installer) ? installer.javaRequirements : undefined;
+    if (
+      !isObject(installer) ||
+      !Array.isArray(installer.variants) ||
+      installer.variants.length === 0 ||
+      !installer.variants.every(variantOk) ||
+      (installer.fileTypes !== undefined && !isStringList(installer.fileTypes)) ||
+      (java !== undefined &&
+        (!isObject(java) ||
+          typeof java.default !== 'number' ||
+          !Array.isArray(java.versions) ||
+          !java.versions.every((entry) => isObject(entry) && typeof entry.from === 'string' && typeof entry.java === 'number')))
+    ) {
+      errors.push('installer must be { variants: [{ id, name, automatic, group?, url? }], defaultVariant?, fileTypes?, javaRequirements? }');
+    }
+  }
+
   if (raw.performance !== undefined) {
     const performance = raw.performance;
     if (!isObject(performance) || typeof performance.tickRate !== 'number' || performance.tickRate <= 0) {
@@ -424,9 +498,10 @@ export function validateManifest(raw: unknown): ManifestValidation {
     if (
       !isObject(layout) ||
       (layout.modsDir !== undefined && !isSafeRelativePath(layout.modsDir)) ||
-      (layout.configDir !== undefined && !isSafeRelativePath(layout.configDir))
+      (layout.configDir !== undefined && !isSafeRelativePath(layout.configDir)) ||
+      (layout.fileTypes !== undefined && !isStringList(layout.fileTypes))
     ) {
-      errors.push('modLayout must be { modsDir?, configDir? } with relative paths');
+      errors.push('modLayout must be { modsDir?, configDir?, fileTypes? } with relative paths');
     }
   }
   if (raw.bridgeTargets !== undefined) {

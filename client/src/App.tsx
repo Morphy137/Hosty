@@ -13,11 +13,11 @@ import {
   openInstanceFolder,
   toErrorPayload,
   installServer,
-  uploadServerJar,
+  uploadServerFile,
   waitForProvisionJob,
   cancelProvisionJob
 } from './api/daemonApi';
-import type { DaemonErrorPayload, ServerLoader, InstanceSettings, PlayerState } from './types/daemon';
+import type { DaemonErrorPayload, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
 import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -182,18 +182,18 @@ export default function App() {
 
   const handleCreateServer = useCallback(
     async (params: {
-      loader: ServerLoader;
+      variant: string;
       version: string;
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
     }) => {
       resetProvisionLogs([
-        `[Provisioner] Initializing ${params.loader.toUpperCase()} ${params.version} for "${params.instanceName}"...`
+        `[Provisioner] Initializing ${params.variant.toUpperCase()} ${params.version} for "${params.instanceName}"...`
       ]);
       try {
         const started = await installServer(
-          params.loader,
+          params.variant,
           params.version,
           params.instanceId,
           params.instanceName,
@@ -209,25 +209,25 @@ export default function App() {
     [handleError, instances, resetProvisionLogs]
   );
 
-  const handleUploadServerJar = useCallback(
+  const handleUploadServerFile = useCallback(
     async (params: {
       file: File;
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
-      loader?: ServerLoader;
-      loaderVersion?: string;
+      variant?: string;
+      gameVersion?: string;
     }) => {
       resetProvisionLogs([
         `[Provisioner] Uploading server binary "${params.file.name}" for "${params.instanceName}"...`
       ]);
       try {
-        const result = await uploadServerJar(
+        const result = await uploadServerFile(
           params.file,
           params.instanceId,
           params.instanceName,
           params.settings,
-          { loader: params.loader, loaderVersion: params.loaderVersion }
+          { variant: params.variant, gameVersion: params.gameVersion }
         );
         if (result.jobId) await waitForProvisionJob(result.jobId);
         await instances.refresh();
@@ -247,7 +247,7 @@ export default function App() {
 
   const wizardActions: WizardActions = {
     install: async (params) => handleCreateServer(params),
-    uploadJar: async (params) => handleUploadServerJar(params),
+    uploadServerFile: async (params) => handleUploadServerFile(params),
     createInstance: async (id, name, settings) => {
       try {
         const created = await instances.createInstance(id, name, settings);

@@ -203,8 +203,11 @@ export class GameDriverRegistry {
     return base?.manifest ?? null;
   }
 
+  /** The installer data is only advertised when the driver really implements an installer. */
   public listDrivers(): GameDriverSummary[] {
-    return Array.from(this.drivers.values()).map((d) => d.summary);
+    return Array.from(this.drivers.values()).map((d) =>
+      d.installer || !d.summary.installer ? d.summary : { ...d.summary, installer: undefined }
+    );
   }
 }
 

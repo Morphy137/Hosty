@@ -486,7 +486,15 @@ describe('declared layout, actions and defaults', () => {
   it('lets the bundled Minecraft pack declare folders, mods layout, bridge targets and actions', () => {
     const summary = new GameDriverRegistry().getDriver('minecraft').summary;
     expect(summary.instanceFolders).toEqual(['mods', 'config']);
-    expect(summary.modLayout).toEqual({ modsDir: 'mods', configDir: 'config' });
+    expect(summary.modLayout).toEqual({ modsDir: 'mods', configDir: 'config', fileTypes: ['.jar'] });
+    expect(summary.installer?.variants.map((variant) => variant.id)).toContain('paper');
+    expect(summary.dimensions?.find((dimension) => dimension.id === 'the_nether')?.aliases).toContain('minecraft:the_nether');
+    expect(summary.playerActions?.filter((action) => action.quick).map((action) => action.id)).toEqual([
+      'heal',
+      'give',
+      'damage',
+      'kill'
+    ]);
     expect(summary.bridgeTargets?.paper.dir).toBe('plugins');
     expect(summary.playerActions?.map((action) => action.id)).toEqual(expect.arrayContaining(['kick', 'ban', 'tp']));
     expect(summary.creationSettings?.map((setting) => setting.key)).toEqual(['gamemode', 'difficulty']);

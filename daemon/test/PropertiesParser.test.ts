@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { PropertiesParser } from '../src/parsers/PropertiesParser';
+import { PropertiesParser } from '../src/extensions/minecraft/PropertiesParser';
 
 describe('PropertiesParser', () => {
   let tmpDir: string;

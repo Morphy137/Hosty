@@ -121,6 +121,25 @@ export interface PlayerActionSpec {
   icon?: string;
 }
 
+/** One flavour of server software the installer offers (e.g. a mod loader). */
+export interface InstallerVariant {
+  id: string;
+  name: string;
+  group?: LocalizedText;
+  /** Downloaded by Hosty; otherwise the user brings the server file (`url` says where to get it). */
+  automatic: boolean;
+  url?: string;
+}
+
+/** Data for the generic installer step; the download logic comes from a bundled extension. */
+export interface InstallerSpec {
+  variants: InstallerVariant[];
+  defaultVariant?: string;
+  fileTypes?: string[];
+  /** Java major per game version: the last entry whose `from` <= version wins. */
+  javaRequirements?: { default: number; versions: Array<{ from: string; java: number }> };
+}
+
 /** A world/dimension players can be in: filter chip, label and icon (image inside the pack). */
 export interface DimensionSpec {
   id: string;
@@ -190,6 +209,12 @@ export interface GameManifest {
   dimensions?: DimensionSpec[];
   /** Ticks per second the server targets; enables the TPS card when the bridge reports TPS. */
   performance?: { tickRate: number };
+  /** `colorCodes`: § / & formatting in the MOTD; `preview`: server-list style preview. */
+  motd?: { colorCodes?: boolean; preview?: boolean };
+  /** Development only: JSON file in the pack with sample `players` / `inventory` for simulated telemetry. */
+  devMock?: string;
+  /** Bundled packs whose extension implements an installer. */
+  installer?: InstallerSpec;
   /** Reserved for packs bundled with Hosty; user packs that set it are rejected. */
   extension?: string;
   playerQueries?: PlayerQuery[];
@@ -198,6 +223,8 @@ export interface GameManifest {
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSource[];
+  /** Where the Mods tabs look (defaults `mods` / `config`) and which extensions are mods (empty = any file). */
+  modLayout?: { modsDir?: string; configDir?: string; fileTypes?: string[] };
   /** Icon the game itself shows, e.g. in its server list: a square PNG of `size` px at `file` (relative). */
   serverIcon?: { file: string; size: number };
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */

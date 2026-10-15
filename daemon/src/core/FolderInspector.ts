@@ -13,8 +13,9 @@ export interface FolderInspection {
   suggestedName: string;
   /** Matching game driver id, or null when nothing recognisable was found. */
   gameId: string | null;
-  loader: string | null;
-  mcVersion: string | null;
+  /** Server-software variant the game's extension detected (e.g. a mod loader). */
+  variant: string | null;
+  gameVersion: string | null;
   port: number | null;
   motd: string | null;
   maxPlayers: number | null;
@@ -29,8 +30,8 @@ const readInstanceSettings = (dir: string): { gameId?: string; loader?: string; 
 };
 
 /**
- * Identifies the game and (for Minecraft) the loader of an existing server folder, reusing the jar
- * detector, so importing does not require the user to know what they have.
+ * Identifies the game and (through its driver) the server variant of an existing folder, so importing does
+ * not require the user to know what they have.
  */
 /**
  * `expectedGameId` (the game chosen in the wizard) lets a user-picked file with an unconventional name be
@@ -64,14 +65,14 @@ export function inspectServerFolder(folderOrFile: string, expectedGameId?: strin
     }
   }
 
-  let loader: string | null = settings.loader ?? null;
-  let mcVersion: string | null = settings.loaderVersion ?? null;
+  let variant: string | null = settings.loader ?? null;
+  let gameVersion: string | null = settings.loaderVersion ?? null;
 
-  // Game-specific details (loader, version) come from the driver, never from a game check here.
+  // Game-specific details (variant, version) come from the driver, never from a game check here.
   if (gameId) {
     const detected = driverRegistry.getDriver(gameId).inspectFolder?.(dir, launchFile);
-    loader = detected?.loader ?? loader;
-    mcVersion = detected?.version ?? mcVersion;
+    variant = detected?.variant ?? variant;
+    gameVersion = detected?.version ?? gameVersion;
   }
 
   const sync = gameId ? driverRegistry.getDriver(gameId).summary.configSync : undefined;
@@ -82,8 +83,8 @@ export function inspectServerFolder(folderOrFile: string, expectedGameId?: strin
     launchFile: launchFile ?? null,
     suggestedName: path.basename(dir),
     gameId,
-    loader,
-    mcVersion,
+    variant,
+    gameVersion,
     port: synced.port ?? null,
     motd: synced.motd ?? null,
     maxPlayers: synced.maxPlayers ?? null

@@ -334,7 +334,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     if (parsed.playerJoin) {
       this.players.set(parsed.playerJoin.username, {
         username: parsed.playerJoin.username,
-        dimension: parsed.playerJoin.dimension ?? 'overworld',
+        // Unknown until the game reports it (log line, position query or bridge).
+        dimension: parsed.playerJoin.dimension ?? '',
         x: parsed.playerJoin.x ?? 0,
         y: parsed.playerJoin.y ?? 64,
         z: parsed.playerJoin.z ?? 0

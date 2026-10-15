@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { ModJarManager } from '../src/core/ModJarManager';
+import { ModFileManager } from '../src/core/ModFileManager';
 import { DaemonError } from '../src/errors';
 
-describe('ModJarManager', () => {
+describe('ModFileManager', () => {
   let tmpDir: string;
 
   beforeEach(() => {
@@ -17,11 +17,15 @@ describe('ModJarManager', () => {
   });
 
   it('validates mod filenames and blocks path traversal', () => {
-    expect(() => ModJarManager.validateModFilename('../bad.jar')).toThrowError(DaemonError);
-    expect(() => ModJarManager.validateModFilename('bad.exe')).toThrowError(DaemonError);
-    expect(ModJarManager.validateModFilename('jei-1.21.jar')).toBe('jei-1.21.jar');
-    expect(ModJarManager.validateModFilename('jei-1.21.jar.disabled')).toBe('jei-1.21.jar.disabled');
-    expect(ModJarManager.validateModFilename('jei-1.21.jar.disable')).toBe('jei-1.21.jar.disable');
+    expect(() => ModFileManager.validateModFilename('../bad.jar')).toThrowError(DaemonError);
+    // The game declares which files are mods; without a declaration any file is accepted.
+    const jarOnly = { fileTypes: ['.jar'] };
+    expect(() => ModFileManager.validateModFilename('bad.exe', jarOnly)).toThrowError(DaemonError);
+    expect(ModFileManager.validateModFilename('mod.zip')).toBe('mod.zip');
+    expect(ModFileManager.validateModFilename('jei-1.21.jar.disabled', jarOnly)).toBe('jei-1.21.jar.disabled');
+    expect(ModFileManager.validateModFilename('jei-1.21.jar')).toBe('jei-1.21.jar');
+    expect(ModFileManager.validateModFilename('jei-1.21.jar.disabled')).toBe('jei-1.21.jar.disabled');
+    expect(ModFileManager.validateModFilename('jei-1.21.jar.disable')).toBe('jei-1.21.jar.disable');
   });
 
   it('lists mod files with formatted size and enabled flag', () => {
@@ -32,7 +36,7 @@ describe('ModJarManager', () => {
     fs.writeFileSync(path.join(modsDir, 'disabled-mod.jar.disabled'), 'disabled-content');
     fs.writeFileSync(path.join(modsDir, 'modrinth-mod.jar.disable'), 'disable-content');
 
-    const list = ModJarManager.listModFiles(tmpDir);
+    const list = ModFileManager.listModFiles(tmpDir);
     expect(list).toHaveLength(3);
 
     const active = list.find((m) => m.filename === 'active-mod.jar');
@@ -51,19 +55,19 @@ describe('ModJarManager', () => {
 
     fs.writeFileSync(path.join(modsDir, 'test-mod.jar'), 'content');
 
-    const toggled = ModJarManager.toggleMod(tmpDir, 'test-mod.jar');
+    const toggled = ModFileManager.toggleMod(tmpDir, 'test-mod.jar');
     expect(toggled.filename).toBe('test-mod.jar.disable');
     expect(toggled.enabled).toBe(false);
     expect(fs.existsSync(path.join(modsDir, 'test-mod.jar.disable'))).toBe(true);
     expect(fs.existsSync(path.join(modsDir, 'test-mod.jar'))).toBe(false);
 
-    const reEnabled = ModJarManager.toggleMod(tmpDir, 'test-mod.jar.disable');
+    const reEnabled = ModFileManager.toggleMod(tmpDir, 'test-mod.jar.disable');
     expect(reEnabled.filename).toBe('test-mod.jar');
     expect(reEnabled.enabled).toBe(true);
 
     // Also verify .disabled works
     fs.writeFileSync(path.join(modsDir, 'legacy-mod.jar.disabled'), 'content');
-    const legacyReEnabled = ModJarManager.toggleMod(tmpDir, 'legacy-mod.jar.disabled');
+    const legacyReEnabled = ModFileManager.toggleMod(tmpDir, 'legacy-mod.jar.disabled');
     expect(legacyReEnabled.filename).toBe('legacy-mod.jar');
     expect(legacyReEnabled.enabled).toBe(true);
   });
@@ -73,7 +77,7 @@ describe('ModJarManager', () => {
     fs.mkdirSync(modsDir, { recursive: true });
 
     fs.writeFileSync(path.join(modsDir, 'to-delete.jar'), 'content');
-    ModJarManager.deleteMod(tmpDir, 'to-delete.jar');
+    ModFileManager.deleteMod(tmpDir, 'to-delete.jar');
     expect(fs.existsSync(path.join(modsDir, 'to-delete.jar'))).toBe(false);
   });
 });

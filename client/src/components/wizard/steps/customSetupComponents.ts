@@ -1,8 +1,8 @@
 import type React from 'react';
 import type { CustomSetupProps } from '../wizardTypes';
-import { MinecraftInstallStep } from './MinecraftInstallStep';
+import { InstallerStep } from './InstallerStep';
 
-/** Custom setup components a driver can request with `{ type: 'custom', component: <key> }`. */
+/** Setup components a manifest can place with `{ type: 'custom', component: <key> }`. */
 export const CUSTOM_SETUP_COMPONENTS: Record<string, React.FC<CustomSetupProps>> = {
-  'minecraft-install': MinecraftInstallStep
+  installer: InstallerStep
 };

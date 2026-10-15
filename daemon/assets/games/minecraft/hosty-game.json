@@ -163,9 +163,109 @@
       "type": "custom",
       "label": "Installation",
       "labelKey": "create_server.steps.installation",
-      "component": "minecraft-install"
+      "component": "installer"
     }
   ],
+  "devMock": "dev-mock.json",
+  "motd": {
+    "colorCodes": true,
+    "preview": true
+  },
+  "installer": {
+    "variants": [
+      {
+        "id": "fabric",
+        "name": "Fabric",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true
+      },
+      {
+        "id": "paper",
+        "name": "PaperMC",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": true
+      },
+      {
+        "id": "purpur",
+        "name": "Purpur",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": true
+      },
+      {
+        "id": "vanilla",
+        "name": "Vanilla",
+        "group": {
+          "en": "Vanilla",
+          "es": "Vanilla"
+        },
+        "automatic": true
+      },
+      {
+        "id": "forge",
+        "name": "Forge",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true,
+        "url": "https://files.minecraftforge.net/net/minecraftforge/forge/"
+      },
+      {
+        "id": "neoforge",
+        "name": "NeoForge",
+        "group": {
+          "en": "Modded",
+          "es": "Con mods"
+        },
+        "automatic": true,
+        "url": "https://neoforged.net/"
+      },
+      {
+        "id": "spigot",
+        "name": "SpigotMC",
+        "group": {
+          "en": "Plugins",
+          "es": "Plugins"
+        },
+        "automatic": false,
+        "url": "https://www.spigotmc.org/wiki/buildtools/"
+      }
+    ],
+    "defaultVariant": "paper",
+    "fileTypes": [
+      ".jar"
+    ],
+    "javaRequirements": {
+      "default": 21,
+      "versions": [
+        {
+          "from": "1.0",
+          "java": 8
+        },
+        {
+          "from": "1.17",
+          "java": 16
+        },
+        {
+          "from": "1.18",
+          "java": 17
+        },
+        {
+          "from": "1.20.5",
+          "java": 21
+        }
+      ]
+    }
+  },
   "capabilities": {
     "players": true,
     "mods": true,
@@ -937,7 +1037,10 @@
   ],
   "modLayout": {
     "modsDir": "mods",
-    "configDir": "config"
+    "configDir": "config",
+    "fileTypes": [
+      ".jar"
+    ]
   },
   "bridgeTargets": {
     "paper": {

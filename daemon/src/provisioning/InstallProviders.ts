@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
 import type { GameDriverSummary } from '../core/drivers/IGameDriver';
-import { ServerInstaller, type ProvisionHooks } from './ServerInstaller';
+import { downloadFile, type ProvisionHooks } from './download';
 import { installWithSteamCmd } from './SteamCmd';
 
 export type ProvisionSpec = NonNullable<GameDriverSummary['provision']>;
@@ -53,7 +53,7 @@ export async function installDownload(
   hooks.onPhase?.('download');
   hooks.onLog(`[Provisioner] Downloading ${filename}...`);
   try {
-    await ServerInstaller.downloadFile(url.toString(), temp, hooks);
+    await downloadFile(url.toString(), temp, hooks);
     if (spec.sha256) {
       const actual = crypto.createHash('sha256').update(fs.readFileSync(temp)).digest('hex');
       if (actual.toLowerCase() !== spec.sha256.toLowerCase()) {

@@ -52,7 +52,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `serverIcon` | | `{ file, size }`: the icon the game itself shows (e.g. `server-icon.png`, 64). Hosty writes the user's icon there as a `size`×`size` PNG; without it the icon is only shown inside Hosty. |
 | `modSources` | | Mod catalogs the server can search and install from (Modrinth-compatible API). |
 | `instanceFolders` | | Folders created inside every new instance (e.g. `["mods", "config"]`); none by default. |
-| `modLayout` | | `{ modsDir, configDir }`: where the Mods tabs look (defaults `mods` / `config`). |
+| `modLayout` | | `{ modsDir, configDir, fileTypes? }`: where the Mods tabs look (defaults `mods` / `config`) and which file extensions are mods (e.g. `[".jar"]`; empty = any file). |
 | `bridgeTargets` | | Loader -> `{ dir, asset }` for the Telemetry Bridge install; `default` is the fallback. |
 | `default` | | Bundled packs only: marks the game used when none is chosen (else the first bundled game). |
 | `provision.branchField` | | For `steamcmd`: id of the setup field whose value is the Steam beta branch. |
@@ -63,7 +63,10 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `creationSettings` | | Choices shown when creating a server and written to a config file: `{ id, label, type, options?, default?, file, key }`. |
 | `quickCommands` | | `{ label, command }` shortcuts shown above the console. |
 | `playerView` | | What the player cards show: `dimensions`, `coordinates`, `vitals`, an `avatarUrl` template, inventory item images (`itemIconUrls` templates with `{{item}}` / `{{namespace}}`, limited to `itemNamespaces`) and `inventoryClearAction` (id of the action the inventory viewer offers). |
-| `setup[].type: "custom"` | | Renders a component registered by the app (`component` id); used by the Minecraft loader installer. |
+| `setup[].type: "custom"` | | Renders a component registered by the app (`component` id). `installer` is the generic server-software step driven by `installer`. |
+| `installer` | | Bundled packs whose extension implements an installer: `{ variants: [{ id, name, automatic, group?, url? }], defaultVariant?, fileTypes?, javaRequirements? }`. The wizard lists the variants, their versions (asked to the extension) or lets the user bring their own server file (`fileTypes`); `javaRequirements: { default, versions: [{ from, java }] }` drives the Java check. |
+| `motd` | | `{ colorCodes?, preview? }` for games whose `configSync` maps a MOTD: `§`/`&` formatting codes and a server-list style preview with the icon. |
+| `devMock` | | Development only: JSON file in the pack with sample `players` (and an `inventory`) used by "Simulate telemetry". |
 
 ### Launch placeholders
 
@@ -142,6 +145,11 @@ test('detects joins', () => {
 | `POST /api/game-packs/:id/trust` | Approve the current `driver.js`. |
 | `GET/POST /api/config-files[/entries?path=]` | Read and edit the declared config files. |
 | `POST /api/instances/:id/provision` | SteamCMD install job for the instance. |
+| `GET /api/games/:id/files?path=` | An image shipped inside the pack (dimension icons, ...). |
+| `GET /api/games/:id/installer/versions/:variant` | Versions the game's installer offers for a variant. |
+| `POST /api/games/:id/installer/inspect-file` | Identify an uploaded server file (variant, game version, installer or server). |
+| `POST /api/provisioning/install` `{ variant, version, instanceId, settings }` | Install job through the game's installer. |
+| `POST /api/instances/upload-server-file?instanceId=&variant=&gameVersion=` | Use the user's own server file (runs it first when it is an installer). |
 
 ## UI translation packs
 

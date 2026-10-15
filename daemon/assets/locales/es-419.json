@@ -1,10 +1,16 @@
 {
-  "_meta": { "name": "Español (Latinoamérica)" },
-  "header": { "mock_button": "Simular telemetría" },
+  "_meta": {
+    "name": "Español (Latinoamérica)"
+  },
+  "header": {
+    "mock_button": "Simular telemetría"
+  },
   "edit_server": {
     "bridge_installed_restart": "Telemetry Bridge instalado. Reinicia el servidor para activarlo."
   },
-  "mod_files": { "empty": "No se encontraron archivos .jar en la carpeta /mods." },
+  "mod_files": {
+    "empty": "No hay archivos de mods en la carpeta de mods."
+  },
   "wizard": {
     "default_name": "Mi servidor de {{game}}",
     "version_search": "Buscar versiones..."

@@ -7,8 +7,7 @@ import type {
   GameDriverSummary,
   InstanceInfo,
   InstanceSettings,
-  ProvisionJobState,
-  ServerLoader
+  ProvisionJobState
 } from '../../types/daemon';
 import {
   fetchSystemEnvironment,
@@ -41,19 +40,19 @@ import {
 
 export interface WizardActions {
   install: (params: {
-    loader: ServerLoader;
+    variant: string;
     version: string;
     instanceId: string;
     instanceName: string;
     settings?: Partial<InstanceSettings>;
   }) => Promise<void>;
-  uploadJar: (params: {
+  uploadServerFile: (params: {
     file: File;
     instanceId: string;
     instanceName: string;
     settings?: Partial<InstanceSettings>;
-    loader?: ServerLoader;
-    loaderVersion?: string;
+    variant?: string;
+    gameVersion?: string;
   }) => Promise<void>;
   createInstance: (id: string, name: string, settings: Partial<InstanceSettings>) => Promise<string>;
   importInstance: (path: string, name?: string, gameId?: string) => Promise<string>;
@@ -240,7 +239,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           break;
         case 'install':
           await actions.install({
-            loader: plan.loader,
+            variant: plan.variant,
             version: plan.version,
             instanceId: plan.instanceId,
             instanceName: plan.name,
@@ -249,13 +248,13 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           instanceId = plan.instanceId;
           break;
         case 'upload':
-          await actions.uploadJar({
+          await actions.uploadServerFile({
             file: plan.file,
             instanceId: plan.instanceId,
             instanceName: plan.name,
             settings: plan.settings,
-            loader: plan.loader,
-            loaderVersion: plan.loaderVersion
+            variant: plan.variant,
+            gameVersion: plan.gameVersion
           });
           instanceId = plan.instanceId;
           break;

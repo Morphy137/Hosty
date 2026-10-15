@@ -1,17 +1,25 @@
 import React, { useMemo } from 'react';
-import { parseMotd } from '../../utils/motd';
+import { parseMotd, type MotdSegment } from '../../utils/motd';
 import { cn } from '../../utils/cn';
 
 interface MotdPreviewProps {
   motd: string;
   name?: string;
   iconSrc?: string | null;
+  /** Interpret § / & formatting codes (manifest `motd.colorCodes`). */
+  colorCodes?: boolean;
   className?: string;
 }
 
-/** Mimics a row of the Minecraft multiplayer server list. */
-export const MotdPreview: React.FC<MotdPreviewProps> = ({ motd, name, iconSrc, className }) => {
-  const segments = useMemo(() => parseMotd(motd), [motd]);
+/** A server-list style row (icon, name, message of the day) for games that declare `motd.preview`. */
+export const MotdPreview: React.FC<MotdPreviewProps> = ({ motd, name, iconSrc, colorCodes = false, className }) => {
+  const segments = useMemo<MotdSegment[]>(
+    () =>
+      colorCodes
+        ? parseMotd(motd)
+        : [{ text: motd, bold: false, italic: false, underline: false, strikethrough: false }].filter((segment) => segment.text),
+    [motd, colorCodes]
+  );
 
   return (
     <div className={cn('flex items-center gap-3 rounded-[6px] bg-console p-2.5 text-white', className)}>

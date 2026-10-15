@@ -6,22 +6,10 @@
   "common": {
     "save": "Guardar"
   },
-  "header": {
-    "mock_active": "Simulação ativa"
-  },
   "overview": {
-    "players": {
-      "tp": "Teletransportar"
-    },
     "console": {
       "placeholder": "Escreva um comando da consola..."
     }
-  },
-  "players": {
-    "tp_spawn": "Spawn",
-    "teleport_coords_label": "Teletransportar para coordenadas",
-    "unmute": "Remover silêncio",
-    "give_exp": "Dar experiência"
   },
   "edit_server": {
     "force_save_label": "Forçar 'save-all' ao parar o servidor",
@@ -31,7 +19,7 @@
     "bridge_installed_ready": "Telemetry Bridge instalada e pronta. Será ativada da próxima vez que o servidor iniciar."
   },
   "mod_files": {
-    "empty": "Nenhum ficheiro .jar encontrado na pasta /mods.",
+    "empty": "Nenhum ficheiro de mod encontrado na pasta de mods.",
     "delete_confirm": "Tem a certeza de que quer eliminar {{filename}}?",
     "delete": "Eliminar mod"
   },
@@ -79,7 +67,6 @@
   },
   "mod_catalog": {
     "search_placeholder": "Pesquisar mods e plugins...",
-    "search": "Pesquisar",
     "browse": "Procurar mods",
     "title": "Procurar mods",
     "install_failed": "Não foi possível instalar {{name}}"

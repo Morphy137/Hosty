@@ -6,7 +6,7 @@ import {
   parsePositionResponse,
   parseDimensionResponse,
   normalizeDimension
-} from '../src/core/LogLineParser';
+} from '../src/extensions/minecraft/LogLineParser';
 
 describe('LogLineParser', () => {
   it('detects server ready signal', () => {

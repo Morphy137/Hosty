@@ -1,4 +1,4 @@
-import type { FolderInspection, GameDriverSummary, JarInspection, ServerLoader } from '../../types/daemon';
+import type { FolderInspection, GameDriverSummary, InstallFileInfo } from '../../types/daemon';
 
 export type WizardOrigin = 'create' | 'import';
 export type WizardStepId = 'origin' | 'game' | 'setup' | 'customize' | 'review' | 'done';
@@ -8,13 +8,15 @@ export const IMPORT_STEPS: WizardStepId[] = ['game', 'origin', 'customize', 'rev
 
 export type SetupValue = string | number | boolean;
 
-export interface LoaderInstallDraft {
-  loader: ServerLoader;
+/** Choices of the installer step (games whose extension declares an `installer`). */
+export interface InstallDraft {
+  /** Installer variant id (e.g. a mod loader); empty until the step picks the game's default. */
+  variant: string;
   version: string;
-  /** User chose "use my own .jar" instead of downloading. */
-  useCustomJar: boolean;
-  jarFile: File | null;
-  jarInspection: JarInspection | null;
+  /** User chose to bring their own server file instead of downloading. */
+  useOwnFile: boolean;
+  file: File | null;
+  fileInfo: InstallFileInfo | null;
 }
 
 export interface WizardDraft {
@@ -23,7 +25,7 @@ export interface WizardDraft {
   importPath: string;
   importInfo: FolderInspection | null;
   setupValues: Record<string, SetupValue>;
-  loaderInstall: LoaderInstallDraft;
+  install: InstallDraft;
   name: string;
   instanceId: string;
   idTouched: boolean;
@@ -34,7 +36,7 @@ export interface WizardDraft {
   /** Values of the game's `creationSettings`, written to its config files after creation. */
   creationValues: Record<string, string>;
   iconBase64: string | null;
-  /** Install the Telemetry Bridge right after creation (when the loader supports it). */
+  /** Install the Telemetry Bridge right after creation (when the variant supports it). */
   installBridge: boolean;
 }
 
@@ -44,13 +46,13 @@ export const INITIAL_DRAFT: WizardDraft = {
   importPath: '',
   importInfo: null,
   setupValues: {},
-  loaderInstall: { loader: 'paper', version: '', useCustomJar: false, jarFile: null, jarInspection: null },
+  install: { variant: '', version: '', useOwnFile: false, file: null, fileInfo: null },
   name: '',
   instanceId: '',
   idTouched: false,
   motd: '',
-  maxPlayers: 20,
-  port: 25565,
+  maxPlayers: 1,
+  port: 0,
   ramMb: 4096,
   creationValues: {},
   iconBase64: null,

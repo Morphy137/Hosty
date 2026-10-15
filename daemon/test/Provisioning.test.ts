@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { classifyJar, inspectJar } from '../src/provisioning/JarInspector';
+import { classifyJar, inspectJar } from '../src/extensions/minecraft/JarInspector';
 import {
   forgeMinecraftVersions,
   latestForgeVersion,
@@ -11,9 +11,9 @@ import {
   neoForgeMinecraftVersions,
   neoForgeToMinecraftVersion,
   parseMavenVersions
-} from '../src/provisioning/ModLoaderCatalog';
+} from '../src/extensions/minecraft/ModLoaderCatalog';
 import { ProvisionJobManager } from '../src/provisioning/ProvisionJobs';
-import { resolveMinecraftLaunchTarget } from '../src/core/drivers/MinecraftDriver';
+import { resolveMinecraftLaunchTarget } from '../src/extensions/minecraft/MinecraftDriver';
 import { GameDriverRegistry } from '../src/core/drivers/GameDriverRegistry';
 import { InstanceManager } from '../src/core/InstanceManager';
 

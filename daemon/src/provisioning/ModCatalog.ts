@@ -4,8 +4,8 @@ import os from 'os';
 import path from 'path';
 import { DaemonError } from '../errors';
 import type { ModSourceSummary } from '../core/drivers/IGameDriver';
-import { ModJarManager } from '../core/ModJarManager';
-import { ServerInstaller } from './ServerInstaller';
+import { ModFileManager } from '../core/ModFileManager';
+import { downloadFile } from './download';
 
 const USER_AGENT = 'hosty/0.1 (https://github.com/Morphy137/Hosty)';
 const SEARCH_PAGE_SIZE = 20;
@@ -59,7 +59,7 @@ export interface ModFacets {
 export interface InstanceModContext {
   dir: string;
   loader?: string;
-  /** Game version the server runs (Minecraft version for Minecraft). */
+  /** Game version the server runs (as the catalog names versions). */
   gameVersion?: string;
 }
 
@@ -332,7 +332,7 @@ export class ModCatalog {
       throw new DaemonError('UPSTREAM_ERROR', 'The catalog returned a download from an unexpected host.');
     }
 
-    const filename = ModJarManager.validateModFilename(file.filename);
+    const filename = ModFileManager.validateModFilename(file.filename);
     const folder = path.join(
       instance.dir,
       (instance.loader && source.installDir?.[instance.loader]) || source.defaultInstallDir || 'mods'
@@ -341,7 +341,7 @@ export class ModCatalog {
 
     const temp = path.join(os.tmpdir(), `hosty-mod-${crypto.randomUUID()}.part`);
     try {
-      await ServerInstaller.downloadFile(file.url, temp, { onLog: () => undefined, signal });
+      await downloadFile(file.url, temp, { onLog: () => undefined, signal });
       const expected = file.hashes?.sha1;
       if (expected) {
         const actual = crypto.createHash('sha1').update(fs.readFileSync(temp)).digest('hex');

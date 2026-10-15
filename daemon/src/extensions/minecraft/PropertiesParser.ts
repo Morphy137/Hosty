@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ConfigUpdates, ConfigValue } from './configUpdates';
+import { ConfigUpdates, ConfigValue } from '../../parsers/configUpdates';
 
 export interface PropertyItem {
   key: string;

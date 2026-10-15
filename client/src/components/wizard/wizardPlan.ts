@@ -1,5 +1,4 @@
-import type { GameDriverSummary, InstanceSettings, ServerLoader } from '../../types/daemon';
-import { LOADER_METADATA } from '../../types/daemon';
+import type { GameDriverSummary, InstanceSettings } from '../../types/daemon';
 import { defaultMinRamMb } from '../../utils/ram';
 import type { WizardDraft } from './wizardTypes';
 
@@ -7,7 +6,7 @@ export type CreationPlan =
   | { kind: 'import'; path: string; name: string; gameId: string }
   | {
       kind: 'install';
-      loader: ServerLoader;
+      variant: string;
       version: string;
       instanceId: string;
       name: string;
@@ -16,21 +15,32 @@ export type CreationPlan =
   | {
       kind: 'upload';
       file: File;
-      loader: ServerLoader;
-      loaderVersion?: string;
+      variant?: string;
+      gameVersion?: string;
       instanceId: string;
       name: string;
       settings: Partial<InstanceSettings>;
     }
   | { kind: 'create'; instanceId: string; name: string; settings: Partial<InstanceSettings> };
 
-/** The game installs through the loader/version/own-jar flow (a driver-requested custom setup component). */
-export const usesLoaderInstall = (game: GameDriverSummary | undefined): boolean =>
-  game?.setupSchema.some((field) => field.component === 'minecraft-install') ?? false;
+/** The game's extension installs its server software (variant / version / own file). */
+export const usesInstaller = (game: GameDriverSummary | undefined): boolean => Boolean(game?.installer?.variants.length);
+
+/** Variant the draft resolves to: the chosen one, else the game's default, else its first. */
+export const selectedVariant = (draft: WizardDraft, game: GameDriverSummary | undefined) => {
+  const variants = game?.installer?.variants ?? [];
+  return (
+    variants.find((variant) => variant.id === draft.install.variant) ??
+    variants.find((variant) => variant.id === game?.installer?.defaultVariant) ??
+    variants[0]
+  );
+};
+
+/** The game has a message of the day (its config sync maps one). */
+export const hasMotd = (game: GameDriverSummary | undefined): boolean => Boolean(game?.configSync?.map.motd);
 
 /** Derives the instance settings shared by every creation path from the wizard draft. */
 export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummary | undefined): Partial<InstanceSettings> {
-  const isMinecraftLike = Boolean(game?.configSync);
   const gameConfig = Object.keys(draft.setupValues).length > 0 ? { ...draft.setupValues } : undefined;
 
   return {
@@ -39,7 +49,7 @@ export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummar
     maxPlayers: draft.maxPlayers,
     minRamMb: defaultMinRamMb(draft.ramMb),
     maxRamMb: draft.ramMb,
-    ...(isMinecraftLike && draft.motd.trim() ? { motd: draft.motd.trim() } : {}),
+    ...(hasMotd(game) && draft.motd.trim() ? { motd: draft.motd.trim() } : {}),
     ...(gameConfig ? { gameConfig } : {})
   };
 }
@@ -54,16 +64,17 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
 
   const settings = buildInstanceSettings(draft, game);
 
-  if (usesLoaderInstall(game)) {
-    const { loaderInstall } = draft;
-    const usesJar = !LOADER_METADATA[loaderInstall.loader].isAutomatic || loaderInstall.useCustomJar;
+  const variant = selectedVariant(draft, game);
+  if (usesInstaller(game) && variant) {
+    const { install } = draft;
+    const usesFile = !variant.automatic || install.useOwnFile;
 
-    if (usesJar && loaderInstall.jarFile) {
+    if (usesFile && install.file) {
       return {
         kind: 'upload',
-        file: loaderInstall.jarFile,
-        loader: loaderInstall.loader,
-        loaderVersion: loaderInstall.jarInspection?.mcVersion ?? undefined,
+        file: install.file,
+        variant: install.fileInfo?.variant ?? variant.id,
+        gameVersion: install.fileInfo?.gameVersion ?? undefined,
         instanceId: draft.instanceId,
         name,
         settings
@@ -71,8 +82,8 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
     }
     return {
       kind: 'install',
-      loader: loaderInstall.loader,
-      version: loaderInstall.version,
+      variant: variant.id,
+      version: install.version,
       instanceId: draft.instanceId,
       name,
       settings
@@ -82,11 +93,14 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
   return { kind: 'create', instanceId: draft.instanceId, name, settings };
 }
 
-const BRIDGE_LOADERS = ['paper', 'purpur', 'spigot', 'fabric'];
-
-/** True when a Telemetry Bridge can be installed for what this wizard run will produce. */
+/** True when a Telemetry Bridge exists (`bridgeLoaders`) for what this wizard run will produce. */
 export const bridgeEligible = (draft: WizardDraft, game: GameDriverSummary | undefined): boolean => {
   if (!game?.capabilities.bridge) return false;
-  const loader = draft.origin === 'import' ? draft.importInfo?.loader : usesLoaderInstall(game) ? draft.loaderInstall.loader : null;
-  return Boolean(loader && BRIDGE_LOADERS.includes(loader));
+  const variant =
+    draft.origin === 'import'
+      ? draft.importInfo?.variant
+      : usesInstaller(game)
+        ? (draft.install.fileInfo?.variant ?? selectedVariant(draft, game)?.id)
+        : null;
+  return Boolean(variant && game.bridgeLoaders?.includes(variant));
 };

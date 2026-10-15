@@ -1,0 +1,488 @@
+{
+  "players": [
+    {
+      "username": "MorphyCD",
+      "dimension": "minecraft:overworld",
+      "x": -245,
+      "y": 68,
+      "z": 1120,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 20,
+      "ping": 12,
+      "isOp": true
+    },
+    {
+      "username": "Notch",
+      "dimension": "minecraft:the_nether",
+      "x": 42,
+      "y": 81,
+      "z": -19,
+      "health": 18,
+      "maxHealth": 20,
+      "food": 17,
+      "ping": 45,
+      "isOp": true
+    },
+    {
+      "username": "Jeb_",
+      "dimension": "minecraft:the_end",
+      "x": 0,
+      "y": 64,
+      "z": 0,
+      "health": 15,
+      "maxHealth": 20,
+      "food": 14,
+      "ping": 28,
+      "isOp": true
+    },
+    {
+      "username": "Dinnerbone",
+      "dimension": "minecraft:overworld",
+      "x": 1024,
+      "y": 72,
+      "z": -550,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 20,
+      "ping": 64,
+      "isOp": false
+    },
+    {
+      "username": "Grian",
+      "dimension": "minecraft:overworld",
+      "x": 120,
+      "y": 85,
+      "z": 340,
+      "health": 14,
+      "maxHealth": 20,
+      "food": 18,
+      "ping": 32,
+      "isOp": false
+    },
+    {
+      "username": "MumboJumbo",
+      "dimension": "minecraft:overworld",
+      "x": -80,
+      "y": 64,
+      "z": 520,
+      "health": 19,
+      "maxHealth": 20,
+      "food": 19,
+      "ping": 19,
+      "isOp": false
+    },
+    {
+      "username": "DanTDM",
+      "dimension": "minecraft:overworld",
+      "x": 310,
+      "y": 63,
+      "z": -105,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 16,
+      "ping": 51,
+      "isOp": false
+    },
+    {
+      "username": "CaptainSparklez",
+      "dimension": "twilightforest:twilight_forest",
+      "x": 15,
+      "y": 70,
+      "z": 128,
+      "health": 12,
+      "maxHealth": 20,
+      "food": 10,
+      "ping": 38,
+      "isOp": false
+    },
+    {
+      "username": "Technoblade",
+      "dimension": "minecraft:the_nether",
+      "x": -666,
+      "y": 108,
+      "z": 420,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 20,
+      "ping": 22,
+      "isOp": true
+    },
+    {
+      "username": "Dream",
+      "dimension": "minecraft:overworld",
+      "x": 890,
+      "y": 70,
+      "z": -320,
+      "health": 16,
+      "maxHealth": 20,
+      "food": 15,
+      "ping": 15,
+      "isOp": false
+    },
+    {
+      "username": "GeorgeNotFound",
+      "dimension": "deeperdarker:otherside",
+      "x": 910,
+      "y": 71,
+      "z": -305,
+      "health": 17,
+      "maxHealth": 20,
+      "food": 13,
+      "ping": 82,
+      "isOp": false
+    },
+    {
+      "username": "Sapnap",
+      "dimension": "minecraft:the_nether",
+      "x": 210,
+      "y": 64,
+      "z": -88,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 18,
+      "ping": 26,
+      "isOp": false
+    },
+    {
+      "username": "TommyInnit",
+      "dimension": "minecraft:overworld",
+      "x": 50,
+      "y": 65,
+      "z": 15,
+      "health": 8,
+      "maxHealth": 20,
+      "food": 8,
+      "ping": 41,
+      "isOp": false,
+      "isFrozen": true
+    },
+    {
+      "username": "Philza",
+      "dimension": "minecraft:the_end",
+      "x": 100,
+      "y": 49,
+      "z": -80,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 20,
+      "ping": 30,
+      "isOp": true
+    },
+    {
+      "username": "WilburSoot",
+      "dimension": "minecraft:overworld",
+      "x": -140,
+      "y": 63,
+      "z": 230,
+      "health": 11,
+      "maxHealth": 20,
+      "food": 12,
+      "ping": 95,
+      "isOp": false
+    },
+    {
+      "username": "Quackity",
+      "dimension": "minecraft:overworld",
+      "x": 730,
+      "y": 68,
+      "z": 95,
+      "health": 13,
+      "maxHealth": 20,
+      "food": 15,
+      "ping": 110,
+      "isOp": false
+    },
+    {
+      "username": "Tubbo",
+      "dimension": "minecraft:overworld",
+      "x": 60,
+      "y": 66,
+      "z": 40,
+      "health": 18,
+      "maxHealth": 20,
+      "food": 16,
+      "ping": 36,
+      "isOp": false
+    },
+    {
+      "username": "Ranboo",
+      "dimension": "aether:the_aether",
+      "x": 250,
+      "y": 55,
+      "z": 14,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 19,
+      "ping": 44,
+      "isOp": false
+    },
+    {
+      "username": "Skeppy",
+      "dimension": "minecraft:overworld",
+      "x": -450,
+      "y": 64,
+      "z": -120,
+      "health": 15,
+      "maxHealth": 20,
+      "food": 14,
+      "ping": 58,
+      "isOp": false
+    },
+    {
+      "username": "BadBoyHalo",
+      "dimension": "minecraft:the_nether",
+      "x": -300,
+      "y": 80,
+      "z": 75,
+      "health": 20,
+      "maxHealth": 20,
+      "food": 20,
+      "ping": 52,
+      "isOp": false,
+      "isMuted": true
+    }
+  ],
+  "inventory": {
+    "armor": [
+      {
+        "slot": 39,
+        "id": "minecraft:netherite_helmet",
+        "count": 1,
+        "damage": 45,
+        "maxDamage": 407,
+        "enchantments": [
+          {
+            "id": "Protection",
+            "level": 4
+          },
+          {
+            "id": "Unbreaking",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "slot": 38,
+        "id": "minecraft:netherite_chestplate",
+        "count": 1,
+        "damage": 120,
+        "maxDamage": 592,
+        "customName": "Chestplate of Fortitude",
+        "enchantments": [
+          {
+            "id": "Protection",
+            "level": 4
+          },
+          {
+            "id": "Mending",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "slot": 37,
+        "id": "minecraft:netherite_leggings",
+        "count": 1,
+        "damage": 80,
+        "maxDamage": 555,
+        "enchantments": [
+          {
+            "id": "Protection",
+            "level": 4
+          }
+        ]
+      },
+      {
+        "slot": 36,
+        "id": "minecraft:netherite_boots",
+        "count": 1,
+        "damage": 15,
+        "maxDamage": 481,
+        "enchantments": [
+          {
+            "id": "Feather Falling",
+            "level": 4
+          },
+          {
+            "id": "Soul Speed",
+            "level": 3
+          }
+        ]
+      }
+    ],
+    "offhand": {
+      "slot": 40,
+      "id": "minecraft:totem_of_undying",
+      "count": 1
+    },
+    "hotbar": [
+      {
+        "slot": 0,
+        "id": "minecraft:netherite_sword",
+        "count": 1,
+        "damage": 110,
+        "maxDamage": 2031,
+        "customName": "Excalibur",
+        "enchantments": [
+          {
+            "id": "Sharpness",
+            "level": 5
+          },
+          {
+            "id": "Looting",
+            "level": 3
+          },
+          {
+            "id": "Fire Aspect",
+            "level": 2
+          }
+        ]
+      },
+      {
+        "slot": 1,
+        "id": "minecraft:netherite_pickaxe",
+        "count": 1,
+        "damage": 320,
+        "maxDamage": 2031,
+        "enchantments": [
+          {
+            "id": "Efficiency",
+            "level": 5
+          },
+          {
+            "id": "Fortune",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "slot": 2,
+        "id": "minecraft:netherite_axe",
+        "count": 1,
+        "damage": 90,
+        "maxDamage": 2031
+      },
+      {
+        "slot": 3,
+        "id": "minecraft:golden_apple",
+        "count": 16
+      },
+      {
+        "slot": 4,
+        "id": "minecraft:ender_pearl",
+        "count": 16
+      },
+      {
+        "slot": 5,
+        "id": "minecraft:cooked_beef",
+        "count": 64
+      },
+      {
+        "slot": 6,
+        "id": "minecraft:firework_rocket",
+        "count": 64
+      },
+      {
+        "slot": 7,
+        "id": "create:wrench",
+        "count": 1,
+        "customName": "Engineer Wrench"
+      },
+      {
+        "slot": 8,
+        "id": "twilightforest:fiery_sword",
+        "count": 1,
+        "damage": 25,
+        "maxDamage": 1024,
+        "enchantments": [
+          {
+            "id": "Fire Aspect",
+            "level": 3
+          }
+        ]
+      }
+    ],
+    "inventory": [
+      {
+        "slot": 9,
+        "id": "minecraft:diamond",
+        "count": 64
+      },
+      {
+        "slot": 10,
+        "id": "minecraft:emerald",
+        "count": 32
+      },
+      {
+        "slot": 11,
+        "id": "minecraft:iron_ingot",
+        "count": 64
+      },
+      {
+        "slot": 12,
+        "id": "minecraft:gold_ingot",
+        "count": 48
+      },
+      {
+        "slot": 13,
+        "id": "minecraft:oak_log",
+        "count": 64
+      },
+      {
+        "slot": 14,
+        "id": "minecraft:cobblestone",
+        "count": 64
+      },
+      {
+        "slot": 15,
+        "id": "minecraft:torch",
+        "count": 64
+      },
+      {
+        "slot": 16,
+        "id": "minecraft:water_bucket",
+        "count": 1
+      },
+      {
+        "slot": 17,
+        "id": "minecraft:bow",
+        "count": 1,
+        "damage": 180,
+        "maxDamage": 384,
+        "enchantments": [
+          {
+            "id": "Power",
+            "level": 5
+          }
+        ]
+      },
+      {
+        "slot": 18,
+        "id": "minecraft:arrow",
+        "count": 64
+      },
+      {
+        "slot": 19,
+        "id": "minecraft:experience_bottle",
+        "count": 32
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  }
+}

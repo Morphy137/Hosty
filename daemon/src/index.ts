@@ -12,17 +12,16 @@ import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModCatalog, type ModSort } from './provisioning/ModCatalog';
 import { buildProvisionRunner } from './provisioning/InstallProviders';
-import { ModJarManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModJarManager';
+import { ModFileManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModFileManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
 import { tokensMatch } from './core/bridge/BridgeAuth';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
 import { ModConfigParser } from './parsers/ModConfigParser';
-import { ServerInstaller, LoaderType, type ProvisionHooks } from './provisioning/ServerInstaller';
+import type { ProvisionHooks } from './provisioning/download';
 import { provisionJobs } from './provisioning/ProvisionJobs';
-import { inspectJar, type JarInspection } from './provisioning/JarInspector';
-import { runServerInstaller } from './provisioning/JavaInstallerRunner';
+import type { GameInstaller, InstallFileInfo } from './core/drivers/IGameDriver';
 import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
@@ -624,8 +623,8 @@ app.post('/api/instances/import', (req, res, next) => {
     const detected: Partial<InstanceSettings> = {
       gameId: inspection.gameId,
       ...(inspection.launchFile ? { launchFile: inspection.launchFile } : {}),
-      ...(inspection.loader ? { loader: inspection.loader } : {}),
-      ...(inspection.mcVersion ? { loaderVersion: inspection.mcVersion } : {})
+      ...(inspection.variant ? { loader: inspection.variant } : {}),
+      ...(inspection.gameVersion ? { loaderVersion: inspection.gameVersion } : {})
     };
     const persisted = instanceManager.updateInstanceSettings(imported.id, detected);
     res.json({ ok: true, instance: persisted ?? imported });
@@ -645,11 +644,21 @@ const parseSettingsQuery = (raw: unknown): Partial<InstanceSettings> => {
   }
 };
 
-/** Streams the raw request body to a temporary file and classifies it. */
-const inspectRequestJar = async (req: Request): Promise<{ tempPath: string; inspection: JarInspection }> => {
-  const tempPath = path.join(os.tmpdir(), `hosty-upload-${Date.now()}-${Math.random().toString(36).slice(2)}.jar`);
+/** The installer a game's extension implements (variants, versions, uploaded server files). */
+const installerOf = (gameId: string): GameInstaller => {
+  const installer = driverRegistry.hasDriver(gameId) ? driverRegistry.getDriver(gameId).installer : undefined;
+  if (!installer) throw new DaemonError('INVALID_PAYLOAD', `"${gameId}" has no server installer.`);
+  return installer;
+};
+
+/** Streams the raw request body to a temporary file and lets the game's installer classify it. */
+const inspectRequestFile = async (
+  req: Request,
+  installer: GameInstaller
+): Promise<{ tempPath: string; inspection: InstallFileInfo }> => {
+  const tempPath = path.join(os.tmpdir(), `hosty-upload-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   await finished(req.pipe(fs.createWriteStream(tempPath)));
-  return { tempPath, inspection: inspectJar(tempPath) };
+  return { tempPath, inspection: installer.inspectFile(tempPath) };
 };
 
 let lastProgressBroadcast = 0;
@@ -724,10 +733,10 @@ const assertInstanceIdle = (instanceId: string | undefined, action: string): voi
   }
 };
 
-app.post('/api/provisioning/inspect-jar', async (req, res, next) => {
+app.post('/api/games/:gameId/installer/inspect-file', async (req, res, next) => {
   let tempPath: string | null = null;
   try {
-    const result = await inspectRequestJar(req);
+    const result = await inspectRequestFile(req, installerOf(req.params.gameId));
     tempPath = result.tempPath;
     res.json(result.inspection);
   } catch (err) {
@@ -737,7 +746,8 @@ app.post('/api/provisioning/inspect-jar', async (req, res, next) => {
   }
 });
 
-app.post('/api/instances/upload-server-jar', async (req, res, next) => {
+// The user brings the server file: the game's installer says what it is and puts it in place.
+app.post('/api/instances/upload-server-file', async (req, res, next) => {
   let tempPath: string | null = null;
   let createdInstanceId: string | undefined;
   try {
@@ -746,24 +756,27 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
     if (!instanceId) {
       throw new DaemonError('INVALID_PAYLOAD', 'instanceId query parameter is required.');
     }
-    assertInstanceIdle(instanceId, 'upload a server jar');
+    assertInstanceIdle(instanceId, 'upload a server file');
     if (provisionJobs.hasRunning()) {
       throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
     }
 
     const settings = parseSettingsQuery(req.query.settings);
-    const overrideLoader = typeof req.query.loader === 'string' ? req.query.loader : undefined;
-    const overrideVersion = typeof req.query.loaderVersion === 'string' ? req.query.loaderVersion : undefined;
+    const existing = instanceManager.getInstance(instanceId);
+    const gameId = existing?.gameId ?? settings.gameId ?? driverRegistry.getDefaultGameId();
+    const installer = installerOf(gameId);
+    const overrideVariant = typeof req.query.variant === 'string' ? req.query.variant : undefined;
+    const overrideVersion = typeof req.query.gameVersion === 'string' ? req.query.gameVersion : undefined;
 
-    const inspected = await inspectRequestJar(req);
+    const inspected = await inspectRequestFile(req, installer);
     tempPath = inspected.tempPath;
     const { inspection } = inspected;
 
-    const loader = overrideLoader || inspection.loader || settings.loader || undefined;
-    const loaderVersion = overrideVersion || inspection.mcVersion || settings.loaderVersion || undefined;
-    const mergedSettings: Partial<InstanceSettings> = { ...settings, loader, loaderVersion };
+    const loader = overrideVariant || inspection.variant || settings.loader || undefined;
+    const loaderVersion = overrideVersion || inspection.gameVersion || settings.loaderVersion || undefined;
+    const mergedSettings: Partial<InstanceSettings> = { ...settings, gameId, loader, loaderVersion };
 
-    let target = instanceManager.getInstance(instanceId);
+    let target = existing;
     if (!target) {
       target = instanceManager.createInstance(instanceId, instanceName, mergedSettings);
       createdInstanceId = target.id;
@@ -771,10 +784,7 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
       instanceManager.updateInstanceSettings(instanceId, { loader, loaderVersion });
     }
     const targetDir = target.dir;
-
-    const destName = inspection.kind === 'installer' ? 'installer.jar' : 'server.jar';
-    const jarDest = path.join(targetDir, destName);
-    fs.copyFileSync(tempPath, jarDest);
+    const placed = installer.placeFile(targetDir, tempPath, inspection);
 
     // First-run files (default config, licence acceptance...) are the game's business, not core's.
     driverRegistry.getDriver(target.gameId).scaffoldInstance?.(targetDir, {
@@ -784,38 +794,21 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
     });
 
     let jobId: string | null = null;
-    if (inspection.kind === 'installer') {
-      const javaPath = target.javaPath || config.javaPath;
+    if (placed.run) {
       jobId = startProvisionJob({
         instanceId: target.id,
-        loader: loader || 'forge',
+        loader: loader || gameId,
         version: loaderVersion || '',
         rollbackInstanceId: createdInstanceId,
-        javaPath,
-        run: async (hooks) => {
-          hooks.onPhase?.('install');
-          hooks.onLog('[Provisioner] Running the uploaded installer (this can take a few minutes)...');
-          try {
-            await runServerInstaller({
-              javaPath: hooks.javaPath || 'java',
-              installerJar: jarDest,
-              cwd: targetDir,
-              signal: hooks.signal,
-              onLine: (line) => hooks.onLog(`[Installer] ${line}`)
-            });
-          } finally {
-            fs.rmSync(jarDest, { force: true });
-            fs.rmSync(path.join(targetDir, 'installer.jar.log'), { force: true });
-          }
-          hooks.onPhase?.('configure');
-        }
+        javaPath: target.javaPath || config.javaPath,
+        run: placed.run
       });
       createdInstanceId = undefined; // ownership moved to the job (rolled back there on failure)
     } else if (instanceManager.getActiveInstanceId() !== target.id) {
       instanceManager.setActiveInstanceId(target.id);
     }
 
-    broadcast('CONSOLE', `[Hypervisor] Server jar uploaded and registered for instance "${target.id}".\r\n`);
+    broadcast('CONSOLE', `[Hypervisor] Server file uploaded and registered for instance "${target.id}".\r\n`);
     res.json({ ok: true, instanceId: target.id, jobId, inspection });
   } catch (err) {
     if (createdInstanceId) {
@@ -833,7 +826,7 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
 
 app.get('/api/mods/files', (_req, res, next) => {
   try {
-    res.json(hasActiveInstance() ? ModJarManager.listModFiles(getActiveDir(), activeModLayout()) : []);
+    res.json(hasActiveInstance() ? ModFileManager.listModFiles(getActiveDir(), activeModLayout()) : []);
   } catch (err) {
     next(err);
   }
@@ -842,7 +835,7 @@ app.get('/api/mods/files', (_req, res, next) => {
 app.post('/api/mods/files/toggle', (req, res, next) => {
   try {
     const { filename } = req.body as { filename: string };
-    const updated = ModJarManager.toggleMod(getActiveDir(), filename, activeModLayout());
+    const updated = ModFileManager.toggleMod(getActiveDir(), filename, activeModLayout());
     const action = updated.enabled ? 'enabled' : 'disabled';
     broadcast('CONSOLE', `[Hypervisor] Mod "${updated.originalName}" ${action}.\r\n`);
     res.json({ ok: true, file: updated });
@@ -853,7 +846,7 @@ app.post('/api/mods/files/toggle', (req, res, next) => {
 
 app.delete('/api/mods/files/:filename', (req, res, next) => {
   try {
-    ModJarManager.deleteMod(getActiveDir(), req.params.filename, activeModLayout());
+    ModFileManager.deleteMod(getActiveDir(), req.params.filename, activeModLayout());
     broadcast('CONSOLE', `[Hypervisor] Mod file "${req.params.filename}" deleted.\r\n`);
     res.json({ ok: true });
   } catch (err) {
@@ -1180,12 +1173,10 @@ app.post('/api/instances/:id/provision', (req, res, next) => {
   }
 });
 
-// Server Provisioning / Installation API
-app.get('/api/provisioning/versions/:loader', async (req, res, next) => {
+// Server software installation, implemented by the game's extension (`installer`); core only tracks the job.
+app.get('/api/games/:gameId/installer/versions/:variant', async (req, res, next) => {
   try {
-    const loader = req.params.loader as LoaderType;
-    const versions = await ServerInstaller.getVersions(loader);
-    res.json(versions);
+    res.json(await installerOf(req.params.gameId).listVersions(req.params.variant));
   } catch (err) {
     next(err);
   }
@@ -1193,31 +1184,37 @@ app.get('/api/provisioning/versions/:loader', async (req, res, next) => {
 
 app.post('/api/provisioning/install', async (req, res, next) => {
   try {
-    const { loader, version, instanceId, instanceName, settings } = req.body as {
-      loader: LoaderType;
-      version: string;
+    const { variant, version, instanceId, instanceName, settings } = req.body as {
+      variant?: string;
+      version?: string;
       instanceId?: string;
       instanceName?: string;
       settings?: Partial<InstanceSettings>;
     };
+    if (!variant || !version) throw new DaemonError('INVALID_PAYLOAD', 'variant and version are required.');
 
     assertInstanceIdle(instanceId, 'install server software');
     if (provisionJobs.hasRunning()) {
       throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
     }
 
-    let target = instanceId ? instanceManager.getInstance(instanceId) : instanceManager.getInstance(instanceManager.getActiveInstanceId());
+    let target = instanceId
+      ? instanceManager.getInstance(instanceId)
+      : instanceManager.getInstance(instanceManager.getActiveInstanceId());
+    const gameId = target?.gameId ?? settings?.gameId ?? driverRegistry.getDefaultGameId();
+    const installer = installerOf(gameId);
     let createdInstanceId: string | undefined;
     if (!target && instanceId) {
-      // Loader and version are persisted in the same step that creates the instance.
+      // Variant and version are persisted in the same step that creates the instance.
       target = instanceManager.createInstance(instanceId, instanceName, {
         ...settings,
-        loader,
+        gameId,
+        loader: variant,
         loaderVersion: version
       });
       createdInstanceId = target.id;
     } else if (target) {
-      instanceManager.updateInstanceSettings(target.id, { loader, loaderVersion: version });
+      instanceManager.updateInstanceSettings(target.id, { loader: variant, loaderVersion: version });
     }
     if (!target) {
       throw new DaemonError('CONFIG_NOT_FOUND', 'No instance available to install into.');
@@ -1226,11 +1223,11 @@ app.post('/api/provisioning/install', async (req, res, next) => {
     const targetDir = target.dir;
     const jobId = startProvisionJob({
       instanceId: target.id,
-      loader,
+      loader: variant,
       version,
       rollbackInstanceId: createdInstanceId,
       javaPath: target.javaPath || config.javaPath,
-      run: (hooks) => ServerInstaller.provisionServer(targetDir, loader, version, hooks)
+      run: (hooks) => installer.install(targetDir, variant, version, hooks)
     });
 
     res.status(202).json({ ok: true, jobId, instanceId: target.id });
@@ -1266,68 +1263,40 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json(body);
 });
 
-// 20 Simulated players for the MOCK action with rich telemetry & modded dimensions
-const MOCK_PLAYERS: PlayerState[] = [
-  { username: 'MorphyCD', dimension: 'minecraft:overworld', x: -245, y: 68, z: 1120, health: 20, maxHealth: 20, food: 20, ping: 12, isOp: true },
-  { username: 'Notch', dimension: 'minecraft:the_nether', x: 42, y: 81, z: -19, health: 18, maxHealth: 20, food: 17, ping: 45, isOp: true },
-  { username: 'Jeb_', dimension: 'minecraft:the_end', x: 0, y: 64, z: 0, health: 15, maxHealth: 20, food: 14, ping: 28, isOp: true },
-  { username: 'Dinnerbone', dimension: 'minecraft:overworld', x: 1024, y: 72, z: -550, health: 20, maxHealth: 20, food: 20, ping: 64, isOp: false },
-  { username: 'Grian', dimension: 'minecraft:overworld', x: 120, y: 85, z: 340, health: 14, maxHealth: 20, food: 18, ping: 32, isOp: false },
-  { username: 'MumboJumbo', dimension: 'minecraft:overworld', x: -80, y: 64, z: 520, health: 19, maxHealth: 20, food: 19, ping: 19, isOp: false },
-  { username: 'DanTDM', dimension: 'minecraft:overworld', x: 310, y: 63, z: -105, health: 20, maxHealth: 20, food: 16, ping: 51, isOp: false },
-  { username: 'CaptainSparklez', dimension: 'twilightforest:twilight_forest', x: 15, y: 70, z: 128, health: 12, maxHealth: 20, food: 10, ping: 38, isOp: false },
-  { username: 'Technoblade', dimension: 'minecraft:the_nether', x: -666, y: 108, z: 420, health: 20, maxHealth: 20, food: 20, ping: 22, isOp: true },
-  { username: 'Dream', dimension: 'minecraft:overworld', x: 890, y: 70, z: -320, health: 16, maxHealth: 20, food: 15, ping: 15, isOp: false },
-  { username: 'GeorgeNotFound', dimension: 'deeperdarker:otherside', x: 910, y: 71, z: -305, health: 17, maxHealth: 20, food: 13, ping: 82, isOp: false },
-  { username: 'Sapnap', dimension: 'minecraft:the_nether', x: 210, y: 64, z: -88, health: 20, maxHealth: 20, food: 18, ping: 26, isOp: false },
-  { username: 'TommyInnit', dimension: 'minecraft:overworld', x: 50, y: 65, z: 15, health: 8, maxHealth: 20, food: 8, ping: 41, isOp: false, isFrozen: true },
-  { username: 'Philza', dimension: 'minecraft:the_end', x: 100, y: 49, z: -80, health: 20, maxHealth: 20, food: 20, ping: 30, isOp: true },
-  { username: 'WilburSoot', dimension: 'minecraft:overworld', x: -140, y: 63, z: 230, health: 11, maxHealth: 20, food: 12, ping: 95, isOp: false },
-  { username: 'Quackity', dimension: 'minecraft:overworld', x: 730, y: 68, z: 95, health: 13, maxHealth: 20, food: 15, ping: 110, isOp: false },
-  { username: 'Tubbo', dimension: 'minecraft:overworld', x: 60, y: 66, z: 40, health: 18, maxHealth: 20, food: 16, ping: 36, isOp: false },
-  { username: 'Ranboo', dimension: 'aether:the_aether', x: 250, y: 55, z: 14, health: 20, maxHealth: 20, food: 19, ping: 44, isOp: false },
-  { username: 'Skeppy', dimension: 'minecraft:overworld', x: -450, y: 64, z: -120, health: 15, maxHealth: 20, food: 14, ping: 58, isOp: false },
-  { username: 'BadBoyHalo', dimension: 'minecraft:the_nether', x: -300, y: 80, z: 75, health: 20, maxHealth: 20, food: 20, ping: 52, isOp: false, isMuted: true }
-];
+// Simulated telemetry for development (`MOCK`): sample players and inventory come from the active game's pack
+// (`devMock` in its manifest); games without one get a few anonymous players.
+interface DevMockData {
+  players: PlayerState[];
+  inventory?: Omit<PlayerInventoryData, 'username' | 'uuid'>;
+}
+
+const readDevMock = (): DevMockData => {
+  const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+  const gameId = instance?.gameId ?? '';
+  const declared = gameId ? driverRegistry.getManifest(gameId)?.devMock : undefined;
+  const file = declared ? driverRegistry.resolvePackFile(gameId, declared) : null;
+  if (file && fs.existsSync(file)) {
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf-8')) as DevMockData;
+    } catch {
+      // Fall through to the generic sample
+    }
+  }
+  return {
+    players: ['Alex', 'Sam', 'Robin'].map((username, index) => ({
+      username,
+      dimension: '',
+      x: index * 10,
+      y: 0,
+      z: index * -10,
+      ping: 20 + index * 15
+    }))
+  };
+};
 
 function createMockInventory(username: string): PlayerInventoryData {
-  return {
-    username,
-    uuid: `mock-${username}`,
-    armor: [
-      { slot: 39, id: 'minecraft:netherite_helmet', count: 1, damage: 45, maxDamage: 407, enchantments: [{ id: 'Protection', level: 4 }, { id: 'Unbreaking', level: 3 }] },
-      { slot: 38, id: 'minecraft:netherite_chestplate', count: 1, damage: 120, maxDamage: 592, customName: 'Chestplate of Fortitude', enchantments: [{ id: 'Protection', level: 4 }, { id: 'Mending', level: 1 }] },
-      { slot: 37, id: 'minecraft:netherite_leggings', count: 1, damage: 80, maxDamage: 555, enchantments: [{ id: 'Protection', level: 4 }] },
-      { slot: 36, id: 'minecraft:netherite_boots', count: 1, damage: 15, maxDamage: 481, enchantments: [{ id: 'Feather Falling', level: 4 }, { id: 'Soul Speed', level: 3 }] }
-    ],
-    offhand: { slot: 40, id: 'minecraft:totem_of_undying', count: 1 },
-    hotbar: [
-      { slot: 0, id: 'minecraft:netherite_sword', count: 1, damage: 110, maxDamage: 2031, customName: 'Excalibur', enchantments: [{ id: 'Sharpness', level: 5 }, { id: 'Looting', level: 3 }, { id: 'Fire Aspect', level: 2 }] },
-      { slot: 1, id: 'minecraft:netherite_pickaxe', count: 1, damage: 320, maxDamage: 2031, enchantments: [{ id: 'Efficiency', level: 5 }, { id: 'Fortune', level: 3 }] },
-      { slot: 2, id: 'minecraft:netherite_axe', count: 1, damage: 90, maxDamage: 2031 },
-      { slot: 3, id: 'minecraft:golden_apple', count: 16 },
-      { slot: 4, id: 'minecraft:ender_pearl', count: 16 },
-      { slot: 5, id: 'minecraft:cooked_beef', count: 64 },
-      { slot: 6, id: 'minecraft:firework_rocket', count: 64 },
-      { slot: 7, id: 'create:wrench', count: 1, customName: 'Engineer Wrench' },
-      { slot: 8, id: 'twilightforest:fiery_sword', count: 1, damage: 25, maxDamage: 1024, enchantments: [{ id: 'Fire Aspect', level: 3 }] }
-    ],
-    inventory: [
-      { slot: 9, id: 'minecraft:diamond', count: 64 },
-      { slot: 10, id: 'minecraft:emerald', count: 32 },
-      { slot: 11, id: 'minecraft:iron_ingot', count: 64 },
-      { slot: 12, id: 'minecraft:gold_ingot', count: 48 },
-      { slot: 13, id: 'minecraft:oak_log', count: 64 },
-      { slot: 14, id: 'minecraft:cobblestone', count: 64 },
-      { slot: 15, id: 'minecraft:torch', count: 64 },
-      { slot: 16, id: 'minecraft:water_bucket', count: 1 },
-      { slot: 17, id: 'minecraft:bow', count: 1, damage: 180, maxDamage: 384, enchantments: [{ id: 'Power', level: 5 }] },
-      { slot: 18, id: 'minecraft:arrow', count: 64 },
-      { slot: 19, id: 'minecraft:experience_bottle', count: 32 },
-      null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null
-    ]
-  };
+  const inventory = readDevMock().inventory ?? { armor: [], offhand: null, hotbar: [], inventory: [] };
+  return { ...inventory, username, uuid: `mock-${username}` } as PlayerInventoryData;
 }
 
 // WebSocket Handling
@@ -1444,7 +1413,7 @@ wss.on('connection', (ws, req) => {
         };
         broadcast('STATUS', 'ONLINE');
         broadcast('METRICS', mockMetrics);
-        broadcast('PLAYERS', MOCK_PLAYERS);
+        broadcast('PLAYERS', readDevMock().players);
         broadcast('CONSOLE', '[Server thread/INFO]: Done (3.850s)! Simulated 20-Player Telemetry Active (Bridge: Connected, TPS: 20.0, MSPT: 12.4ms).\r\n');
       }
     } catch (err) {

@@ -68,8 +68,12 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
   // Form Fields initialized directly from props
   const [name, setName] = useState(instance.name || instance.id);
   const [motd, setMotd] = useState(instance.motd || '');
-  const [port, setPort] = useState(instance.port || 25565);
-  const [maxPlayers, setMaxPlayers] = useState(instance.maxPlayers || 20);
+  const [port, setPort] = useState(instance.port || game?.defaultPort || 0);
+  const [maxPlayers, setMaxPlayers] = useState(instance.maxPlayers || game?.defaultMaxPlayers || 1);
+  // Each section only exists when the game declares what it needs.
+  const usesJava = Boolean(game?.supportsCustomJava);
+  const hasBridge = (game?.bridgeLoaders?.length ?? 0) > 0;
+  const hasMotd = Boolean(game?.configSync?.map.motd);
 
   const initialMaxMb = instance.maxRamMb || 4096;
   const isExactGb = initialMaxMb % 1024 === 0 && initialMaxMb >= 1024;
@@ -162,9 +166,18 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const startupPreview = `java -Xms${calculatedMinRamMb}M -Xmx${calculatedMaxRamMb}M ${parsedJvmArgs.join(
-    ' '
-  )} -jar server.jar nogui`.replace(/\s+/g, ' ');
+  const launchFile = instance.launchFile || game?.executableName || '';
+  const startupPreview = [
+    'java',
+    `-Xms${calculatedMinRamMb}M`,
+    `-Xmx${calculatedMaxRamMb}M`,
+    ...parsedJvmArgs,
+    '-jar',
+    launchFile,
+    ...(game?.launchArgs ?? [])
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,8 +194,8 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
       await onSaveSettings(instance.id, {
         name: name.trim() || instance.id,
         motd: motd.trim(),
-        port: Number(port) || 25565,
-        maxPlayers: Number(maxPlayers) || 20,
+        port: Number(port) || instance.port,
+        maxPlayers: Number(maxPlayers) || instance.maxPlayers,
         minRamMb: calculatedMinRamMb,
         maxRamMb: calculatedMaxRamMb,
         forceSaveOnStop,
@@ -238,31 +251,35 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             {t('edit_server.tab_general')}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('advanced')}
-            className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'advanced'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-mute hover:text-ink'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            {t('edit_server.tab_advanced')}
-          </button>
+          {usesJava && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('advanced')}
+              className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'advanced'
+                  ? 'border-ink text-ink'
+                  : 'border-transparent text-mute hover:text-ink'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              {t('edit_server.tab_advanced')}
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('bridge')}
-            className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'bridge'
-                ? 'border-ink text-ink'
-                : 'border-transparent text-mute hover:text-ink'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            {t('edit_server.tab_bridge')}
-          </button>
+          {hasBridge && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('bridge')}
+              className={`pb-1.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'bridge'
+                  ? 'border-ink text-ink'
+                  : 'border-transparent text-mute hover:text-ink'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              {t('edit_server.tab_bridge')}
+            </button>
+          )}
         </div>
 
         {/* Form Body */}
@@ -284,18 +301,20 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-mono text-[11px] uppercase text-mute">
-                    {t('edit_server.motd_label')}
-                  </label>
-                  <input
-                    type="text"
-                    value={motd}
-                    onChange={(e) => setMotd(e.target.value)}
-                    placeholder={t('create_server.motd_placeholder')}
-                    className="w-full h-9 px-3 rounded-[4px] bg-surface border border-hairline text-[13px] text-ink placeholder-mute focus:outline-none focus:border-ink"
-                  />
-                </div>
+                {hasMotd && (
+                  <div className="space-y-1.5">
+                    <label className="font-mono text-[11px] uppercase text-mute">
+                      {t('edit_server.motd_label')}
+                    </label>
+                    <input
+                      type="text"
+                      value={motd}
+                      onChange={(e) => setMotd(e.target.value)}
+                      placeholder={t('create_server.motd_placeholder')}
+                      className="w-full h-9 px-3 rounded-[4px] bg-surface border border-hairline text-[13px] text-ink placeholder-mute focus:outline-none focus:border-ink"
+                    />
+                  </div>
+                )}
 
                 {/* Folder Path Display */}
                 <div className="space-y-1.5">
@@ -465,7 +484,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             </div>
           )}
 
-          {activeTab === 'advanced' && (
+          {activeTab === 'advanced' && usesJava && (
             <div className="space-y-4">
               {/* Java Path Override */}
               <div className="space-y-1.5">
@@ -548,7 +567,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
             </div>
           )}
 
-          {activeTab === 'bridge' && (
+          {activeTab === 'bridge' && hasBridge && (
             <div className="space-y-4">
               <div className="p-4 rounded-[6px] border border-hairline bg-surface-2 space-y-3">
                 <div className="flex items-center justify-between">

@@ -44,7 +44,8 @@ const DEFAULTS = {
   allowedOrigins:
     'http://localhost:5173,http://127.0.0.1:5173,http://localhost:1420,http://127.0.0.1:1420,http://tauri.localhost,https://tauri.localhost,tauri://localhost',
   instanceId: '',
-  jarFile: 'server.jar',
+  /** Empty = each game launches its own declared executable. */
+  jarFile: '',
   javaPath: 'java',
   minRamMb: 2048,
   maxRamMb: 4096,

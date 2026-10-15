@@ -102,15 +102,12 @@ describe('daemonApi utilities', () => {
     globalThis.fetch = origFetch;
   });
 
-  it('fetchLoaderVersions falls back gracefully when network or daemon fails', async () => {
+  it('fetchInstallerVersions returns an empty list when the daemon cannot be reached', async () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
 
-    const { fetchLoaderVersions } = await import('../src/api/daemonApi');
-    const versions = await fetchLoaderVersions('fabric');
-    expect(versions).toBeInstanceOf(Array);
-    expect(versions.length).toBeGreaterThan(0);
-    expect(versions).toContain('1.21.4');
+    const { fetchInstallerVersions } = await import('../src/api/daemonApi');
+    await expect(fetchInstallerVersions('minecraft', 'fabric')).resolves.toEqual([]);
 
     globalThis.fetch = origFetch;
   });
