@@ -1,29 +1,36 @@
 import path from 'path';
 import type { IGameDriver, GameDriverSummary } from './IGameDriver';
-import { MinecraftDriver } from './MinecraftDriver';
-import { DeclarativeGameDriver } from '../gamepacks/DeclarativeDriver';
-import { validateManifest, type GameManifest } from '../gamepacks/manifest';
-import { PackLoader, type PackInfo } from '../gamepacks/PackLoader';
-import projectZomboidManifest from '../gamepacks/builtin/project-zomboid.json';
-import hytaleManifest from '../gamepacks/builtin/hytale.json';
+import type { GameManifest } from '../gamepacks/manifest';
+import { PackLoader, loadBundledPacks, type PackInfo } from '../gamepacks/PackLoader';
 
-const BUILTIN_MANIFESTS: unknown[] = [projectZomboidManifest, hytaleManifest];
+// Bundled single-file builds (Node SEA) have no meaningful __dirname; they pass the folder explicitly.
+const moduleDir = typeof __dirname === 'string' ? __dirname : process.cwd();
+const DEFAULT_BUNDLED_GAMES_DIR = path.resolve(moduleDir, '../../../assets/games');
 
 export class GameDriverRegistry {
   private readonly drivers = new Map<string, IGameDriver>();
   private readonly builtinIds = new Set<string>();
+  private bundledInfos: PackInfo[] = [];
+  private bundledDir = '';
   private packInfos: PackInfo[] = [];
   private loader: PackLoader | null = null;
   private readonly defaultDriverId = 'minecraft';
 
-  constructor() {
-    this.register(new MinecraftDriver(), true);
-    for (const raw of BUILTIN_MANIFESTS) {
-      const validation = validateManifest(raw);
-      if (!validation.ok || !validation.manifest) {
-        throw new Error(`Invalid built-in game pack: ${validation.errors.join('; ')}`);
-      }
-      this.register(new DeclarativeGameDriver(validation.manifest as GameManifest, null, 'builtin'), true);
+  constructor(bundledDir: string = DEFAULT_BUNDLED_GAMES_DIR) {
+    this.loadBundled(bundledDir);
+  }
+
+  /** (Re)loads the games that ship with Hosty from their pack folders. */
+  public loadBundled(bundledDir: string): void {
+    const resolved = path.resolve(bundledDir);
+    for (const id of this.builtinIds) this.drivers.delete(id);
+    this.builtinIds.clear();
+    this.bundledInfos = [];
+    this.bundledDir = resolved;
+
+    for (const { info, driver } of loadBundledPacks(resolved)) {
+      if (driver && info.id) this.register(driver, true);
+      this.bundledInfos.push(info);
     }
   }
 
@@ -39,7 +46,8 @@ export class GameDriverRegistry {
   }
 
   /** Loads user game packs from `gamesDir`; built-in drivers can never be replaced by a pack. */
-  public loadPacks(gamesDir: string): PackInfo[] {
+  public loadPacks(gamesDir: string, bundledDir?: string): PackInfo[] {
+    if (bundledDir && path.resolve(bundledDir) !== this.bundledDir) this.loadBundled(bundledDir);
     this.loader = new PackLoader(gamesDir);
     return this.reloadPacks();
   }
@@ -67,24 +75,9 @@ export class GameDriverRegistry {
     return infos;
   }
 
-  /** Built-in games first (read-only, shown as reference), then the packs found on disk. */
+  /** Bundled games first (read-only, shown as reference), then the packs found on disk. */
   public getPackInfos(): PackInfo[] {
-    const builtin: PackInfo[] = [...this.builtinIds].map((id) => {
-      const driver = this.drivers.get(id);
-      const manifest = driver ? this.getManifest(id) : null;
-      return {
-        id,
-        name: driver?.summary.name ?? id,
-        version: manifest?.version ?? null,
-        dir: 'built-in',
-        source: 'builtin',
-        hasCode: manifest === null,
-        trusted: true,
-        loaded: true,
-        errors: []
-      };
-    });
-    return [...builtin, ...this.packInfos];
+    return [...this.bundledInfos, ...this.packInfos];
   }
 
   /** Installs a pack folder into the games folder and reloads. Throws a readable message on failure. */
@@ -112,11 +105,14 @@ export class GameDriverRegistry {
   }
 
   public getDriver(gameId?: string): IGameDriver {
-    if (!gameId) {
-      return this.drivers.get(this.defaultDriverId)!;
+    const found = gameId ? this.drivers.get(gameId.toLowerCase()) : undefined;
+    const driver = found ?? this.drivers.get(this.defaultDriverId);
+    if (!driver) {
+      throw new Error(
+        `No game drivers are loaded (bundled games folder: ${this.bundledDir || 'unset'}). Check MC_NEXUS_BUNDLED_GAMES_DIR.`
+      );
     }
-    const found = this.drivers.get(gameId.toLowerCase());
-    return found ?? this.drivers.get(this.defaultDriverId)!;
+    return driver;
   }
 
   public hasDriver(gameId: string): boolean {

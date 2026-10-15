@@ -578,6 +578,10 @@
           }
         }
       }
+    },
+    "extension": {
+      "type": "string",
+      "description": "Reserved for packs bundled with Hosty."
     }
   }
 }

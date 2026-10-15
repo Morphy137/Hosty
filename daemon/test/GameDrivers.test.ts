@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { GameDriverRegistry, driverRegistry } from '../src/core/drivers/GameDriverRegistry';
-import { MinecraftDriver } from '../src/core/drivers/MinecraftDriver';
 
 describe('Game Drivers Architecture', () => {
   let tmpDir: string;
@@ -63,7 +62,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('MinecraftDriver', () => {
-    const driver = new MinecraftDriver();
+    const driver = new GameDriverRegistry().getDriver('minecraft');
 
     it('does not add G1 when the user picked another collector, and deduplicates flags', () => {
       fs.writeFileSync(path.join(tmpDir, 'server.jar'), '');

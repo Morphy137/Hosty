@@ -33,7 +33,7 @@ import net from 'net';
 
 const config = loadConfig();
 config.javaPath = resolveJavaExecutable(config.javaPath);
-driverRegistry.loadPacks(config.gamesDir);
+driverRegistry.loadPacks(config.gamesDir, config.bundledGamesDir);
 
 const app = express();
 app.use(

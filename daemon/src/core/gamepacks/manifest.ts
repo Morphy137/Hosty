@@ -111,6 +111,8 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
+  extension?: string;
   playerQueries?: PlayerQuery[];
   configSync?: ConfigSync;
   /** Loaders (or variants) a Telemetry Bridge artifact exists for. */
@@ -246,6 +248,10 @@ export function validateManifest(raw: unknown): ManifestValidation {
         if (entry.exclude !== undefined) checkPatterns('launch.discover.exclude', entry.exclude, errors);
       }
     }
+  }
+
+  if (raw.extension !== undefined && (typeof raw.extension !== 'string' || !ID_PATTERN.test(raw.extension))) {
+    errors.push('extension must be an extension id (lowercase letters, digits and dashes)');
   }
 
   if (raw.playerQueries !== undefined) {
