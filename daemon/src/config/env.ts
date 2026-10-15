@@ -9,7 +9,7 @@ const DEFAULTS = {
   allowedOrigins:
     'http://localhost:5173,http://127.0.0.1:5173,http://localhost:1420,http://127.0.0.1:1420,http://tauri.localhost,https://tauri.localhost,tauri://localhost',
   instanceDir: path.join(__dirname, '../../../instances/default'),
-  instanceId: 'default',
+  instanceId: '',
   jarFile: 'server.jar',
   javaPath: 'java',
   minRamMb: 2048,
