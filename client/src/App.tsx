@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDaemonSocket } from './hooks/useDaemonSocket';
 import { useDaemonHealth } from './hooks/useDaemonHealth';
 import { useInstances } from './hooks/useInstances';
@@ -21,6 +22,8 @@ import { Skeleton } from './components/ui/Skeleton';
 import { availableTabs, resolveActiveTab, type TabId } from './utils/tabs';
 import { useGames } from './hooks/useGames';
 import { useAppVersion } from './hooks/useAppVersion';
+import { useMetricsHistory } from './hooks/useMetricsHistory';
+import { useToast } from './components/ui/toastContext';
 import { isTauriRuntime } from './config/daemon';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
@@ -37,6 +40,7 @@ import { useAppUpdater } from './hooks/useAppUpdater';
 import { UpdateBanner } from './components/common/UpdateBanner';
 
 export default function App() {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const updater = useAppUpdater();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -85,6 +89,8 @@ export default function App() {
     }
   }, [activeInstance, instanceList, isLoadingInstances, selectInstance]);
   const games = useGames(connectionState);
+  const metricsHistory = useMetricsHistory(metrics, status);
+  const { toast } = useToast();
   const appVersion = useAppVersion();
   const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
   const tabs = availableTabs(activeGame);
@@ -282,6 +288,7 @@ export default function App() {
                     onOpenEditModal={() => setIsEditModalOpen(true)}
                     onRestart={handleRestartServer}
                     onInspectInventory={handleInspectInventory}
+                    history={metricsHistory}
                   />
                 )}
 
@@ -314,7 +321,10 @@ export default function App() {
                     onFilterChange={modConfigs.setFilter}
                     onSelectFile={modConfigs.selectFile}
                     onUpdateEntry={modConfigs.updateEntry}
-                    onSave={modConfigs.save}
+                    onSave={async () => {
+                      await modConfigs.save();
+                      toast({ title: t('toast.saved'), variant: 'success' });
+                    }}
                   />
                 )}
 
@@ -324,7 +334,10 @@ export default function App() {
                     filter={serverProperties.filter}
                     onFilterChange={serverProperties.setFilter}
                     onUpdateEntry={serverProperties.updateEntry}
-                    onSave={serverProperties.save}
+                    onSave={async () => {
+                      await serverProperties.save();
+                      toast({ title: t('toast.saved'), variant: 'success' });
+                    }}
                   />
                 )}
               </div>

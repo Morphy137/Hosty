@@ -32,6 +32,9 @@ import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActio
 import { getInstanceIconUrl } from '../../api/daemonApi';
 import { SlidingText } from '../common/SlidingText';
 import { GameLogo } from '../common/GameIcons';
+import { AnimatedNumber } from '../motion/AnimatedNumber';
+import { Sparkline } from '../common/Sparkline';
+import type { MetricsHistory } from '../../hooks/useMetricsHistory';
 
 interface OverviewTabProps {
   metrics: Metrics;
@@ -44,6 +47,7 @@ interface OverviewTabProps {
   onOpenEditModal: () => void;
   onRestart: () => void;
   onInspectInventory?: (player: PlayerState) => void;
+  history?: MetricsHistory;
 }
 
 const QUICK_COMMANDS = [
@@ -63,7 +67,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onSendAction,
   onOpenEditModal,
   onRestart,
-  onInspectInventory
+  onInspectInventory,
+  history
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
@@ -252,7 +257,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
-              {metrics.cpu}%
+              <AnimatedNumber value={metrics.cpu} fractionDigits={0} suffix="%" />
             </span>
             <span className="font-mono text-[12px] text-mute">java.exe</span>
           </div>
@@ -262,6 +267,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               style={{ width: `${Math.min(100, metrics.cpu)}%` }}
             />
           </div>
+          <Sparkline className="mt-2" values={history?.cpu ?? []} max={100} />
         </div>
 
         <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
@@ -273,7 +279,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
-              {metrics.ramMb} MB
+              <AnimatedNumber value={metrics.ramMb} suffix=" MB" />
             </span>
             <span className="font-mono text-[12px] text-mute">
               / {metrics.maxRamMb} MB ({ramPercent}%)
@@ -285,6 +291,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               style={{ width: `${ramPercent}%` }}
             />
           </div>
+          <Sparkline className="mt-2" values={history?.ramPercent ?? []} max={100} />
         </div>
 
         {/* TPS / MSPT Performance Card */}
@@ -423,7 +430,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 return (
                   <div
                     key={p.username}
-                    className="p-4 hover:bg-surface-2 transition space-y-3"
+                    className="animate-in p-4 hover:bg-surface-2 transition space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

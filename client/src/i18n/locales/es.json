@@ -438,5 +438,9 @@
     "kill_confirm_title": "¿Forzar el cierre del servidor?",
     "kill_confirm_desc": "El proceso se termina de inmediato. Se puede perder el progreso del mundo sin guardar.",
     "kill_confirm_action": "Forzar cierre"
+  },
+  "toast": {
+    "saved": "Cambios guardados",
+    "command_sent": "Comando enviado"
   }
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'motion/react';
 import { FolderInput, Globe, Moon, Plus, RefreshCw, Sparkles, Sun } from 'lucide-react';
 import type { InstanceInfo, ServerStatus } from '../../types/daemon';
 import { changeLanguage, type SupportedLanguage } from '../../i18n';
@@ -73,12 +74,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {instances.length === 0 && (
           <p className="px-2 py-3 text-[12px] text-mute">{t('header.no_servers')}</p>
         )}
+        <AnimatePresence initial={false}>
         {instances.map((instance) => {
           const isActive = instance.id === activeInstanceId;
           const status = statuses[instance.id] ?? instance.status ?? 'OFFLINE';
           return (
-            <button
+            <motion.div
               key={instance.id}
+              layout
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+            <button
               type="button"
               onClick={() => onSelectInstance(instance.id)}
               aria-current={isActive ? 'true' : undefined}
@@ -94,8 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
               <StatusDot status={status} />
             </button>
+            </motion.div>
           );
         })}
+        </AnimatePresence>
       </nav>
 
       <div className="space-y-2 border-t border-hairline p-3">

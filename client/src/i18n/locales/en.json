@@ -438,5 +438,9 @@
     "kill_confirm_title": "Force close the server?",
     "kill_confirm_desc": "The process is terminated immediately. Unsaved world progress may be lost.",
     "kill_confirm_action": "Force close"
+  },
+  "toast": {
+    "saved": "Changes saved",
+    "command_sent": "Command sent"
   }
 }
