@@ -56,6 +56,12 @@ jobs:
       - name: Install Client Dependencies
         run: npm --prefix client ci
 
+      # The daemon test suite imports these workspaces (bridge protocol schema, game SDK).
+      - name: Install Package Dependencies
+        run: |
+          npm --prefix packages/game-sdk ci
+          npm --prefix packages/bridge-protocol ci
+
       - name: Verify Quality Assurance (Tests & Linter)
         run: |
           npm --prefix daemon test
