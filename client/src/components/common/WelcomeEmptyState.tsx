@@ -1,16 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusCircle, FolderInput, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 
 interface WelcomeEmptyStateProps {
   onCreateServer: () => void;
-  onImportServer: () => void;
 }
 
-export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({
-  onCreateServer,
-  onImportServer
-}) => {
+export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({ onCreateServer }) => {
   const { t } = useTranslation();
 
   return (
@@ -32,54 +28,14 @@ export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({
           {t('onboarding.welcome_desc')}
         </p>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-8 text-left">
-          {/* Card 1: Create */}
-          <button
-            type="button"
-            onClick={onCreateServer}
-            className="group p-5 rounded-[10px] bg-surface hover:bg-surface-2 border border-hairline hover:border-accent transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-[8px] bg-accent/10 dark:bg-accent/15 text-accent-fg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                <PlusCircle className="w-5 h-5" />
-              </div>
-              <h2 className="text-[15px] font-semibold text-ink group-hover:text-accent-fg transition-colors">
-                {t('onboarding.create_server_title')}
-              </h2>
-              <p className="text-[12px] text-soft mt-1.5 leading-relaxed">
-                {t('onboarding.create_server_desc')}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-hairline flex items-center justify-between text-[12px] font-medium text-accent-fg">
-              <span>{t('onboarding.create_server_btn')}</span>
-              <span>→</span>
-            </div>
-          </button>
-
-          {/* Card 2: Import */}
-          <button
-            type="button"
-            onClick={onImportServer}
-            className="group p-5 rounded-[10px] bg-surface hover:bg-surface-2 border border-hairline hover:border-ink transition-all shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-[8px] bg-surface-3 text-ink flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                <FolderInput className="w-5 h-5" />
-              </div>
-              <h2 className="text-[15px] font-semibold text-ink group-hover:text-ink transition-colors">
-                {t('onboarding.import_server_title')}
-              </h2>
-              <p className="text-[12px] text-soft mt-1.5 leading-relaxed">
-                {t('onboarding.import_server_desc')}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-hairline flex items-center justify-between text-[12px] font-medium text-ink">
-              <span>{t('onboarding.import_server_btn')}</span>
-              <span className="text-mute group-hover:translate-x-0.5 transition-transform">→</span>
-            </div>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onCreateServer}
+          className="mt-8 inline-flex h-11 cursor-pointer items-center gap-2 rounded-[8px] bg-ink px-6 text-[14px] font-medium text-on-ink shadow-xs transition hover:bg-ink-hover"
+        >
+          {t('onboarding.get_started')}
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

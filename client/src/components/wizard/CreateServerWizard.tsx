@@ -49,7 +49,7 @@ export interface WizardActions {
     loaderVersion?: string;
   }) => Promise<void>;
   createInstance: (id: string, name: string, settings: Partial<InstanceSettings>) => Promise<string>;
-  importInstance: (path: string, name?: string) => Promise<string>;
+  importInstance: (path: string, name?: string, gameId?: string) => Promise<string>;
 }
 
 interface CreateServerWizardProps {
@@ -95,7 +95,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   const { toast } = useToast();
 
   const [draft, setDraft] = useState<WizardDraft>(INITIAL_DRAFT);
-  const [step, setStep] = useState<WizardStepId>('origin');
+  const [step, setStep] = useState<WizardStepId>('game');
   const [direction, setDirection] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +126,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
         port: nextFreePort(minecraft?.defaultPort ?? INITIAL_DRAFT.port, instances),
         maxPlayers: minecraft?.defaultMaxPlayers ?? INITIAL_DRAFT.maxPlayers
       });
-      setStep('origin');
+      setStep('game');
       setDirection(1);
       setIsBusy(false);
       setError(null);
@@ -185,7 +185,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   const canContinue = (() => {
     switch (step) {
       case 'origin':
-        return draft.origin === 'create' || (Boolean(draft.importInfo?.gameId) && !isInspecting);
+        return draft.origin === 'create' || (draft.importInfo?.gameId === draft.gameId && !isInspecting);
       case 'game':
         return game !== undefined && game.status !== 'coming_soon';
       case 'setup':
@@ -198,11 +198,6 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   })();
 
   const handleNext = () => {
-    if (step === 'origin' && draft.origin === 'create') {
-      // Preselect Minecraft the first time so the game step starts with a sensible default.
-      const target = games.find((candidate) => candidate.id === draft.gameId && candidate.status !== 'coming_soon');
-      if (target && !draft.name) handleSelectGame(target);
-    }
     const next = steps[stepIndex + 1];
     if (next) goTo(next, 1);
   };
@@ -223,7 +218,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
 
       switch (plan.kind) {
         case 'import':
-          instanceId = await actions.importInstance(plan.path, plan.name);
+          instanceId = await actions.importInstance(plan.path, plan.name, plan.gameId);
           break;
         case 'install':
           await actions.install({

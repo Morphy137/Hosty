@@ -62,7 +62,7 @@ describe('buildCreationPlan', () => {
 
   it('imports an existing folder', () => {
     const plan = buildCreationPlan({ ...baseDraft, origin: 'import', importPath: ' C:\\Servers\\old ' }, minecraft);
-    expect(plan).toEqual({ kind: 'import', path: 'C:\\Servers\\old', name: 'My Server' });
+    expect(plan).toEqual({ kind: 'import', path: 'C:\\Servers\\old', name: 'My Server', gameId: 'minecraft' });
   });
 
   it('creates non-Minecraft instances directly and forwards the schema values', () => {

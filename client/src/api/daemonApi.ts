@@ -170,12 +170,24 @@ export function getGameLogoUrl(gameId: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }
 
-export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {
-  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', { path: folderPath, name });
+export function importInstance(
+  folderPath: string,
+  name?: string,
+  gameId?: string
+): Promise<{ ok: boolean; instance: InstanceInfo }> {
+  return postJson<{ ok: boolean; instance: InstanceInfo }>('/api/instances/import', {
+    path: folderPath,
+    name,
+    gameId
+  });
 }
 
 export function fetchInstanceSettings(id: string): Promise<InstanceInfo> {
   return request<InstanceInfo>(`/api/instances/${encodeURIComponent(id)}/settings`);
+}
+
+export function deleteInstance(id: string): Promise<{ ok: boolean; keptFiles: boolean }> {
+  return deleteRequest<{ ok: boolean; keptFiles: boolean }>(`/api/instances/${encodeURIComponent(id)}`);
 }
 
 export function updateInstanceSettings(

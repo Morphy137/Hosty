@@ -157,6 +157,7 @@ export interface InstanceSettings {
   javaPath?: string;
   forceSaveOnStop?: boolean;
   autostart?: boolean;
+  favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
@@ -254,6 +255,7 @@ export interface InstanceInfo {
   javaPath: string;
   forceSaveOnStop: boolean;
   autostart: boolean;
+  favorite?: boolean;
   status?: ServerStatus;
   onlinePlayersCount?: number;
   loader?: string;

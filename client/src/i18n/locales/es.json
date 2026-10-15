@@ -168,7 +168,7 @@
     "motd_label": "Descripción (MOTD)",
     "folder_path": "Ruta de la Carpeta",
     "force_save_label": "Forzar 'save-all' al detener el servidor",
-    "autostart_label": "Iniciar automáticamente con el daemon",
+    "autostart_label": "Iniciar automáticamente al abrir Hosty",
     "icon_label": "Ícono del Servidor",
     "upload_icon": "Subir Ícono",
     "remove_icon": "Eliminar Ícono",
@@ -403,7 +403,8 @@
     "import_server_btn": "Importar servidor",
     "empty_overview_title": "Ningún servidor seleccionado",
     "empty_overview_desc": "Crea un nuevo servidor dedicado o importa una carpeta de servidor existente para comenzar a gestionarlo.",
-    "footer_tagline": "Hosty • Supervisor de servidores multijuego"
+    "footer_tagline": "Hosty • Supervisor de servidores multijuego",
+    "get_started": "Comenzar"
   },
   "updater": {
     "update_available_title": "Actualización disponible",
@@ -430,7 +431,21 @@
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
     "version": "v{{version}}",
-    "game_packs": "Paquetes de juegos"
+    "game_packs": "Paquetes de juegos",
+    "menu_edit": "Editar servidor",
+    "menu_rename": "Cambiar nombre",
+    "menu_favorite": "Añadir a favoritos",
+    "menu_unfavorite": "Quitar de favoritos",
+    "menu_remove": "Quitar de Hosty",
+    "menu_delete": "Eliminar servidor",
+    "menu_more": "Opciones del servidor",
+    "rename_title": "Cambiar nombre del servidor",
+    "rename_save": "Guardar",
+    "cancel": "Cancelar",
+    "remove_title": "¿Quitar de Hosty?",
+    "remove_imported_desc": "\"{{name}}\" desaparecerá de Hosty. Su carpeta y archivos NO se borran, así que puedes importarlo de nuevo más tarde.",
+    "delete_title": "¿Eliminar servidor?",
+    "delete_created_desc": "\"{{name}}\" y todos sus archivos (mundos, mods, configuraciones) se eliminarán permanentemente del disco."
   },
   "titlebar": {
     "minimize": "Minimizar",
@@ -525,7 +540,8 @@
     "done_title": "{{name}} está listo",
     "done_desc": "Tu servidor fue creado. Puedes iniciarlo ahora o abrir su panel para seguir configurándolo.",
     "start_now": "Iniciar servidor ahora",
-    "open_panel": "Abrir panel"
+    "open_panel": "Abrir panel",
+    "import_wrong_game": "Esta carpeta parece un servidor de \"{{detected}}\", no de \"{{selected}}\". Vuelve atrás y elige el juego correcto."
   },
   "config": {
     "no_files": "Este juego no tiene archivos de configuración editables.",

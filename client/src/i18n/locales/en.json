@@ -168,7 +168,7 @@
     "motd_label": "Description (MOTD)",
     "folder_path": "Folder Path",
     "force_save_label": "Force 'save-all' on server stop",
-    "autostart_label": "Autostart when daemon starts",
+    "autostart_label": "Start automatically when Hosty opens",
     "icon_label": "Server Icon",
     "upload_icon": "Upload Icon",
     "remove_icon": "Remove Icon",
@@ -403,7 +403,8 @@
     "import_server_btn": "Import Server",
     "empty_overview_title": "No Server Selected",
     "empty_overview_desc": "Create a new dedicated server or import an existing server folder to start managing your game.",
-    "footer_tagline": "Hosty • Multi-game Server Supervisor"
+    "footer_tagline": "Hosty • Multi-game Server Supervisor",
+    "get_started": "Get started"
   },
   "updater": {
     "update_available_title": "Update Available",
@@ -430,7 +431,21 @@
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
     "version": "v{{version}}",
-    "game_packs": "Game packs"
+    "game_packs": "Game packs",
+    "menu_edit": "Edit server",
+    "menu_rename": "Rename",
+    "menu_favorite": "Add to favorites",
+    "menu_unfavorite": "Remove from favorites",
+    "menu_remove": "Remove from Hosty",
+    "menu_delete": "Delete server",
+    "menu_more": "Server options",
+    "rename_title": "Rename server",
+    "rename_save": "Save",
+    "cancel": "Cancel",
+    "remove_title": "Remove from Hosty?",
+    "remove_imported_desc": "\"{{name}}\" will disappear from Hosty. Its folder and files are NOT deleted, so you can import it again later.",
+    "delete_title": "Delete server?",
+    "delete_created_desc": "\"{{name}}\" and all of its files (worlds, mods, configs) will be permanently deleted from disk."
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -525,7 +540,8 @@
     "done_title": "{{name}} is ready",
     "done_desc": "Your server was created. You can start it now or open its panel to keep configuring.",
     "start_now": "Start server now",
-    "open_panel": "Open panel"
+    "open_panel": "Open panel",
+    "import_wrong_game": "This folder looks like a \"{{detected}}\" server, not \"{{selected}}\". Go back and choose the right game."
   },
   "config": {
     "no_files": "This game has no editable configuration files.",

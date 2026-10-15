@@ -270,6 +270,18 @@ export default function App() {
           onCreate={() => openWizard('create')}
           onImport={() => openWizard('import')}
           onOpenGamePacks={() => setIsPacksOpen(true)}
+          onEditInstance={(id) => {
+            void instances.selectInstance(id).then(() => setIsEditModalOpen(true));
+          }}
+          onRenameInstance={async (id, name) => {
+            await instances.updateSettings(id, { name }).catch(() => undefined);
+          }}
+          onToggleFavorite={async (id, favorite) => {
+            await instances.updateSettings(id, { favorite }).catch(() => undefined);
+          }}
+          onRemoveInstance={async (id) => {
+            await instances.deleteInstance(id).catch(() => undefined);
+          }}
           theme={theme}
           onToggleTheme={toggleTheme}
           appVersion={appVersion}
@@ -305,7 +317,6 @@ export default function App() {
               ) : (
                 <WelcomeEmptyState
                   onCreateServer={() => openWizard('create')}
-                  onImportServer={() => openWizard('import')}
                 />
               )
             ) : (

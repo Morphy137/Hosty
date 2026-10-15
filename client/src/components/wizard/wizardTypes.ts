@@ -3,8 +3,8 @@ import type { FolderInspection, GameDriverSummary, JarInspection, ServerLoader }
 export type WizardOrigin = 'create' | 'import';
 export type WizardStepId = 'origin' | 'game' | 'setup' | 'customize' | 'review' | 'done';
 
-export const CREATE_STEPS: WizardStepId[] = ['origin', 'game', 'setup', 'customize', 'review'];
-export const IMPORT_STEPS: WizardStepId[] = ['origin', 'customize', 'review'];
+export const CREATE_STEPS: WizardStepId[] = ['game', 'origin', 'setup', 'customize', 'review'];
+export const IMPORT_STEPS: WizardStepId[] = ['game', 'origin', 'customize', 'review'];
 
 export type SetupValue = string | number | boolean;
 

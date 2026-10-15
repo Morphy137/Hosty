@@ -392,6 +392,24 @@ app.delete('/api/instances/:id/icon', (req, res, next) => {
 });
 
 // Restart endpoint
+// Removes an instance from Hosty. Imported folders are only unregistered (files are kept).
+app.delete('/api/instances/:id', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    }
+    if (registry.getSupervisor(instance.id)?.isRunning()) {
+      throw new DaemonError('SERVER_RUNNING', 'Stop the server before removing it.');
+    }
+    instanceManager.deleteInstance(instance.id);
+    registry.removeSupervisor(instance.id);
+    res.json({ ok: true, keptFiles: Boolean(instance.isImported) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/instances/:id/restart', (req, res, next) => {
   try {
     const instance = instanceManager.getInstance(req.params.id);
@@ -1198,7 +1216,24 @@ wss.on('connection', (ws, req) => {
 
 server.listen(config.port, config.host, () => {
   console.log(`[MC-Nexus Daemon] Listening on http://${config.host}:${config.port}`);
+  startAutostartInstances();
 });
+
+/** Starts every instance flagged "start with Hosty", one after another to avoid a CPU spike. */
+function startAutostartInstances(): void {
+  const pending = instanceManager.listInstances().filter((instance) => instance.autostart);
+  pending.forEach((instance, index) => {
+    setTimeout(() => {
+      try {
+        prepareBridgeConfig(instance.id);
+        registry.getOrCreateSupervisor(instance).start();
+        console.log(`[MC-Nexus Daemon] Autostarted "${instance.name}".`);
+      } catch (err) {
+        console.error(`Autostart failed for "${instance.name}":`, err);
+      }
+    }, 1500 + index * 4000);
+  });
+}
 
 let isShuttingDown = false;
 

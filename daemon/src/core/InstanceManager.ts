@@ -16,6 +16,8 @@ export interface InstanceSettings {
   javaPath?: string;
   forceSaveOnStop?: boolean;
   autostart?: boolean;
+  /** Pinned to the top of the server list. */
+  favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
   gameId?: string;
@@ -42,6 +44,7 @@ export interface InstanceInfo {
   javaPath: string;
   forceSaveOnStop: boolean;
   autostart: boolean;
+  favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
   gameId: string;
@@ -385,6 +388,7 @@ export class InstanceManager {
       javaPath: settings.javaPath ?? '',
       forceSaveOnStop: settings.forceSaveOnStop ?? true,
       autostart: settings.autostart ?? false,
+      favorite: settings.favorite ?? false,
       loader: settings.loader,
       loaderVersion: settings.loaderVersion,
       gameId,

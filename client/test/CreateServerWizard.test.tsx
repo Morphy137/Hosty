@@ -170,7 +170,9 @@ describe('CreateServerWizard', () => {
     renderWizard(actions, 'import');
 
     const dialog = await screen.findByRole('dialog');
-    const input = within(dialog).getByLabelText('Server Folder Path');
+    // The wizard starts at the game step; the folder is then checked against the chosen game.
+    await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
+    const input = await within(dialog).findByLabelText('Server Folder Path');
     await user.type(input, 'C:/servers/old');
     await user.tab();
 
@@ -179,6 +181,6 @@ describe('CreateServerWizard', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
     await user.click(within(dialog).getByRole('button', { name: 'Import Server' }));
 
-    await waitFor(() => expect(actions.importInstance).toHaveBeenCalledWith('C:/servers/old', 'old'));
+    await waitFor(() => expect(actions.importInstance).toHaveBeenCalledWith('C:/servers/old', 'old', 'minecraft'));
   });
 });
