@@ -23,6 +23,8 @@ import { runServerInstaller } from './provisioning/JavaInstallerRunner';
 import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment } from './core/EnvironmentDetector';
+import { inspectServerFolder } from './core/FolderInspector';
+import net from 'net';
 
 const config = loadConfig();
 
@@ -65,7 +67,15 @@ const registry = new SupervisorRegistry({
 });
 
 // Helper to get currently active working directory
-const getActiveDir = () => instanceManager.getActiveInstanceDir();
+// Directory of the active instance. Without one, the instances root must never be treated as a
+// server folder (mods/config routes would create stray folders that then show up as servers).
+const hasActiveInstance = () => instanceManager.getActiveInstanceId() !== '';
+const getActiveDir = () => {
+  if (!hasActiveInstance()) {
+    throw new DaemonError('CONFIG_NOT_FOUND', 'No server instance is selected.');
+  }
+  return instanceManager.getActiveInstanceDir();
+};
 
 // Helper to get or create the ProcessSupervisor for the active instance
 const getActiveSupervisor = (): ProcessSupervisor | null => {
@@ -147,6 +157,19 @@ app.get('/api/system/environment', (_req, res) => {
     totalMemMb: Math.round(os.totalmem() / (1024 * 1024)),
     freeMemMb: Math.round(os.freemem() / (1024 * 1024))
   });
+});
+
+// Reports whether a TCP port can be bound on this machine (used by the creation wizard)
+app.get('/api/system/ports/:port', (req, res, next) => {
+  const port = Number(req.params.port);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    next(new DaemonError('INVALID_PAYLOAD', 'Port must be an integer between 1 and 65535.'));
+    return;
+  }
+  const probe = net.createServer();
+  probe.once('error', () => res.json({ port, inUse: true }));
+  probe.once('listening', () => probe.close(() => res.json({ port, inUse: false })));
+  probe.listen(port, '0.0.0.0');
 });
 
 // Game Drivers API
@@ -348,6 +371,16 @@ app.post('/api/instances/create', (req, res, next) => {
 
     const created = instanceManager.createInstance(id, name, settings);
     res.json({ ok: true, instance: created });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/inspect-folder', (req, res, next) => {
+  try {
+    const { path: folderPath } = req.body as { path?: string };
+    if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
+    res.json(inspectServerFolder(folderPath));
   } catch (err) {
     next(err);
   }
@@ -564,7 +597,7 @@ app.post('/api/instances/upload-server-jar', async (req, res, next) => {
 // Server Properties API
 app.get('/api/properties', (_req, res, next) => {
   try {
-    res.json(PropertiesParser.parseFile(getActiveDir()));
+    res.json(hasActiveInstance() ? PropertiesParser.parseFile(getActiveDir()) : []);
   } catch (err) {
     next(err);
   }
@@ -584,7 +617,7 @@ app.post('/api/properties', (req, res, next) => {
 // Physical Mods .jar Files API
 app.get('/api/mods/files', (_req, res, next) => {
   try {
-    res.json(ModJarManager.listModFiles(getActiveDir()));
+    res.json(hasActiveInstance() ? ModJarManager.listModFiles(getActiveDir()) : []);
   } catch (err) {
     next(err);
   }
@@ -615,7 +648,7 @@ app.delete('/api/mods/files/:filename', (req, res, next) => {
 // Mod Configurations API (/config/*.toml, *.json)
 app.get('/api/mods/configs', (_req, res, next) => {
   try {
-    res.json(ModConfigParser.listConfigs(getActiveDir()));
+    res.json(hasActiveInstance() ? ModConfigParser.listConfigs(getActiveDir()) : []);
   } catch (err) {
     next(err);
   }
