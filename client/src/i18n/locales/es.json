@@ -591,5 +591,20 @@
     "install_button": "Instalar",
     "builtin": "Integrado",
     "uninstall": "Desinstalar pack"
+  },
+  "mod_catalog": {
+    "title": "Buscar mods",
+    "description": "Busca en {{source}} y descarga directo en este servidor. Los resultados se filtran por el motor y la versión del servidor.",
+    "browse": "Buscar mods",
+    "source": "Fuente",
+    "search_placeholder": "Buscar mods y plugins...",
+    "search": "Buscar",
+    "empty": "Sin resultados.",
+    "by": "por {{author}}",
+    "install": "Instalar",
+    "load_more": "Cargar más",
+    "installed": "{{name}} instalado",
+    "install_failed": "No se pudo instalar {{name}}",
+    "restart_required": "Reinicia el servidor para cargarlo."
   }
 }

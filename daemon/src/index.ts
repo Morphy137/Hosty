@@ -10,6 +10,7 @@ import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSupervisor';
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
+import { ModCatalog } from './provisioning/ModCatalog';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { telemetryBridge, TelemetryBridgeManager } from './core/bridge/TelemetryBridgeManager';
@@ -405,6 +406,60 @@ app.delete('/api/instances/:id', (req, res, next) => {
     instanceManager.deleteInstance(instance.id);
     registry.removeSupervisor(instance.id);
     res.json({ ok: true, keptFiles: Boolean(instance.isImported) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Mod catalog: sources are declared by the game driver, the core stays game-agnostic ----------
+const resolveModSource = (instanceId: string, sourceId: unknown) => {
+  const instance = instanceManager.getInstance(instanceId);
+  if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${instanceId}" not found.`);
+  const sources = driverRegistry.getDriver(instance.gameId).summary.modSources ?? [];
+  const source = sources.find((candidate) => candidate.id === sourceId) ?? sources[0];
+  if (!source) throw new DaemonError('INVALID_PAYLOAD', 'This game has no mod catalog.');
+  return { instance, source, sources };
+};
+
+app.get('/api/instances/:id/mods/sources', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    res.json({ sources: driverRegistry.getDriver(instance.gameId).summary.modSources ?? [] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/instances/:id/mods/search', async (req, res, next) => {
+  try {
+    const { instance, source } = resolveModSource(req.params.id, req.query.source);
+    const query = typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '';
+    const offset = Number(req.query.offset) || 0;
+    res.json(
+      await ModCatalog.search(
+        source,
+        { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
+        query,
+        offset
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/mods/install', async (req, res, next) => {
+  try {
+    const { source: sourceId, projectId } = req.body as { source?: string; projectId?: string };
+    if (!projectId) throw new DaemonError('INVALID_PAYLOAD', 'projectId is required.');
+    const { instance, source } = resolveModSource(req.params.id, sourceId);
+    const installed = await ModCatalog.install(
+      source,
+      { dir: instance.dir, loader: instance.loader, gameVersion: instance.loaderVersion },
+      projectId
+    );
+    res.json({ ok: true, ...installed, restartRequired: registry.getSupervisor(instance.id)?.isRunning() ?? false });
   } catch (err) {
     next(err);
   }

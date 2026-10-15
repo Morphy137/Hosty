@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { IGameDriver, GameDriverSummary, ProcessLaunchPlan, ParsedLogEvent, JvmFlagPreset } from './IGameDriver';
+import type { IGameDriver, GameDriverSummary, ProcessLaunchPlan, ParsedLogEvent, JvmFlagPreset, ModSourceSummary } from './IGameDriver';
 import {
   isServerReadyLine,
   parseDimensionResponse,
@@ -51,6 +51,24 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
     .find((name) => /^forge-.+\.jar$/i.test(name) && !/installer/i.test(name));
   return legacy ? { mode: 'jar', target: legacy } : null;
 }
+
+const MODRINTH_SOURCE: ModSourceSummary = {
+  id: 'modrinth',
+  name: 'Modrinth',
+  type: 'modrinth',
+  baseUrl: 'https://api.modrinth.com/v2',
+  projectUrl: 'https://modrinth.com/project/{slug}',
+  loaderCategories: {
+    fabric: ['fabric'],
+    forge: ['forge'],
+    neoforge: ['neoforge'],
+    paper: ['paper', 'spigot', 'bukkit'],
+    purpur: ['purpur', 'paper', 'spigot', 'bukkit'],
+    spigot: ['spigot', 'bukkit']
+  },
+  installDir: { paper: 'plugins', purpur: 'plugins', spigot: 'plugins' },
+  defaultInstallDir: 'mods'
+};
 
 const JVM_FLAG_PRESETS: JvmFlagPreset[] = [
   {
@@ -106,6 +124,7 @@ export class MinecraftDriver implements IGameDriver {
     capabilities: { players: true, mods: true, configEditor: true, bridge: true },
     configFiles: [{ path: 'server.properties', format: 'properties' }],
     launchDefaults: { memoryMb: 4096 },
+    modSources: [MODRINTH_SOURCE],
     jvmFlagPresets: JVM_FLAG_PRESETS,
     source: 'builtin',
     hasLogo: false

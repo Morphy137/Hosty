@@ -37,6 +37,7 @@ import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
 import type { WizardOrigin } from './components/wizard/wizardTypes';
 import { EditServerModal } from './components/modals/EditServerModal';
+import { ModCatalogDialog } from './components/modals/ModCatalogDialog';
 import { PlayerInventoryModal } from './components/modals/PlayerInventoryModal';
 import { WelcomeEmptyState } from './components/common/WelcomeEmptyState';
 import { useAppUpdater } from './hooks/useAppUpdater';
@@ -100,6 +101,7 @@ export default function App() {
   const appVersion = useAppVersion();
   const activeGame = games.find((game) => game.id === (instances.activeInstance?.gameId ?? 'minecraft'));
   const locales = useLocales(connectionState);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
@@ -360,6 +362,7 @@ export default function App() {
                     onToggleMod={modFiles.toggleMod}
                     onDeleteMod={modFiles.deleteMod}
                     onOpenConfigTab={() => setActiveTab('mods')}
+                    onBrowseCatalog={activeGame?.modSources?.length ? () => setIsCatalogOpen(true) : undefined}
                   />
                 )}
 
@@ -415,6 +418,16 @@ export default function App() {
         onClose={() => setIsPacksOpen(false)}
         onChanged={() => setGamesReloadKey((key) => key + 1)}
       />
+
+      {activeGame?.modSources?.length && instances.activeInstance ? (
+        <ModCatalogDialog
+          open={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          instanceId={instances.activeInstance.id}
+          sources={activeGame.modSources}
+          onInstalled={() => void modFiles.refresh()}
+        />
+      ) : null}
 
       <EditServerModal
         isOpen={isEditModalOpen}

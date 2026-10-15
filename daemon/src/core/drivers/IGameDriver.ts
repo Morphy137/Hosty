@@ -40,6 +40,28 @@ export interface JvmFlagPreset {
   recommendedFor?: string[];
 }
 
+/**
+ * Where a game's mods/plugins can be searched and downloaded from. The core only speaks the
+ * declared API dialect, so any game pack can expose its own catalog.
+ */
+export interface ModSourceSummary {
+  id: string;
+  name: string;
+  /** API dialect. `modrinth` = Modrinth/Labrinth v2 compatible. */
+  type: 'modrinth';
+  /** API base URL, e.g. https://api.modrinth.com/v2 */
+  baseUrl: string;
+  /** Optional link template for a project page; `{slug}` is replaced. */
+  projectUrl?: string;
+  /** Instance loader -> catalog category names used as the compatibility filter. */
+  loaderCategories?: Record<string, string[]>;
+  /** Restrict results to these catalog project types. */
+  projectTypes?: string[];
+  /** Instance loader -> folder (relative to the instance) the file is placed in. */
+  installDir?: Record<string, string>;
+  defaultInstallDir?: string;
+}
+
 export interface LaunchDefaults {
   /** Default heap size in MB offered when creating a server. */
   memoryMb?: number;
@@ -63,6 +85,7 @@ export interface GameDriverSummary {
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
+  modSources?: ModSourceSummary[];
   jvmFlagPresets?: JvmFlagPreset[];
   /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
   source: 'builtin' | 'pack';

@@ -591,5 +591,20 @@
     "install_button": "Install",
     "builtin": "Built-in",
     "uninstall": "Uninstall pack"
+  },
+  "mod_catalog": {
+    "title": "Find mods",
+    "description": "Search {{source}} and download straight into this server. Results are filtered by the server's loader and version.",
+    "browse": "Find mods",
+    "source": "Source",
+    "search_placeholder": "Search mods and plugins...",
+    "search": "Search",
+    "empty": "No results.",
+    "by": "by {{author}}",
+    "install": "Install",
+    "load_more": "Load more",
+    "installed": "{{name}} installed",
+    "install_failed": "Could not install {{name}}",
+    "restart_required": "Restart the server to load it."
   }
 }

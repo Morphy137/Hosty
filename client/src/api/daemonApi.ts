@@ -1,5 +1,6 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  ModSearchHit,
   ConfigEntry,
   ConfigPayload,
   DaemonErrorPayload,
@@ -175,6 +176,29 @@ export function installGamePack(sourcePath: string): Promise<{ ok: boolean; game
 export function uninstallGamePack(packId: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
   return deleteRequest<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>(
     `/api/game-packs/${encodeURIComponent(packId)}`
+  );
+}
+
+export function searchCatalogMods(
+  instanceId: string,
+  sourceId: string,
+  query: string,
+  offset = 0
+): Promise<{ hits: ModSearchHit[]; total: number; offset: number }> {
+  const params = new URLSearchParams({ source: sourceId, q: query, offset: String(offset) });
+  return request<{ hits: ModSearchHit[]; total: number; offset: number }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/mods/search?${params.toString()}`
+  );
+}
+
+export function installCatalogMod(
+  instanceId: string,
+  sourceId: string,
+  projectId: string
+): Promise<{ ok: boolean; filename: string; restartRequired: boolean }> {
+  return postJson<{ ok: boolean; filename: string; restartRequired: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/mods/install`,
+    { source: sourceId, projectId }
   );
 }
 

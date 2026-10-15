@@ -187,6 +187,24 @@ export interface SetupField {
   component?: string;
 }
 
+export interface ModSourceInfo {
+  id: string;
+  name: string;
+  type: string;
+  baseUrl: string;
+}
+
+export interface ModSearchHit {
+  projectId: string;
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  downloads: number;
+  iconUrl: string | null;
+  url: string | null;
+}
+
 export interface JvmFlagPreset {
   id: string;
   label: string;
@@ -214,6 +232,7 @@ export interface GameDriverSummary {
   configFiles: ConfigFileInfo[];
   launchDefaults?: { memoryMb?: number };
   jvmFlagPresets?: JvmFlagPreset[];
+  modSources?: ModSourceInfo[];
   source: 'builtin' | 'pack';
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */
