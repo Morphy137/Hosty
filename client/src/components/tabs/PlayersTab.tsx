@@ -203,7 +203,7 @@ export const PlayersTab: React.FC<PlayersTabProps> = ({
               return (
                 <div
                   key={player.username}
-                  className="geist-card p-3.5 flex flex-col justify-between hover:border-ink/30 transition space-y-3 bg-surface border border-hairline shadow-2xs"
+                  className="animate-in geist-card p-3.5 flex flex-col justify-between hover:border-ink/30 transition space-y-3 bg-surface border border-hairline shadow-2xs"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
