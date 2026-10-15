@@ -101,4 +101,17 @@ describe('daemonApi utilities', () => {
 
     globalThis.fetch = origFetch;
   });
+
+  it('fetchLoaderVersions falls back gracefully when network or daemon fails', async () => {
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network failure'));
+
+    const { fetchLoaderVersions } = await import('../src/api/daemonApi');
+    const versions = await fetchLoaderVersions('fabric');
+    expect(versions).toBeInstanceOf(Array);
+    expect(versions.length).toBeGreaterThan(0);
+    expect(versions).toContain('1.21.4');
+
+    globalThis.fetch = origFetch;
+  });
 });

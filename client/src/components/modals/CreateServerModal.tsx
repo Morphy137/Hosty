@@ -87,6 +87,21 @@ const WIZARD_STEPS: { id: WizardStep; labelKey: string; icon: React.ElementType 
   { id: 'review', labelKey: 'create_server.steps.review', icon: Server }
 ];
 
+const FALLBACK_MINECRAFT_VERSIONS: readonly string[] = [
+  '1.21.4',
+  '1.21.3',
+  '1.21.1',
+  '1.21',
+  '1.20.6',
+  '1.20.4',
+  '1.20.2',
+  '1.20.1',
+  '1.19.4',
+  '1.19.2',
+  '1.18.2',
+  '1.16.5'
+];
+
 export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   isOpen,
   onClose,
@@ -108,8 +123,8 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
   const [ramUnit, setRamUnit] = useState<'GB' | 'MB'>('GB');
 
   const [selectedLoader, setSelectedLoader] = useState<ServerLoader>('fabric');
-  const [versions, setVersions] = useState<string[]>([]);
-  const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [versions, setVersions] = useState<string[]>([...FALLBACK_MINECRAFT_VERSIONS]);
+  const [selectedVersion, setSelectedVersion] = useState<string>(FALLBACK_MINECRAFT_VERSIONS[0]);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
 
@@ -164,13 +179,16 @@ export const CreateServerModal: React.FC<CreateServerModalProps> = ({
     fetchLoaderVersions(selectedLoader)
       .then((verList) => {
         if (ignore) return;
-        setVersions(verList);
-        setSelectedVersion(verList[0] ?? '');
+        const validList = verList && verList.length > 0 ? verList : FALLBACK_MINECRAFT_VERSIONS;
+        setVersions([...validList]);
+        setSelectedVersion((prev) => (validList.includes(prev) ? prev : validList[0] ?? ''));
       })
       .catch(() => {
         if (ignore) return;
-        setVersions([]);
-        setSelectedVersion('');
+        setVersions([...FALLBACK_MINECRAFT_VERSIONS]);
+        setSelectedVersion((prev) =>
+          FALLBACK_MINECRAFT_VERSIONS.includes(prev) ? prev : FALLBACK_MINECRAFT_VERSIONS[0] ?? ''
+        );
       })
       .finally(() => {
         if (!ignore) setIsLoadingVersions(false);

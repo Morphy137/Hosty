@@ -7,6 +7,7 @@ describe('Daemon loadConfig', () => {
     expect(config.port).toBe(4000);
     expect(config.host).toBe('127.0.0.1');
     expect(config.allowedOrigins).toContain('http://localhost:5173');
+    expect(config.allowedOrigins).toContain('http://tauri.localhost');
     expect(config.minRamMb).toBe(2048);
     expect(config.maxRamMb).toBe(4096);
   });

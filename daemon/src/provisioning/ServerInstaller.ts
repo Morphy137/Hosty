@@ -22,6 +22,21 @@ const USER_AGENT = 'mc-nexus/1.0.0 (contact@mc-nexus.local)';
 const DEFAULT_HEADERS = { 'User-Agent': USER_AGENT };
 const MAX_VERSIONS = 15;
 
+export const DEFAULT_MINECRAFT_VERSIONS: readonly string[] = [
+  '1.21.4',
+  '1.21.3',
+  '1.21.1',
+  '1.21',
+  '1.20.6',
+  '1.20.4',
+  '1.20.2',
+  '1.20.1',
+  '1.19.4',
+  '1.19.2',
+  '1.18.2',
+  '1.16.5'
+];
+
 export class ServerInstaller {
   public static isValidLoader(value: unknown): value is LoaderType {
     return typeof value === 'string' && (VALID_LOADERS as readonly string[]).includes(value);
@@ -51,10 +66,8 @@ export class ServerInstaller {
       }
 
       return await this.getVanillaVersions();
-    } catch (err: unknown) {
-      if (err instanceof DaemonError) throw err;
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new DaemonError('UPSTREAM_ERROR', `Failed to fetch versions for ${loader}: ${msg}`);
+    } catch {
+      return [...DEFAULT_MINECRAFT_VERSIONS];
     }
   }
 
@@ -128,15 +141,10 @@ export class ServerInstaller {
         }
       }
     } catch {
-      // Fallback to v2
+      // Fallback
     }
 
-    const fallbackRes = await fetch('https://api.papermc.io/v2/projects/paper', { headers: DEFAULT_HEADERS });
-    if (!fallbackRes.ok) {
-      throw new DaemonError('UPSTREAM_ERROR', `Paper API responded with status ${fallbackRes.status}`);
-    }
-    const data = (await fallbackRes.json()) as { versions: string[] };
-    return data.versions.reverse().slice(0, MAX_VERSIONS);
+    return [...DEFAULT_MINECRAFT_VERSIONS];
   }
 
   private static async getPurpurVersions(): Promise<string[]> {

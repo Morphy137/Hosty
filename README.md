@@ -1,55 +1,88 @@
+<div align="center">
+
+<img src="client/public/logo.svg" alt="Hosty logo" width="96" />
+
 # Hosty
 
-High-performance, friendly local multi-game server management dashboard and desktop application powered by **Tauri v2**, **React 19**, and a **Node.js process supervisor daemon**.
+**Your local game servers, one friendly dashboard.**
 
-## Versioning Scheme
+Create, run and manage dedicated servers on your own PC — no terminals, no config-file hunting, no headaches.
 
-Hosty strictly adheres to a semantic versioning convention structured as `a.b.c`:
+![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-* **`a` (Major)**: Significant milestones and production releases. Incremented **only after explicit manual approval and validation**.
-* **`b` (Minor)**: New functional improvements, loaders, game drivers, or UI features.
-* **`c` (Patch)**: Bug fixes, UI adjustments, and minor maintenance changes.
+</div>
 
-**Current Version:** `0.1.0` (Alpha / Development milestone toward `1.0.0`).
+---
 
-## System Requirements
+![Hosty overview](docs/screenshots/overview.png)
 
-- **Operating System:** Windows 10/11 (x64)
-- **Node.js:** `>= 20.x` (Recommended: Node 22 LTS)
-- **Rust Toolchain:** Stable (for Tauri desktop app compilation)
-- **Java Runtime Environment (JRE/JDK):** Java 17 or Java 21 (Temurin / Adoptium) is required to run Minecraft servers and compile bridge plugins.
+## What is Hosty?
 
-## Architecture
+Hosty is a desktop app that makes hosting a game server on your own computer as easy as playing the game. Pick a game, pick a version, press **Start** — Hosty handles the downloads, the setup and the monitoring for you.
 
-```
-hosty/
-├── client/           # React 19 + Vite + Tailwind CSS + Tauri v2 frontend
-├── daemon/           # Express + WebSocket process supervisor & game drivers
-└── bridge/           # In-game telemetry plugins (Fabric mod & Paper plugin)
-```
+It is **not tied to a single game**. Hosty is built as a multi-game platform, and support for more games is added over time.
 
-## Getting Started
+## Supported games
 
-### Development
+| Game | Status |
+| --- | --- |
+| **Minecraft** (Vanilla, Paper, Purpur, Fabric, Forge, NeoForge) | Available |
+| **Project Zomboid** | Early support |
+| **Hytale** | Early support |
+| More games | Coming over time |
+
+## Highlights
+
+- **Guided server creation** — a step-by-step wizard picks the game, installs the server for you and sets sensible defaults.
+- **One-click control** — start, stop and restart from the top bar, with safe saving on shutdown.
+- **Live dashboard** — watch CPU, memory, server performance and who is online, in real time.
+- **Live console** — read the server output and send commands, with handy shortcuts.
+- **Player management** — see where everyone is and heal, gift, hurt, kick or inspect inventories without typing commands.
+- **Mods made easy** — enable, disable or remove mods, and edit their settings from the app.
+- **Easy settings** — tweak server properties with a clean editor instead of raw text files.
+- **Import existing servers** — bring a server you already have and manage it from Hosty.
+- **Multiple servers** — keep several servers and switch between them instantly.
+- **Light & dark themes**, available in **English** and **Spanish**.
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/players.png" alt="Player management" /></td>
+    <td><img src="docs/screenshots/create-server.png" alt="Create server wizard" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Manage players at a glance</sub></td>
+    <td align="center"><sub>Create a server in a few steps</sub></td>
+  </tr>
+</table>
+
+## Requirements
+
+- Windows 10 / 11 (64-bit)
+- Java 17 or 21 (only for games that need it, such as Minecraft)
+
+## Getting started
+
+Download the latest installer from the [Releases](../../releases) page, run it and create your first server.
+
+### Running from source
+
+You will need Node.js 20+ (22 LTS recommended) and the stable Rust toolchain.
+
 ```bash
-# Run backend daemon
-npm run dev:daemon
+# Install dependencies
+npm --prefix daemon install
+npm --prefix client install
 
-# Run frontend client
-npm run dev:client
-
-# Or run full desktop app via Tauri
+# Launch the full desktop app
 npm run tauri:dev
 ```
 
-### Build & Testing
-```bash
-# Run all unit and integration tests
-npm test
+## Project status
 
-# Run code linter
-npm run lint
+Hosty is in **alpha** (`0.1.0`) and evolving quickly. Feedback and ideas are very welcome.
 
-# Build production assets
-npm run build
-```
+## License
+
+[MIT](https://opensource.org/licenses/MIT)
