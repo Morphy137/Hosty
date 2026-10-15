@@ -34,7 +34,12 @@
     "windows": {
       "allowDowngrades": true,
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "displayLanguageSelector": true,
+        "languages": ["English", "SpanishInternational", "Spanish", "PortugueseBR", "Portuguese", "SimpChinese"]
       }
     },
     "icon": [

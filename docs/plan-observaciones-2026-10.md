@@ -39,3 +39,19 @@ Auditoría de 21 observaciones del usuario. Cada punto: causa raíz verificada e
 
 ## Verificación
 `npm run lint`, `npm test`, `npm run build`; Playwright (`client test:e2e`); tests nuevos en `daemon/test` (versiones sin límite, import inválido, DELETE, bridge install, GamePacks builtin listing) y paridad i18n; prueba manual en `npm run tauri:dev`: copiar consola, clic derecho, reload packs sin parpadeo, import carpeta inválida, instalar bridge con server apagado, instalador NSIS en VM Windows.
+
+## Estado de implementación
+
+| # | Estado | Nota |
+|---|---|---|
+| 1, 2, 4, 5, 6, 12, 19 | Hecho | Fase 1 y 2 (versiones sin límite, consola copiable, menú nativo, parpadeo, errores, barra, logo). |
+| 3 | Hecho (informativo) | Externo (JOML en Java 23+); preset opcional "Silence Unsafe warning" en flags JVM. |
+| 7 | Hecho | Catálogo declarado por driver (`modSources`); Minecraft declara Modrinth. CurseForge descartado (requiere API key de Hosty). |
+| 8 | Hecho | Autostart implementado al arrancar el daemon; etiqueta "al abrir Hosty". |
+| 9, 21 | Hecho | `jvmFlagPresets` y `launchDefaults` por driver; "Por defecto: X GB". |
+| 10, 11 | Hecho | Recomendación en el wizard; instalación verificada, estado real (`bridgeInstalled`), mensajes según servidor activo. |
+| 13, 14, 15 | Hecho | Import estricto por juego, DELETE + menú contextual + favoritos, wizard juego→crear/importar. |
+| 16 | Parcial | Built-ins listados, instalar/desinstalar packs. Pendiente: mover PZ/Hytale a packs en carpeta y quitar `'minecraft'` hardcodeado. |
+| 17 | Diferido | Build 42 de Project Zomboid, al implementar ese soporte. |
+| 18 | Parcial | Mecanismo + selector listos (`<locales>/<code>.json`). Pendiente: aportar las traducciones (es-419, es-ES, pt-BR, pt-PT, zh-CN, hi). |
+| 20 | Parcial | Instalador NSIS con selector de idioma, imágenes e icono redondeado. Pendiente: paso de instalación de packs/idiomas dentro del instalador (se hace dentro de la app). |

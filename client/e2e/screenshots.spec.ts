@@ -44,6 +44,7 @@ test('captures the documentation screenshots', async ({ page }) => {
   fs.writeFileSync(path.join(folder, 'server.jar'), 'placeholder');
 
   await page.getByRole('button', { name: 'Import', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Continue' }).click(); // game step
   await dialog.getByLabel('Server Folder Path').fill(folder);
   await dialog.getByLabel('Server Folder Path').blur();
   await expect(dialog.getByText(/Detected: minecraft/)).toBeVisible();

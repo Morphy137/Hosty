@@ -69,3 +69,13 @@ npm --prefix packages/game-sdk run typecheck
 npm --prefix daemon run build:sidecar          # single-file daemon for the desktop app
 npm --prefix client run screenshots            # regenerate docs/screenshots
 ```
+
+## Installer and icons
+
+- NSIS options live in `client/src-tauri/tauri.conf.json` (`bundle.windows.nsis`): language selector
+  (English, Spanish, Latin-American Spanish, Brazilian/European Portuguese, Simplified Chinese), installer icon,
+  and the header/sidebar images in `client/src-tauri/installer/*.bmp` (150x57 / 164x314, 24-bit BMP).
+- The app icon set is generated from a rounded-corner 512 px PNG with `npx tauri icon <source.png> -o src-tauri/icons`
+  (run from `client/`). Keep the source square with transparent rounded corners (about 22% radius).
+- Game packs and UI language packs are installed from inside the app (Game packs dialog / `locales` folder);
+  the installer does not bundle them, so the installer language choice is installer-only.
