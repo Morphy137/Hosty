@@ -16,9 +16,17 @@ const PREFERRED_PORT: u16 = 4000;
 const SHUTDOWN_GRACE: Duration = Duration::from_secs(45);
 const DEV_DAEMON_URL: &str = "http://localhost:4000";
 
+/// 256 random bits as hex; shared only with the sidecar and the UI of this run.
+fn generate_api_token() -> Result<String, String> {
+  let mut bytes = [0u8; 32];
+  getrandom::getrandom(&mut bytes).map_err(|e| e.to_string())?;
+  Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
 #[derive(Default)]
 struct DaemonState {
   url: Mutex<Option<String>>,
+  api_token: Mutex<Option<String>>,
   start_error: Mutex<Option<String>>,
   log_dir: Mutex<Option<PathBuf>>,
   child: Mutex<Option<CommandChild>>,
@@ -62,6 +70,7 @@ fn start_daemon(app: &tauri::AppHandle) -> Result<(), String> {
   let games_dir = data_dir.join("games");
   fs::create_dir_all(&games_dir).map_err(|e| e.to_string())?;
   let port = pick_port();
+  let api_token = generate_api_token()?;
 
   let (mut rx, child) = app
     .shell()
@@ -74,10 +83,12 @@ fn start_daemon(app: &tauri::AppHandle) -> Result<(), String> {
     .env("MC_NEXUS_ASSETS_DIR", assets_dir.to_string_lossy().to_string())
     .env("MC_NEXUS_GAMES_DIR", games_dir.to_string_lossy().to_string())
     .env("MC_NEXUS_PARENT_SUPERVISED", "1")
+    .env("MC_NEXUS_API_TOKEN", api_token.clone())
     .spawn()
     .map_err(|e| e.to_string())?;
 
   *state.url.lock().unwrap() = Some(format!("http://127.0.0.1:{port}"));
+  *state.api_token.lock().unwrap() = Some(api_token);
   *state.child.lock().unwrap() = Some(child);
 
   let (terminated_tx, terminated_rx) = mpsc::channel::<()>();
@@ -130,6 +141,12 @@ fn get_daemon_url(state: State<'_, DaemonState>) -> Result<String, String> {
     .unwrap()
     .clone()
     .ok_or_else(|| "Daemon has not been started".to_string())
+}
+
+/// Empty in `tauri dev`, where the daemon is started by hand without authentication.
+#[tauri::command]
+fn get_daemon_token(state: State<'_, DaemonState>) -> String {
+  state.api_token.lock().unwrap().clone().unwrap_or_default()
 }
 
 #[tauri::command]
@@ -201,7 +218,7 @@ pub fn run() {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_dialog::init())
     .manage(DaemonState::default())
-    .invoke_handler(tauri::generate_handler![get_daemon_url, open_daemon_logs])
+    .invoke_handler(tauri::generate_handler![get_daemon_url, get_daemon_token, open_daemon_logs])
     .setup(|app| {
       #[cfg(desktop)]
       {

@@ -2,9 +2,9 @@ package com.mcnexus.bridge;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -32,64 +32,95 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+/**
+ * Hosty bridge for Paper / Purpur / Spigot. Speaks Hosty bridge protocol v1 (docs/bridge-protocol.md):
+ * the daemon URL and the per-instance token come from {@code .hosty/bridge.json} in the server folder.
+ */
 public class NexusBridgePlugin extends JavaPlugin implements Listener {
     private static final Gson GSON = new Gson();
+    private static final int PROTOCOL_VERSION = 1;
+    private static final String[] CAPABILITIES = {
+        "telemetry.server", "telemetry.players", "inventory.view",
+        "action.heal", "action.damage", "action.kill", "action.kick", "action.teleport",
+        "action.freeze", "action.unfreeze", "action.smite", "action.give_exp", "action.mute", "action.unmute"
+    };
+
     private WebSocketClient wsClient;
     private BukkitTask telemetryTask;
+    private volatile boolean authenticated = false;
+    private volatile boolean shuttingDown = false;
+    private long reconnectDelayTicks = 100L;
+
     private String instanceId;
     private String daemonWsUri = "ws://127.0.0.1:4000/telemetry/bridge";
+    private String token = "";
 
     private final Set<UUID> frozenPlayers = Collections.synchronizedSet(new HashSet<>());
     private final Set<UUID> mutedPlayers = Collections.synchronizedSet(new HashSet<>());
 
     @Override
     public void onEnable() {
-        resolveInstanceId();
         getServer().getPluginManager().registerEvents(this, this);
         connectToDaemon();
 
         // 20 ticks = 1 second
-        telemetryTask = Bukkit.getScheduler().runTaskTimer(this, this::sendTickTelemetry, 20L, 20L);
-        getLogger().info("[MC-Nexus Bridge] Plugin initialized for instance: " + instanceId);
+        telemetryTask = Bukkit.getScheduler().runTaskTimer(this, this::sendTelemetry, 20L, 20L);
+        getLogger().info("[Hosty Bridge] Plugin initialized.");
     }
 
     @Override
     public void onDisable() {
+        shuttingDown = true;
         if (telemetryTask != null) {
             telemetryTask.cancel();
         }
         if (wsClient != null && wsClient.isOpen()) {
             wsClient.close();
         }
-        getLogger().info("[MC-Nexus Bridge] Plugin disabled.");
+        getLogger().info("[Hosty Bridge] Plugin disabled.");
     }
 
-    private void resolveInstanceId() {
+    /** Reads daemon URL, instance id and token written by the daemon before the server started. */
+    private boolean loadConnectionConfig() {
         try {
-            File currentDir = new File(".").getCanonicalFile();
-            File idFile = new File(currentDir, ".nexus-instance-id");
-            if (idFile.exists()) {
-                this.instanceId = Files.readString(idFile.toPath()).trim();
-            } else {
-                this.instanceId = currentDir.getName();
-            }
-        } catch (Exception e) {
-            this.instanceId = "default";
-        }
+            File serverDir = new File(".").getCanonicalFile();
+            this.instanceId = serverDir.getName();
 
-        String envUri = System.getenv("MC_NEXUS_WS_URL");
-        if (envUri != null && !envUri.isEmpty()) {
-            this.daemonWsUri = envUri;
+            File legacyId = new File(serverDir, ".nexus-instance-id");
+            if (legacyId.exists()) {
+                this.instanceId = Files.readString(legacyId.toPath()).trim();
+            }
+
+            File configFile = new File(new File(serverDir, ".hosty"), "bridge.json");
+            if (!configFile.exists()) {
+                getLogger().warning("[Hosty Bridge] .hosty/bridge.json not found. Start the server from Hosty so it can be generated.");
+                return false;
+            }
+
+            JsonObject config = GSON.fromJson(Files.readString(configFile.toPath()), JsonObject.class);
+            if (config.has("url")) this.daemonWsUri = config.get("url").getAsString();
+            if (config.has("instanceId")) this.instanceId = config.get("instanceId").getAsString();
+            this.token = config.has("token") ? config.get("token").getAsString() : "";
+            return !token.isEmpty();
+        } catch (Exception e) {
+            getLogger().warning("[Hosty Bridge] Could not read bridge configuration: " + e.getMessage());
+            return false;
         }
     }
 
     private void connectToDaemon() {
+        if (shuttingDown) return;
+
+        if (!loadConnectionConfig()) {
+            scheduleReconnect();
+            return;
+        }
+
         try {
             URI uri = new URI(daemonWsUri);
             wsClient = new WebSocketClient(uri) {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
-                    getLogger().info("[MC-Nexus Bridge] Connected to daemon at " + uri);
                     sendHello();
                 }
 
@@ -100,52 +131,68 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    getLogger().warning("[MC-Nexus Bridge] Connection to daemon lost. Reconnecting in 5s...");
-                    Bukkit.getScheduler().runTaskLater(NexusBridgePlugin.this, NexusBridgePlugin.this::connectToDaemon, 100L);
+                    authenticated = false;
+                    if (!shuttingDown) {
+                        scheduleReconnect();
+                    }
                 }
 
                 @Override
                 public void onError(Exception ex) {
-                    getLogger().log(Level.FINE, "[MC-Nexus Bridge] WS Error: " + ex.getMessage());
+                    getLogger().log(Level.FINE, "[Hosty Bridge] WS error: " + ex.getMessage());
                 }
             };
             wsClient.connect();
         } catch (Exception e) {
-            getLogger().warning("[MC-Nexus Bridge] Failed to initialize WebSocket: " + e.getMessage());
+            getLogger().warning("[Hosty Bridge] Failed to initialize WebSocket: " + e.getMessage());
+            scheduleReconnect();
         }
+    }
+
+    private void scheduleReconnect() {
+        if (shuttingDown) return;
+        Bukkit.getScheduler().runTaskLater(this, this::connectToDaemon, reconnectDelayTicks);
     }
 
     private void sendHello() {
         if (wsClient == null || !wsClient.isOpen()) return;
 
         JsonObject hello = new JsonObject();
-        hello.addProperty("type", "BRIDGE_HELLO");
+        hello.addProperty("type", "HELLO");
+        hello.addProperty("protocolVersion", PROTOCOL_VERSION);
         hello.addProperty("instanceId", instanceId);
-        hello.addProperty("loader", "paper");
-        hello.addProperty("version", Bukkit.getVersion());
+        hello.addProperty("token", token);
+        hello.addProperty("game", "minecraft");
+
+        JsonObject implementation = new JsonObject();
+        implementation.addProperty("name", "hosty-bridge-paper");
+        implementation.addProperty("version", getDescription().getVersion());
+        hello.add("implementation", implementation);
+
+        JsonArray caps = new JsonArray();
+        for (String capability : CAPABILITIES) caps.add(capability);
+        hello.add("capabilities", caps);
+
         wsClient.send(GSON.toJson(hello));
     }
 
-    private void sendTickTelemetry() {
-        if (wsClient == null || !wsClient.isOpen()) return;
+    private void sendTelemetry() {
+        if (!authenticated || wsClient == null || !wsClient.isOpen()) return;
 
         try {
             JsonObject frame = new JsonObject();
-            frame.addProperty("type", "TICK_TELEMETRY");
-            frame.addProperty("instanceId", instanceId);
+            frame.addProperty("type", "TELEMETRY");
 
-            // Server Metrics
             JsonObject server = new JsonObject();
             double[] tpsArr = Bukkit.getTPS();
             double tps = tpsArr.length > 0 ? Math.min(20.0, Math.round(tpsArr[0] * 100.0) / 100.0) : 20.0;
             server.addProperty("tps", tps);
 
-            // MSPT (Paper / Purpur extension check)
             double mspt = 10.0;
             try {
                 mspt = Bukkit.getAverageTickTime();
             } catch (Throwable ignored) {
-                // Vanilla / Spigot fallback
+                // Spigot fallback
             }
             server.addProperty("mspt", Math.round(mspt * 10.0) / 10.0);
 
@@ -156,45 +203,39 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
                 entities += w.getEntities().size();
             }
             server.addProperty("loadedChunks", chunks);
-            server.addProperty("entitiesCount", entities);
+            server.addProperty("entities", entities);
             frame.add("server", server);
 
-            // Players Array
             JsonArray players = new JsonArray();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 JsonObject po = new JsonObject();
-                po.addProperty("uuid", p.getUniqueId().toString());
-                po.addProperty("username", p.getName());
+                po.addProperty("id", p.getUniqueId().toString());
+                po.addProperty("name", p.getName());
+                po.addProperty("ping", p.getPing());
+                po.addProperty("health", Math.round(p.getHealth() * 10.0) / 10.0);
+                po.addProperty("maxHealth", maxHealthOf(p));
 
-                // Namespaced canonical dimension key (e.g. "minecraft:overworld", "twilightforest:twilight_forest")
+                JsonObject position = new JsonObject();
+                Location loc = p.getLocation();
+                position.addProperty("x", Math.round(loc.getX() * 10.0) / 10.0);
+                position.addProperty("y", Math.round(loc.getY() * 10.0) / 10.0);
+                position.addProperty("z", Math.round(loc.getZ() * 10.0) / 10.0);
                 String dimKey;
                 try {
                     dimKey = p.getWorld().getKey().toString();
                 } catch (Throwable t) {
                     dimKey = p.getWorld().getEnvironment().name().toLowerCase();
                 }
-                po.addProperty("dimension", dimKey);
+                position.addProperty("world", dimKey);
+                po.add("position", position);
 
-                Location loc = p.getLocation();
-                po.addProperty("x", Math.round(loc.getX() * 10.0) / 10.0);
-                po.addProperty("y", Math.round(loc.getY() * 10.0) / 10.0);
-                po.addProperty("z", Math.round(loc.getZ() * 10.0) / 10.0);
-
-                po.addProperty("health", Math.round(p.getHealth() * 10.0) / 10.0);
-                double maxHealth = 20.0;
-                try {
-                    if (p.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
-                        maxHealth = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                    }
-                } catch (Throwable ignored) {}
-                po.addProperty("maxHealth", maxHealth);
-
-                po.addProperty("food", p.getFoodLevel());
-                po.addProperty("ping", p.getPing());
-                po.addProperty("gamemode", p.getGameMode().name().toLowerCase());
-                po.addProperty("isOp", p.isOp());
-                po.addProperty("isFrozen", frozenPlayers.contains(p.getUniqueId()));
-                po.addProperty("isMuted", mutedPlayers.contains(p.getUniqueId()));
+                JsonObject stats = new JsonObject();
+                stats.addProperty("food", p.getFoodLevel());
+                stats.addProperty("gamemode", p.getGameMode().name().toLowerCase());
+                stats.addProperty("isOp", p.isOp());
+                stats.addProperty("isFrozen", frozenPlayers.contains(p.getUniqueId()));
+                stats.addProperty("isMuted", mutedPlayers.contains(p.getUniqueId()));
+                po.add("stats", stats);
 
                 players.add(po);
             }
@@ -202,179 +243,256 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
 
             wsClient.send(GSON.toJson(frame));
         } catch (Exception e) {
-            getLogger().log(Level.WARNING, "[MC-Nexus Bridge] Telemetry error: " + e.getMessage());
+            getLogger().log(Level.WARNING, "[Hosty Bridge] Telemetry error: " + e.getMessage());
         }
+    }
+
+    private double maxHealthOf(Player p) {
+        try {
+            if (p.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
+                return p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+            }
+        } catch (Throwable ignored) {
+            // Attribute enum renamed on newer versions; use the vanilla default.
+        }
+        return 20.0;
     }
 
     private void handleIncomingMessage(String raw) {
         try {
             JsonObject obj = GSON.fromJson(raw, JsonObject.class);
-            if (!obj.has("type")) return;
+            if (obj == null || !obj.has("type")) return;
 
             String type = obj.get("type").getAsString();
-            if ("ACTION".equals(type)) {
-                String action = obj.get("action").getAsString();
-                String username = obj.get("username").getAsString();
 
-                // Run on main Bukkit server thread
-                Bukkit.getScheduler().runTask(this, () -> executeAction(action, username, obj));
+            if ("HELLO_ACK".equals(type)) {
+                boolean ok = obj.has("ok") && obj.get("ok").getAsBoolean();
+                authenticated = ok;
+                if (ok) {
+                    reconnectDelayTicks = 100L;
+                    getLogger().info("[Hosty Bridge] Connected to Hosty (protocol v" + PROTOCOL_VERSION + ").");
+                } else {
+                    reconnectDelayTicks = 20L * 60;
+                    String message = "rejected";
+                    if (obj.has("error") && obj.get("error").isJsonObject()) {
+                        JsonObject error = obj.getAsJsonObject("error");
+                        message = error.has("message") ? error.get("message").getAsString() : message;
+                    }
+                    getLogger().warning("[Hosty Bridge] Hosty refused the connection: " + message);
+                }
+                return;
+            }
+
+            if (!authenticated) return;
+
+            if ("ACTION".equals(type)) {
+                final JsonObject message = obj;
+                // Bukkit API must be used from the main server thread
+                Bukkit.getScheduler().runTask(this, () -> executeAction(message));
             }
         } catch (Exception e) {
-            getLogger().warning("[MC-Nexus Bridge] Failed to handle daemon action: " + e.getMessage());
+            getLogger().warning("[Hosty Bridge] Failed to handle daemon message: " + e.getMessage());
         }
     }
 
-    private void executeAction(String action, String username, JsonObject payload) {
-        Player player = Bukkit.getPlayerExact(username);
-        if (player == null || !player.isOnline()) return;
+    private void sendResult(String actionId, boolean success, String message) {
+        if (wsClient == null || !wsClient.isOpen()) return;
+        JsonObject result = new JsonObject();
+        result.addProperty("type", "RESULT");
+        if (actionId != null) result.addProperty("actionId", actionId);
+        result.addProperty("success", success);
+        if (message != null) result.addProperty("message", message);
+        wsClient.send(GSON.toJson(result));
+    }
+
+    private static JsonObject paramsOf(JsonObject message) {
+        JsonElement params = message.get("params");
+        return params != null && params.isJsonObject() ? params.getAsJsonObject() : new JsonObject();
+    }
+
+    private void executeAction(JsonObject message) {
+        String actionId = message.has("actionId") && !message.get("actionId").isJsonNull()
+            ? message.get("actionId").getAsString() : null;
+        String action = message.has("action") ? message.get("action").getAsString() : "";
+        JsonObject params = paramsOf(message);
+
+        String username = null;
+        if (message.has("target") && message.get("target").isJsonObject()) {
+            JsonObject target = message.getAsJsonObject("target");
+            if (target.has("name")) username = target.get("name").getAsString();
+        }
+
+        Player player = username == null ? null : Bukkit.getPlayerExact(username);
+        if (player == null || !player.isOnline()) {
+            sendResult(actionId, false, "Player is not online");
+            return;
+        }
 
         switch (action) {
-            case "INVENTORY_VIEW":
-                sendInventoryData(player);
+            case "inventory_view":
+                sendInventory(player);
                 break;
 
-            case "FREEZE":
+            case "freeze":
                 frozenPlayers.add(player.getUniqueId());
-                if (payload.has("frostEffect") && payload.get("frostEffect").getAsBoolean()) {
+                if (params.has("frostEffect") && params.get("frostEffect").getAsBoolean()) {
                     try { player.setFreezeTicks(1000); } catch (Throwable ignored) {}
                 }
                 break;
 
-            case "UNFREEZE":
+            case "unfreeze":
                 frozenPlayers.remove(player.getUniqueId());
                 try { player.setFreezeTicks(0); } catch (Throwable ignored) {}
                 break;
 
-            case "SMITE":
+            case "smite":
                 player.getWorld().strikeLightning(player.getLocation());
                 break;
 
-            case "GIVE_EXP":
-                int levels = payload.has("levels") ? payload.get("levels").getAsInt() : 5;
+            case "give_exp": {
+                int levels = params.has("levels") ? params.get("levels").getAsInt() : 5;
                 player.giveExpLevels(levels);
                 break;
+            }
 
-            case "MUTE":
+            case "mute":
                 mutedPlayers.add(player.getUniqueId());
                 break;
 
-            case "UNMUTE":
+            case "unmute":
                 mutedPlayers.remove(player.getUniqueId());
                 break;
 
-            case "HEAL":
-                double healAmount = payload.has("amount") ? payload.get("amount").getAsDouble() : 20.0;
-                double maxHp = 20.0;
-                try {
-                    if (player.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null) {
-                        maxHp = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-                    }
-                } catch (Throwable ignored) {}
-                player.setHealth(Math.min(maxHp, player.getHealth() + healAmount));
-
-                if (payload.has("feed") && payload.get("feed").getAsBoolean()) {
+            case "heal": {
+                double healAmount = params.has("amount") ? params.get("amount").getAsDouble() : 20.0;
+                player.setHealth(Math.min(maxHealthOf(player), player.getHealth() + healAmount));
+                if (params.has("feed") && params.get("feed").getAsBoolean()) {
                     player.setFoodLevel(20);
                     player.setSaturation(20.0f);
                 }
                 break;
+            }
 
-            case "DAMAGE":
-                double dmg = payload.has("amount") ? payload.get("amount").getAsDouble() : 4.0;
+            case "damage": {
+                double dmg = params.has("amount") ? params.get("amount").getAsDouble() : 4.0;
                 player.damage(dmg);
                 break;
+            }
 
-            case "KILL":
+            case "kill":
                 player.setHealth(0.0);
                 break;
 
-            case "KICK":
-                String reason = payload.has("reason") ? payload.get("reason").getAsString() : "Kicked by administrator";
+            case "kick": {
+                String reason = params.has("reason") ? params.get("reason").getAsString() : "Kicked by administrator";
                 player.kickPlayer(reason);
                 break;
+            }
 
-            case "TELEPORT":
-                if (payload.has("targetPlayer")) {
-                    Player targetP = Bukkit.getPlayerExact(payload.get("targetPlayer").getAsString());
+            case "teleport": {
+                if (params.has("targetPlayer")) {
+                    Player targetP = Bukkit.getPlayerExact(params.get("targetPlayer").getAsString());
                     if (targetP != null && targetP.isOnline()) {
                         player.teleport(targetP.getLocation());
                         break;
                     }
                 }
-                if (payload.has("x") && payload.has("y") && payload.has("z")) {
-                    double x = payload.get("x").getAsDouble();
-                    double y = payload.get("y").getAsDouble();
-                    double z = payload.get("z").getAsDouble();
-                    Location target = new Location(player.getWorld(), x, y, z, player.getLocation().getYaw(), player.getLocation().getPitch());
+                if (params.has("x") && params.has("y") && params.has("z")) {
+                    Location target = new Location(
+                        player.getWorld(),
+                        params.get("x").getAsDouble(),
+                        params.get("y").getAsDouble(),
+                        params.get("z").getAsDouble(),
+                        player.getLocation().getYaw(),
+                        player.getLocation().getPitch()
+                    );
                     player.teleport(target);
                 }
                 break;
+            }
+
+            default:
+                sendResult(actionId, false, "Unsupported action: " + action);
+                return;
         }
+
+        sendResult(actionId, true, null);
     }
 
-    private void sendInventoryData(Player player) {
+    private void sendInventory(Player player) {
         if (wsClient == null || !wsClient.isOpen()) return;
 
         try {
             JsonObject root = new JsonObject();
-            root.addProperty("type", "INVENTORY_DATA");
-            root.addProperty("instanceId", instanceId);
+            root.addProperty("type", "INVENTORY");
 
-            JsonObject inv = new JsonObject();
-            inv.addProperty("username", player.getName());
-            inv.addProperty("uuid", player.getUniqueId().toString());
+            JsonObject who = new JsonObject();
+            who.addProperty("id", player.getUniqueId().toString());
+            who.addProperty("name", player.getName());
+            root.add("player", who);
 
-            // Armor (Helmet, Chestplate, Leggings, Boots)
-            JsonArray armorArr = new JsonArray();
-            ItemStack[] armor = player.getInventory().getArmorContents(); // [Boots, Leggings, Chestplate, Helmet] in Bukkit
-            armorArr.add(serializeItem(armor.length > 3 ? armor[3] : null, 39)); // Helmet
-            armorArr.add(serializeItem(armor.length > 2 ? armor[2] : null, 38)); // Chestplate
-            armorArr.add(serializeItem(armor.length > 1 ? armor[1] : null, 37)); // Leggings
-            armorArr.add(serializeItem(armor.length > 0 ? armor[0] : null, 36)); // Boots
-            inv.add("armor", armorArr);
+            JsonArray containers = new JsonArray();
 
-            // Offhand
-            inv.add("offhand", serializeItem(player.getInventory().getItemInOffHand(), 40));
+            // Armor order: helmet, chestplate, leggings, boots (Bukkit returns boots first)
+            JsonArray armor = new JsonArray();
+            ItemStack[] armorContents = player.getInventory().getArmorContents();
+            int[] armorSlots = {39, 38, 37, 36};
+            for (int i = 0; i < 4; i++) {
+                int bukkitIndex = 3 - i;
+                armor.add(serializeItem(armorContents.length > bukkitIndex ? armorContents[bukkitIndex] : null, armorSlots[i]));
+            }
+            containers.add(container("armor", armor));
 
-            // Hotbar: 0 to 8
-            JsonArray hotbarArr = new JsonArray();
+            JsonArray offhand = new JsonArray();
+            offhand.add(serializeItem(player.getInventory().getItemInOffHand(), 40));
+            containers.add(container("offhand", offhand));
+
+            JsonArray hotbar = new JsonArray();
             for (int i = 0; i < 9; i++) {
-                hotbarArr.add(serializeItem(player.getInventory().getItem(i), i));
+                hotbar.add(serializeItem(player.getInventory().getItem(i), i));
             }
-            inv.add("hotbar", hotbarArr);
+            containers.add(container("hotbar", hotbar));
 
-            // Main Inventory: 9 to 35
-            JsonArray mainArr = new JsonArray();
+            JsonArray main = new JsonArray();
             for (int i = 9; i < 36; i++) {
-                mainArr.add(serializeItem(player.getInventory().getItem(i), i));
+                main.add(serializeItem(player.getInventory().getItem(i), i));
             }
-            inv.add("inventory", mainArr);
+            containers.add(container("main", main));
 
-            root.add("inventory", inv);
+            root.add("containers", containers);
             wsClient.send(GSON.toJson(root));
         } catch (Exception e) {
-            getLogger().warning("[MC-Nexus Bridge] Error serializing inventory: " + e.getMessage());
+            getLogger().warning("[Hosty Bridge] Error serializing inventory: " + e.getMessage());
         }
     }
 
-    private JsonObject serializeItem(ItemStack item, int slot) {
+    private static JsonObject container(String id, JsonArray slots) {
+        JsonObject c = new JsonObject();
+        c.addProperty("id", id);
+        c.add("slots", slots);
+        return c;
+    }
+
+    /** Returns a JSON slot or JsonNull for an empty slot. */
+    private JsonElement serializeItem(ItemStack item, int index) {
         if (item == null || item.getType() == Material.AIR) {
-            return null;
+            return com.google.gson.JsonNull.INSTANCE;
         }
 
         JsonObject io = new JsonObject();
-        io.addProperty("slot", slot);
-        io.addProperty("id", item.getType().getKey().toString());
+        io.addProperty("index", index);
+        io.addProperty("itemId", item.getType().getKey().toString());
         io.addProperty("count", item.getAmount());
 
+        JsonObject metaOut = new JsonObject();
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             if (meta.hasDisplayName()) {
-                io.addProperty("customName", meta.getDisplayName());
+                metaOut.addProperty("customName", meta.getDisplayName());
             }
             if (meta instanceof Damageable) {
-                Damageable dmg = (Damageable) meta;
-                io.addProperty("damage", dmg.getDamage());
-                io.addProperty("maxDamage", (int) item.getType().getMaxDurability());
+                metaOut.addProperty("damage", ((Damageable) meta).getDamage());
+                metaOut.addProperty("maxDamage", (int) item.getType().getMaxDurability());
             }
             if (meta.hasEnchants()) {
                 JsonArray enchArr = new JsonArray();
@@ -384,9 +502,10 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
                     eo.addProperty("level", entry.getValue());
                     enchArr.add(eo);
                 }
-                io.add("enchantments", enchArr);
+                metaOut.add("enchantments", enchArr);
             }
         }
+        io.add("meta", metaOut);
         return io;
     }
 
@@ -405,7 +524,7 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (mutedPlayers.contains(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage("§c[MC-Nexus] You are currently muted by administrator.");
+            event.getPlayer().sendMessage("§c[Hosty] You are currently muted by an administrator.");
         }
     }
 }

@@ -52,6 +52,8 @@ export interface ServerMetrics {
   loadedChunks?: number;
   entitiesCount?: number;
   bridgeConnected?: boolean;
+  /** Capabilities advertised by the connected bridge (e.g. `action.heal`, `inventory.view`). */
+  bridgeCapabilities?: string[];
 }
 
 export type ServerStatus = 'OFFLINE' | 'STARTING' | 'ONLINE' | 'STOPPING';
@@ -123,6 +125,12 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   public isBridgeActive(): boolean {
     return this.isBridgeConnected;
+  }
+
+  private bridgeCapabilities: string[] = [];
+
+  public setBridgeCapabilities(capabilities: string[]): void {
+    this.bridgeCapabilities = capabilities;
   }
 
   public setBridgeActive(active: boolean): void {
@@ -405,7 +413,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
           mspt: this.lastBridgeMetrics?.mspt,
           loadedChunks: this.lastBridgeMetrics?.loadedChunks,
           entitiesCount: this.lastBridgeMetrics?.entitiesCount,
-          bridgeConnected: this.isBridgeConnected
+          bridgeConnected: this.isBridgeConnected,
+          bridgeCapabilities: this.bridgeCapabilities
         });
       } catch {
         // The process may have exited between the pid check and sampling.
