@@ -160,7 +160,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 {status}
               </span>
               <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-surface-2 border border-hairline text-soft uppercase flex items-center gap-1.5">
-                <GameLogo gameId={instance?.gameId || 'minecraft'} size={14} />
+                <GameLogo gameId={instance?.gameId ?? ''} size={14} />
                 <span>{gameName ?? instance?.gameId ?? ''}</span>
               </span>
               {metrics.bridgeConnected && (

@@ -1,0 +1,282 @@
+{
+  "apiVersion": 1,
+  "id": "minecraft",
+  "name": "Minecraft: Java Edition",
+  "version": "1.0.0",
+  "badge": "MC",
+  "category": "voxel",
+  "status": "available",
+  "description": {
+    "en": "Official Mojang, Fabric, Paper, Forge and NeoForge Java servers"
+  },
+  "defaults": {
+    "port": 25565,
+    "maxPlayers": 20,
+    "memoryMb": 4096
+  },
+  "launch": {
+    "runtime": "java",
+    "executable": "server.jar",
+    "args": [
+      "nogui"
+    ],
+    "discover": [
+      {
+        "glob": "libraries/net/neoforged/neoforge/*/win_args.txt",
+        "platform": "win32",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "libraries/net/neoforged/neoforge/*/unix_args.txt",
+        "platform": "linux",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "libraries/net/neoforged/neoforge/*/unix_args.txt",
+        "platform": "darwin",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "libraries/net/minecraftforge/forge/*/win_args.txt",
+        "platform": "win32",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "libraries/net/minecraftforge/forge/*/unix_args.txt",
+        "platform": "linux",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "libraries/net/minecraftforge/forge/*/unix_args.txt",
+        "platform": "darwin",
+        "args": [
+          {
+            "arg": "@user_jvm_args.txt",
+            "ifExists": "user_jvm_args.txt"
+          },
+          "@{{match}}",
+          "nogui"
+        ]
+      },
+      {
+        "glob": "forge-*.jar",
+        "exclude": "installer",
+        "mode": "jar",
+        "args": [
+          "nogui"
+        ]
+      }
+    ]
+  },
+  "detect": [
+    "server.properties"
+  ],
+  "logs": {
+    "ready": "Done \\([\\d.,]+s\\)! For help, type \"help\"",
+    "join": ":\\s(?<username>[a-zA-Z0-9_]{3,16}) joined the game",
+    "leave": ":\\s(?<username>[a-zA-Z0-9_]{3,16}) left the game"
+  },
+  "commands": {
+    "stop": "stop",
+    "save": "save-all"
+  },
+  "playerQueries": [
+    {
+      "id": "Pos",
+      "command": "data get entity {{player}} Pos",
+      "pattern": ":\\s(?<username>[a-zA-Z0-9_]{3,16}) has the following entity data: \\[(?<x>-?\\\\d+(?:\\\\.\\\\d+)?(?:E-?\\\\d+)?)d, (?<y>-?\\\\d+(?:\\\\.\\\\d+)?(?:E-?\\\\d+)?)d, (?<z>-?\\\\d+(?:\\\\.\\\\d+)?(?:E-?\\\\d+)?)d\\]",
+      "fields": {
+        "x": "number",
+        "y": "number",
+        "z": "number"
+      }
+    },
+    {
+      "id": "Dimension",
+      "command": "data get entity {{player}} Dimension",
+      "pattern": ":\\s(?<username>[a-zA-Z0-9_]{3,16}) has the following entity data: \"(?:[a-z0-9_.-]+:)?(?<dimension>[a-z0-9_./-]+)\"",
+      "fields": {
+        "dimension": "string"
+      }
+    }
+  ],
+  "configFiles": [
+    {
+      "path": "server.properties",
+      "format": "properties"
+    }
+  ],
+  "configSync": {
+    "file": "server.properties",
+    "format": "properties",
+    "map": {
+      "port": "server-port",
+      "motd": "motd",
+      "maxPlayers": "max-players"
+    }
+  },
+  "bridgeLoaders": [
+    "paper",
+    "purpur",
+    "spigot",
+    "fabric"
+  ],
+  "setup": [
+    {
+      "id": "install",
+      "type": "custom",
+      "label": "Installation",
+      "labelKey": "create_server.steps.installation",
+      "component": "minecraft-install"
+    }
+  ],
+  "capabilities": {
+    "players": true,
+    "mods": true,
+    "configEditor": true,
+    "bridge": true
+  },
+  "modFormat": "JAR (.jar)",
+  "jvmFlagPresets": [
+    {
+      "id": "aikar",
+      "label": "Aikar's flags",
+      "description": "Tuned G1GC set for Paper-family servers with 4 GB or more. Best for Paper, Purpur and Spigot.",
+      "flags": [
+        "-XX:+UseG1GC",
+        "-XX:+ParallelRefProcEnabled",
+        "-XX:MaxGCPauseMillis=200",
+        "-XX:+UnlockExperimentalVMOptions",
+        "-XX:+DisableExplicitGC",
+        "-XX:+AlwaysPreTouch",
+        "-XX:G1NewSizePercent=30",
+        "-XX:G1MaxNewSizePercent=40",
+        "-XX:G1HeapRegionSize=8M",
+        "-XX:G1ReservePercent=20",
+        "-XX:G1HeapWastePercent=5",
+        "-XX:G1MixedGCCountTarget=4",
+        "-XX:InitiatingHeapOccupancyPercent=15",
+        "-XX:G1MixedGCLiveThresholdPercent=90",
+        "-XX:G1RSetUpdatingPauseTimePercent=5",
+        "-XX:SurvivorRatio=32",
+        "-XX:+PerfDisableSharedMem",
+        "-XX:MaxTenuringThreshold=1"
+      ],
+      "recommendedFor": [
+        "paper",
+        "purpur",
+        "spigot"
+      ]
+    },
+    {
+      "id": "g1-basic",
+      "label": "G1GC basic",
+      "description": "Light, safe G1 tuning for modded and vanilla servers (Fabric, Forge, NeoForge, Vanilla).",
+      "flags": [
+        "-XX:+UseG1GC",
+        "-XX:+ParallelRefProcEnabled",
+        "-XX:MaxGCPauseMillis=200",
+        "-XX:+DisableExplicitGC"
+      ],
+      "recommendedFor": [
+        "fabric",
+        "forge",
+        "neoforge",
+        "vanilla"
+      ]
+    },
+    {
+      "id": "zgc",
+      "label": "Generational ZGC",
+      "description": "Very low pause times on large heaps. Needs Java 21 or newer.",
+      "flags": [
+        "-XX:+UseZGC",
+        "-XX:+ZGenerational"
+      ]
+    },
+    {
+      "id": "java23-unsafe",
+      "label": "Silence Unsafe warning",
+      "description": "Hides the \"sun.misc.Unsafe::objectFieldOffset\" deprecation warning printed by JOML on Java 23+. Do not use on older Java: it will not start.",
+      "flags": [
+        "--sun-misc-unsafe-memory-access=allow"
+      ]
+    }
+  ],
+  "modSources": [
+    {
+      "id": "modrinth",
+      "name": "Modrinth",
+      "type": "modrinth",
+      "baseUrl": "https://api.modrinth.com/v2",
+      "projectUrl": "https://modrinth.com/project/{slug}",
+      "loaderCategories": {
+        "fabric": [
+          "fabric"
+        ],
+        "forge": [
+          "forge"
+        ],
+        "neoforge": [
+          "neoforge"
+        ],
+        "paper": [
+          "paper",
+          "spigot",
+          "bukkit"
+        ],
+        "purpur": [
+          "purpur",
+          "paper",
+          "spigot",
+          "bukkit"
+        ],
+        "spigot": [
+          "spigot",
+          "bukkit"
+        ]
+      },
+      "installDir": {
+        "paper": "plugins",
+        "purpur": "plugins",
+        "spigot": "plugins"
+      },
+      "defaultInstallDir": "mods"
+    }
+  ]
+}

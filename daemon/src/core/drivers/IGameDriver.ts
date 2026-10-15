@@ -85,6 +85,10 @@ export interface GameDriverSummary {
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
+  /** Config file kept in sync with the instance's port / motd / player limit. */
+  configSync?: { file: string; format: 'properties'; map: { port?: string; motd?: string; maxPlayers?: string } };
+  /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
+  bridgeLoaders?: string[];
   modSources?: ModSourceSummary[];
   jvmFlagPresets?: JvmFlagPreset[];
   /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
@@ -138,6 +142,10 @@ export interface IGameDriver {
   buildStopCommand(): string;
   buildSaveCommand(): string;
   parseLogLine(line: string): ParsedLogEvent | null;
+  /** Creates the game's initial files for a new instance (e.g. a default config). */
+  scaffoldInstance?(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void;
+  /** Identifies what an existing folder contains (loader / version) so importing needs no user input. */
+  inspectFolder?(instanceDir: string): { loader?: string | null; version?: string | null };
   consumeQueryResponse?(
     line: string,
     pendingQueries: Set<string>

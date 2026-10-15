@@ -66,6 +66,26 @@ export class PropertiesParser {
     if (!fs.existsSync(filePath)) {
       this.createDefaultProperties(filePath);
     }
+    this.updateFile(filePath, updates);
+  }
+
+  /** Reads `key=value` pairs of any properties-format file; a missing file yields an empty map. */
+  public static readValues(filePath: string): Record<string, string> {
+    if (!fs.existsSync(filePath)) return {};
+    const values: Record<string, string> = {};
+    for (const line of fs.readFileSync(filePath, 'utf-8').split(/\r?\n/)) {
+      const parsed = parseLine(line);
+      if (parsed) values[parsed.key] = parsed.rawValue.trim();
+    }
+    return values;
+  }
+
+  /** Same in-place update as `saveFile`, for an explicit path (creates a minimal file when missing). */
+  public static updateFile(filePath: string, updates: ConfigUpdates): void {
+    if (!fs.existsSync(filePath)) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, '', 'utf-8');
+    }
 
     const content = fs.readFileSync(filePath, 'utf-8');
     const lineEnding = detectLineEnding(content);

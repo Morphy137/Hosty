@@ -5,6 +5,8 @@ import { PropertiesParser } from '../parsers/PropertiesParser';
 import { driverRegistry } from './drivers/GameDriverRegistry';
 import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 
+const defaultGameId = (): string => driverRegistry.getDefaultGameId();
+
 export interface InstanceSettings {
   name?: string;
   motd?: string;
@@ -162,7 +164,7 @@ export class InstanceManager {
       throw new DaemonError('INVALID_PAYLOAD', `Instance "${safeId}" already exists.`);
     }
 
-    const gameId = customSettings?.gameId || 'minecraft';
+    const gameId = customSettings?.gameId || defaultGameId();
     const driver = driverRegistry.getDriver(gameId);
 
     fs.mkdirSync(targetDir, { recursive: true });
@@ -174,14 +176,8 @@ export class InstanceManager {
     const motd = customSettings?.motd ?? `${driver.summary.name} - ${serverName}`;
     const maxPlayers = customSettings?.maxPlayers ?? driver.summary.defaultMaxPlayers;
 
-    // For Minecraft, generate server.properties with standard schema
-    if (gameId === 'minecraft') {
-      PropertiesParser.createDefaultProperties(path.join(targetDir, 'server.properties'), {
-        port,
-        motd,
-        maxPlayers
-      });
-    }
+    // The driver creates the game's initial files (e.g. a default config), core stays game-agnostic.
+    driver.scaffoldInstance?.(targetDir, { port, motd, maxPlayers });
 
     const settings: InstanceSettings = {
       name: serverName,
@@ -233,15 +229,15 @@ export class InstanceManager {
 
     fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
 
-    // Also sync to server.properties for Minecraft instances
-    if ((merged.gameId || 'minecraft') === 'minecraft') {
-      const propsUpdates: Record<string, string | number | boolean> = {};
-      if (patch.port !== undefined) propsUpdates['server-port'] = patch.port;
-      if (patch.motd !== undefined) propsUpdates['motd'] = patch.motd;
-      if (patch.maxPlayers !== undefined) propsUpdates['max-players'] = patch.maxPlayers;
-
-      if (Object.keys(propsUpdates).length > 0) {
-        PropertiesParser.saveFile(instance.dir, propsUpdates);
+    // Keep the game's own config file in sync with the instance settings (declared by the driver).
+    const sync = driverRegistry.getDriver(merged.gameId || defaultGameId()).summary.configSync;
+    if (sync && sync.format === 'properties') {
+      const updates: Record<string, string | number | boolean> = {};
+      if (patch.port !== undefined && sync.map.port) updates[sync.map.port] = patch.port;
+      if (patch.motd !== undefined && sync.map.motd) updates[sync.map.motd] = patch.motd;
+      if (patch.maxPlayers !== undefined && sync.map.maxPlayers) updates[sync.map.maxPlayers] = patch.maxPlayers;
+      if (Object.keys(updates).length > 0) {
+        PropertiesParser.updateFile(path.join(instance.dir, sync.file), updates);
       }
     }
 
@@ -315,7 +311,7 @@ export class InstanceManager {
       name: serverName,
       path: resolvedPath,
       createdAt: new Date().toISOString(),
-      gameId: gameId || 'minecraft'
+      gameId: gameId || defaultGameId()
     };
     this.saveRegistry(registry);
 
@@ -339,32 +335,21 @@ export class InstanceManager {
       }
     }
 
-    const gameId = settings.gameId || 'minecraft';
+    const gameId = settings.gameId || defaultGameId();
     const driver = driverRegistry.getDriver(gameId);
 
-    const propsPath = path.join(dir, 'server.properties');
+    const configSync = driver.summary.configSync;
+    const propsPath = configSync ? path.join(dir, configSync.file) : '';
     let port = settings.port ?? driver.summary.defaultPort ?? DEFAULT_PORT;
     let motd = settings.motd ?? id;
     let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers ?? DEFAULT_MAX_PLAYERS;
 
-    if (gameId === 'minecraft' && fs.existsSync(propsPath)) {
-      try {
-        const raw = fs.readFileSync(propsPath, 'utf-8');
-        for (const line of raw.split(/\r?\n/)) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('server-port=')) {
-            const p = Number(trimmed.split('=')[1]);
-            if (!isNaN(p)) port = p;
-          } else if (trimmed.startsWith('motd=')) {
-            motd = trimmed.slice('motd='.length).trim();
-          } else if (trimmed.startsWith('max-players=')) {
-            const mp = Number(trimmed.split('=')[1]);
-            if (!isNaN(mp)) maxPlayers = mp;
-          }
-        }
-      } catch {
-        // Fallback to defaults
-      }
+    if (configSync && fs.existsSync(propsPath)) {
+      const values = PropertiesParser.readValues(propsPath);
+      const asNumber = (raw: string | undefined) => (raw !== undefined && raw !== '' && !isNaN(Number(raw)) ? Number(raw) : undefined);
+      if (configSync.map.port) port = asNumber(values[configSync.map.port]) ?? port;
+      if (configSync.map.motd && values[configSync.map.motd] !== undefined) motd = values[configSync.map.motd];
+      if (configSync.map.maxPlayers) maxPlayers = asNumber(values[configSync.map.maxPlayers]) ?? maxPlayers;
     }
 
     const stat = fs.statSync(dir);
@@ -395,7 +380,7 @@ export class InstanceManager {
       pzBranch: settings.pzBranch,
       gameConfig: settings.gameConfig,
       bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(dir),
-      bridgeSupported: gameId === 'minecraft' && TelemetryBridgeManager.supportsLoader(settings.loader)
+      bridgeSupported: (driver.summary.bridgeLoaders ?? []).length > 0 && (!settings.loader || (driver.summary.bridgeLoaders ?? []).includes(settings.loader))
     };
   }
 
@@ -440,7 +425,7 @@ export class InstanceManager {
       fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
       const defaultSettings: InstanceSettings = {
         name: id,
-        gameId: 'minecraft',
+        gameId: defaultGameId(),
         port: DEFAULT_PORT,
         maxPlayers: DEFAULT_MAX_PLAYERS,
         minRamMb: DEFAULT_MIN_RAM_MB,

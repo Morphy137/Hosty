@@ -66,7 +66,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
       update({
         importPath: folder,
         importInfo: info,
-        name: draft.name || info.suggestedName,
+        name: info.suggestedName,
         instanceId: draft.idTouched ? draft.instanceId : slugifyInstanceId(info.suggestedName),
         motd: info.motd ?? draft.motd,
         port: info.port ?? draft.port,

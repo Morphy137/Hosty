@@ -37,6 +37,59 @@ export interface GameCapabilities {
   bridge: boolean;
 }
 
+/** An argument; objects are only included when `ifExists` (relative to the instance) exists. */
+export type LaunchArg = string | { arg: string; ifExists: string };
+
+/** Finds the real entry point after installation (e.g. a generated args file). First match wins. */
+export interface LaunchDiscovery {
+  /** Relative glob; `*` matches inside one path segment. */
+  glob: string;
+  platform?: 'win32' | 'linux' | 'darwin';
+  /** Case-insensitive pattern of file names to skip (e.g. `installer`). */
+  exclude?: string;
+  /** `jar` runs `java -jar <match>`; `args` (default) uses only the listed args (`{{match}}` = matched path). */
+  mode?: 'args' | 'jar';
+  args?: LaunchArg[];
+}
+
+/** A command sent for each online player; named groups of the answer update the player's state. */
+export interface PlayerQuery {
+  id: string;
+  /** `{{player}}` is replaced with the player name. */
+  command: string;
+  /** Must define the named group `username`; other named groups map to `fields`. */
+  pattern: string;
+  fields: Record<string, 'number' | 'string'>;
+}
+
+/** Keeps port / description / player limit in sync with a game config file. */
+export interface ConfigSync {
+  file: string;
+  format: 'properties';
+  map: { port?: string; motd?: string; maxPlayers?: string };
+}
+
+export interface JvmFlagPreset {
+  id: string;
+  label: string;
+  description: string;
+  flags: string[];
+  recommendedFor?: string[];
+}
+
+export interface ModSource {
+  id: string;
+  name: string;
+  /** API dialect: `modrinth` = Modrinth/Labrinth v2 compatible. */
+  type: 'modrinth';
+  baseUrl: string;
+  projectUrl?: string;
+  loaderCategories?: Record<string, string[]>;
+  projectTypes?: string[];
+  installDir?: Record<string, string>;
+  defaultInstallDir?: string;
+}
+
 export interface GameManifest {
   apiVersion: 1;
   /** 2-40 chars: lowercase letters, digits and dashes. Must be unique and cannot reuse a built-in id. */
@@ -49,7 +102,7 @@ export interface GameManifest {
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';
-  defaults: { port: number; maxPlayers: number };
+  defaults: { port: number; maxPlayers: number; memoryMb?: number };
   provision?: ProvisionSpec;
   launch: {
     /** `native` runs the executable directly; `java` runs `java -jar <executable>` with RAM flags. */
@@ -58,7 +111,14 @@ export interface GameManifest {
     executable: PlatformValue;
     /** Placeholders: {{id}} {{name}} {{port}} {{maxPlayers}} {{minRamMb}} {{maxRamMb}} {{ramMb}} */
     args?: string[];
+    discover?: LaunchDiscovery[];
   };
+  playerQueries?: PlayerQuery[];
+  configSync?: ConfigSync;
+  /** Loaders a Telemetry Bridge exists for. */
+  bridgeLoaders?: string[];
+  jvmFlagPresets?: JvmFlagPreset[];
+  modSources?: ModSource[];
   /** Files whose presence marks a valid installation (also used to recognise imported folders). */
   detect?: string[];
   logs?: {

@@ -40,7 +40,7 @@ export interface WizardDraft {
 
 export const INITIAL_DRAFT: WizardDraft = {
   origin: 'create',
-  gameId: 'minecraft',
+  gameId: '',
   importPath: '',
   importInfo: null,
   setupValues: {},
