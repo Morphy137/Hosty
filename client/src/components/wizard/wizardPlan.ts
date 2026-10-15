@@ -24,9 +24,14 @@ export type CreationPlan =
     }
   | { kind: 'create'; instanceId: string; name: string; settings: Partial<InstanceSettings> };
 
+/** The game installs through the loader/version/own-jar flow (a driver-requested custom setup component). */
+export const usesLoaderInstall = (game: GameDriverSummary | undefined): boolean =>
+  game?.setupSchema.some((field) => field.component === 'minecraft-install') ?? false;
+
 /** Derives the instance settings shared by every creation path from the wizard draft. */
 export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummary | undefined): Partial<InstanceSettings> {
   const isMinecraftLike = game?.configFileName === 'server.properties';
+  const isProvisioned = game?.provision?.type === 'steamcmd';
   const gameConfig = Object.keys(draft.setupValues).length > 0 ? { ...draft.setupValues } : undefined;
   const branch = draft.setupValues.pzBranch;
 
@@ -38,7 +43,7 @@ export function buildInstanceSettings(draft: WizardDraft, game: GameDriverSummar
     maxRamMb: draft.ramMb,
     ...(isMinecraftLike && draft.motd.trim() ? { motd: draft.motd.trim() } : {}),
     ...(gameConfig ? { gameConfig } : {}),
-    ...(branch === 'stable' || branch === 'unstable' ? { pzBranch: branch } : {})
+    ...(isProvisioned && (branch === 'stable' || branch === 'unstable') ? { pzBranch: branch } : {})
   };
 }
 
@@ -52,7 +57,7 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
 
   const settings = buildInstanceSettings(draft, game);
 
-  if (draft.gameId === 'minecraft') {
+  if (usesLoaderInstall(game)) {
     const { minecraft } = draft;
     const usesJar = !LOADER_METADATA[minecraft.loader].isAutomatic || minecraft.useCustomJar;
 

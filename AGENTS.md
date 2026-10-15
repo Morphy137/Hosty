@@ -27,7 +27,7 @@ hosty/
 
 - `index.ts` — Express routes + WebSocket server. Route groups: `/api/health`, `/api/system/environment`, `/api/games`, `/api/instances/*` (select, create, import, settings, icon, restart, console, bridge install, upload-server-jar), `/api/properties`, `/api/mods/files|configs`, `/api/provisioning/versions/:loader|install`.
 - `config/env.ts` — env loading/validation (`MC_NEXUS_PORT` default 4000, `_HOST`, `_ALLOWED_ORIGINS`, `_INSTANCE_DIR`, `_JAVA_PATH`, `_MIN/MAX_RAM_MB`, `_ENABLE_MOCK`, ...). Mock/simulated telemetry is enabled by default outside production.
-- `core/drivers/` — **game driver abstraction**: `IGameDriver` (summary metadata, `validateInstallation`, `buildLaunchPlan`, stop/save commands, `parseLogLine`, optional query/position polling) registered in `GameDriverRegistry`. Implementations: `MinecraftDriver`, `ProjectZomboidDriver`, `HytaleDriver`.
+- `core/drivers/` — **game driver abstraction**: `IGameDriver` (summary with capabilities/config files/setup schema, `validateInstallation`, `buildLaunchPlan`, stop/save commands, `parseLogLine`, optional query/position polling) registered in `GameDriverRegistry`. `MinecraftDriver` is code; Project Zomboid and Hytale are built-in manifests run by `core/gamepacks/DeclarativeDriver`. `core/gamepacks/PackLoader` loads user packs from `MC_NEXUS_GAMES_DIR` (trust-gated `driver.js`); `ConfigFileEditor` edits the declared config files; `provisioning/SteamCmd` installs Steam games.
 - `core/` — `InstanceManager` (instance CRUD/persistence), `ProcessSupervisor` + `SupervisorRegistry` (process lifecycle, metrics via `pidusage`), `LogLineParser`/`LineBuffer`, `ModJarManager`, `EnvironmentDetector` (Java detection), `bridge/` (`BridgeProtocol`, `TelemetryBridgeManager`).
 - `parsers/` — `.properties`, mod config (TOML via `@iarna/toml`, etc.) parsing and update helpers.
 - `provisioning/` — `ServerInstaller` downloads server jars (automatic loaders: `paper`, `purpur`, `fabric`, `vanilla`, plus `forge`/`neoforge` whose official installers are downloaded from Maven and run with `--installServer`; Spigot stays manual). `JarInspector` identifies an uploaded jar (loader, MC version, installer vs server). `ProvisionJobs` tracks installs as background jobs: `POST /api/provisioning/install` returns `{ jobId }`, progress is broadcast as `PROVISION_PROGRESS`, `GET /api/provisioning/jobs/:id` and `POST .../jobs/:id/cancel` exist. `MinecraftDriver` launches Forge/NeoForge via the generated `libraries/**/win_args.txt` (`@args` mode) and everything else with `-jar server.jar`.
@@ -47,10 +47,12 @@ hosty/
 
 ## Adding a new game
 
-1. Create `daemon/src/core/drivers/<Game>Driver.ts` implementing `IGameDriver`.
-2. Register it in `GameDriverRegistry.ts`.
-3. Add logo asset + i18n strings (`en` and `es`) in the client; surface it in `CreateServerModal`.
-4. Add tests in `daemon/test/GameDrivers.test.ts`.
+Games are **game packs** (see [docs/game-packs.md](docs/game-packs.md)); no recompilation is needed.
+
+1. Declarative first: a `hosty-game.json` manifest in the games folder (`npm create hosty-game <id>` scaffolds one). Built-in manifests live in `daemon/src/core/gamepacks/builtin/` and are registered in `GameDriverRegistry`.
+2. Code only when the manifest is not enough: optional `driver.js` (trust-gated) or, for built-in games, a class implementing `IGameDriver` (see `MinecraftDriver`).
+3. Do **not** add `gameId ===` checks to the client or daemon: use `capabilities`, `configFiles` and `setupSchema` from the driver summary.
+4. Add tests (`daemon/test/GamePacks.test.ts`, `GameDrivers.test.ts`).
 
 ## Commands
 

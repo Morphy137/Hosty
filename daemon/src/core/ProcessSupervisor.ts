@@ -19,6 +19,10 @@ export interface ServerConfig {
   jvmArgs?: string[];
   forceSaveOnStop?: boolean;
   gameId?: string;
+  name?: string;
+  port?: number;
+  maxPlayers?: number;
+  gameConfig?: Record<string, string | number | boolean>;
 }
 
 export interface PlayerState {

@@ -59,6 +59,8 @@ fn start_daemon(app: &tauri::AppHandle) -> Result<(), String> {
     .resource_dir()
     .map_err(|e| e.to_string())?
     .join("bridge");
+  let games_dir = data_dir.join("games");
+  fs::create_dir_all(&games_dir).map_err(|e| e.to_string())?;
   let port = pick_port();
 
   let (mut rx, child) = app
@@ -70,6 +72,7 @@ fn start_daemon(app: &tauri::AppHandle) -> Result<(), String> {
     .env("MC_NEXUS_HOST", "127.0.0.1")
     .env("MC_NEXUS_INSTANCE_DIR", instance_dir.to_string_lossy().to_string())
     .env("MC_NEXUS_ASSETS_DIR", assets_dir.to_string_lossy().to_string())
+    .env("MC_NEXUS_GAMES_DIR", games_dir.to_string_lossy().to_string())
     .env("MC_NEXUS_PARENT_SUPERVISED", "1")
     .spawn()
     .map_err(|e| e.to_string())?;

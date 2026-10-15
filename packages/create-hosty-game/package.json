@@ -1,0 +1,8 @@
+{
+  "name": "create-hosty-game",
+  "version": "0.1.0",
+  "description": "Scaffold a Hosty game pack: npm create hosty-game",
+  "license": "MIT",
+  "bin": { "create-hosty-game": "bin/create-hosty-game.js" },
+  "files": ["bin", "template"]
+}

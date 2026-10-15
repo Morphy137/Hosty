@@ -1,0 +1,25 @@
+{
+  "apiVersion": 1,
+  "id": "__ID__",
+  "name": "__NAME__",
+  "version": "0.1.0",
+  "description": { "en": "Dedicated server for __NAME__", "es": "Servidor dedicado de __NAME__" },
+  "category": "sandbox",
+  "status": "beta",
+  "defaults": { "port": 27015, "maxPlayers": 16 },
+  "provision": { "type": "none" },
+  "launch": {
+    "runtime": "native",
+    "executable": { "win32": "server.exe", "default": "server.sh" },
+    "args": ["-port", "{{port}}", "-maxplayers", "{{maxPlayers}}"]
+  },
+  "detect": ["server.exe", "server.sh"],
+  "logs": {
+    "ready": "Server started",
+    "join": "(?<username>\\S+) joined the game",
+    "leave": "(?<username>\\S+) left the game"
+  },
+  "commands": { "stop": "stop", "save": "save" },
+  "configFiles": [],
+  "capabilities": { "players": true, "mods": false, "configEditor": false, "bridge": false }
+}

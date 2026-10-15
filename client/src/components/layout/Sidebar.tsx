@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
-import { FolderInput, Globe, Moon, Plus, RefreshCw, Sparkles, Sun } from 'lucide-react';
+import { FolderInput, Globe, Moon, Plus, Puzzle, RefreshCw, Sparkles, Sun } from 'lucide-react';
 import type { InstanceInfo, ServerStatus } from '../../types/daemon';
 import { changeLanguage, type SupportedLanguage } from '../../i18n';
 import type { Theme } from '../../hooks/useTheme';
@@ -19,6 +19,7 @@ interface SidebarProps {
   onSelectInstance: (id: string) => void;
   onCreate: () => void;
   onImport: () => void;
+  onOpenGamePacks: () => void;
   theme: Theme;
   onToggleTheme: () => void;
   appVersion: string | null;
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectInstance,
   onCreate,
   onImport,
+  onOpenGamePacks,
   theme,
   onToggleTheme,
   appVersion,
@@ -120,6 +122,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </IconButton>
           <span className="font-mono text-[11px] uppercase text-mute">{currentLang}</span>
           <div className="flex-1" />
+          <IconButton label={t('sidebar.game_packs')} variant="secondary" onClick={onOpenGamePacks}>
+            <Puzzle className="h-3.5 w-3.5 text-mute" />
+          </IconButton>
           {onMock && (
             <IconButton label={t('header.mock_button')} variant="secondary" onClick={onMock}>
               <Sparkles className="h-3.5 w-3.5 text-mute" />
