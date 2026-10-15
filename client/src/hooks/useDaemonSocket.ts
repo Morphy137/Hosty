@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { DAEMON_WS_URL } from '../config/daemon';
+import { getDaemonWsUrl } from '../config/daemon';
 import {
   INITIAL_DAEMON_SOCKET_STATE,
   daemonSocketReducer,
@@ -19,7 +19,7 @@ export interface DaemonSocket extends DaemonSocketState {
 }
 
 /** Maintains a WebSocket connection to the daemon with automatic exponential-backoff reconnects. */
-export function useDaemonSocket(url: string = DAEMON_WS_URL): DaemonSocket {
+export function useDaemonSocket(url: string = getDaemonWsUrl()): DaemonSocket {
   const [state, dispatch] = useReducer(daemonSocketReducer, INITIAL_DAEMON_SOCKET_STATE);
   const [connectionState, setConnectionState] = useState<SocketConnectionState>('connecting');
   const socketRef = useRef<WebSocket | null>(null);

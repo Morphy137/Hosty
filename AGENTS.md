@@ -21,7 +21,7 @@ hosty/
 
 - **Client ⇄ daemon**: REST (`/api/...`) + WebSocket. Default daemon URL `http://localhost:4000` (`VITE_DAEMON_URL`, see `client/.env.example`). Dev client runs on `http://localhost:5173`.
 - **Daemon ⇄ bridge**: the in-game bridge connects to `ws://127.0.0.1:4000/telemetry/bridge`, sends 1 Hz telemetry (TPS/MSPT, chunks, entities, players with position/health/ping/gamemode/OP) and executes silent admin commands (heal, damage, teleport, inventory, kick, freeze, kill). Auto-reconnect with backoff. Bridge jars are shipped in `daemon/assets/bridge/` and installed per instance via `POST /api/instances/:id/bridge/install`.
-- **Tauri shell** (`client/src-tauri`) only wraps the frontend; the daemon is a separate Node process.
+- **Tauri shell** (`client/src-tauri`) wraps the frontend and supervises the daemon as a sidecar (`binaries/hosty-daemon-<triple>`, built by `npm --prefix daemon run build:sidecar` with esbuild + Node SEA). In release builds Rust picks the port (4000 or a free one), passes `MC_NEXUS_INSTANCE_DIR`/`MC_NEXUS_ASSETS_DIR`, exposes it via the `get_daemon_url` command and logs the sidecar to `app_log_dir/daemon.log`. On exit it writes `shutdown` to the sidecar stdin so Java servers stop gracefully. In `tauri dev` the sidecar is not spawned; run `npm run dev:daemon`.
 
 ### Daemon (`daemon/src`)
 

@@ -1,3 +1,4 @@
+import path from 'path';
 import { describe, it, expect } from 'vitest';
 import { loadConfig } from '../src/config/env';
 
@@ -34,5 +35,20 @@ describe('Daemon loadConfig', () => {
         MC_NEXUS_MAX_RAM_MB: '2048'
       })
     ).toThrowError('MC_NEXUS_MIN_RAM_MB cannot be greater than MC_NEXUS_MAX_RAM_MB');
+  });
+
+  it('resolves instance and assets dirs from the environment', () => {
+    const config = loadConfig({
+      MC_NEXUS_INSTANCE_DIR: '/data/hosty/instances/default',
+      MC_NEXUS_ASSETS_DIR: '/opt/hosty/bridge'
+    });
+    expect(config.instanceDir.split(path.sep).join('/')).toMatch(/hosty\/instances\/default$/);
+    expect(config.assetsDir.split(path.sep).join('/')).toMatch(/opt\/hosty\/bridge$/);
+  });
+
+  it('defaults the production instance dir to the user app data folder', () => {
+    const config = loadConfig({ NODE_ENV: 'production', APPDATA: path.join('data', 'Roaming') });
+    expect(config.instanceDir).toContain('Hosty');
+    expect(config.instanceDir).not.toContain('node_modules');
   });
 });
