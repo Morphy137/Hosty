@@ -314,6 +314,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       open={isOpen}
       onOpenChange={(open) => !open && onClose()}
       size="lg"
+      height="fixed"
       dismissible={!isBusy}
       title={draft.origin === 'import' ? t('import_server.modal_title') : t('create_server.modal_title')}
       description={isDone ? undefined : t(`wizard.step_desc.${step}`)}

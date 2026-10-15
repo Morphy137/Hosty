@@ -856,7 +856,7 @@ app.get('/api/game-packs', (_req, res) => {
 });
 
 app.post('/api/game-packs/reload', (_req, res) => {
-  res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadPacks() });
+  res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadAll() });
 });
 
 // Declarative manifest of a game (built-ins included) so authors can use it as a template.

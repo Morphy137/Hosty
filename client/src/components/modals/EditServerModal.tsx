@@ -197,7 +197,7 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-surface border border-hairline max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="geist-card bg-surface border border-hairline max-w-2xl w-full p-6 shadow-2xl space-y-5 h-[min(40rem,90vh)] flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-hairline pb-4 shrink-0">
           <div>

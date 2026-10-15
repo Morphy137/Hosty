@@ -396,6 +396,15 @@ describe('bundled packs', () => {
     expect(registry.getPackInfos().find((pack) => pack.id === 'minecraft')?.hasCode).toBe(true);
   });
 
+  it('keeps bundled games in the list after reloading user packs', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-reload-'));
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(path.join(root, 'games'));
+    const ids = registry.reloadAll().map((pack) => pack.id);
+    expect(ids).toEqual(expect.arrayContaining(['minecraft', 'project-zomboid', 'hytale']));
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
   it('rejects the bundled-only `extension` field in user packs', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-ext-'));
     const pack = path.join(root, 'games', 'sneaky');

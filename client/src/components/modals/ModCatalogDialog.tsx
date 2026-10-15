@@ -94,6 +94,7 @@ export const ModCatalogDialog: React.FC<ModCatalogDialogProps> = ({
       open={open}
       onOpenChange={(next) => !next && onClose()}
       size="xl"
+      height="fixed"
       title={t('mod_catalog.title')}
       description={t('mod_catalog.description', { source: source?.name ?? '' })}
     >

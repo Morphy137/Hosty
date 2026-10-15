@@ -41,7 +41,7 @@ export const PlayerExperienceModal: React.FC<PlayerExperienceModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-9999 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="geist-card bg-surface border border-hairline max-w-md w-full p-6 shadow-2xl flex flex-col gap-5">
+      <div className="geist-card bg-surface border border-hairline max-w-md w-full p-6 shadow-2xl flex flex-col gap-5 h-[min(34rem,90vh)] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">

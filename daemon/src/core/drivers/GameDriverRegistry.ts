@@ -80,6 +80,12 @@ export class GameDriverRegistry {
     return [...this.bundledInfos, ...this.packInfos];
   }
 
+  /** Rescans the user packs folder and returns the complete list (bundled games included). */
+  public reloadAll(): PackInfo[] {
+    this.reloadPacks();
+    return this.getPackInfos();
+  }
+
   /** Installs a pack folder into the games folder and reloads. Throws a readable message on failure. */
   public installPack(sourceDir: string): PackInfo[] {
     if (!this.loader) throw new Error('Game packs are not enabled.');
@@ -88,7 +94,7 @@ export class GameDriverRegistry {
       this.loader.uninstall(id);
       throw new Error(`"${id}" is a built-in game and cannot be replaced by a pack.`);
     }
-    return this.reloadPacks();
+    return this.reloadAll();
   }
 
   public uninstallPack(packId: string): boolean {

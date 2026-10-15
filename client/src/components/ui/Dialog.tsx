@@ -22,6 +22,11 @@ interface DialogProps {
   children?: React.ReactNode;
   footer?: React.ReactNode;
   size?: keyof typeof SIZES;
+  /**
+   * `fixed` keeps the dialog the same height whatever it shows (steps, lists, loading states); the body
+   * scrolls instead. Use it for any dialog whose content changes.
+   */
+  height?: 'auto' | 'fixed';
   /** Hides the close button and blocks Escape / outside clicks (e.g. while an install runs). */
   dismissible?: boolean;
 }
@@ -34,6 +39,7 @@ export const Dialog: React.FC<DialogProps> = ({
   children,
   footer,
   size = 'md',
+  height = 'auto',
   dismissible = true
 }) => {
   const { t } = useTranslation();
@@ -62,7 +68,11 @@ export const Dialog: React.FC<DialogProps> = ({
               className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none"
             >
               <motion.div
-                className={cn('geist-card-elevated flex max-h-[90vh] w-full flex-col', SIZES[size])}
+                className={cn(
+                  'geist-card-elevated flex w-full flex-col',
+                  height === 'fixed' ? 'h-[min(40rem,90vh)]' : 'max-h-[90vh]',
+                  SIZES[size]
+                )}
                 initial={{ opacity: 0, scale: 0.97, y: 6 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: 6 }}
