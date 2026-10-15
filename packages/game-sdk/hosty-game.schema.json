@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hosty.app/schemas/hosty-game.v1.json",
+  "title": "Hosty game pack manifest (apiVersion 1)",
+  "type": "object",
+  "required": ["apiVersion", "id", "name", "version", "defaults", "launch"],
+  "additionalProperties": false,
+  "$defs": {
+    "localized": {
+      "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": { "type": "string" } }]
+    },
+    "platformValue": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "properties": {
+            "win32": { "type": "string" },
+            "linux": { "type": "string" },
+            "darwin": { "type": "string" },
+            "default": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "patterns": {
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+    },
+    "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?![/\\\\]|[A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" }
+  },
+  "properties": {
+    "apiVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "logo": { "$ref": "#/$defs/relativePath" },
+    "description": { "$ref": "#/$defs/localized" },
+    "badge": { "type": "string", "maxLength": 4 },
+    "category": { "enum": ["voxel", "survival", "sandbox"] },
+    "status": { "enum": ["available", "beta", "coming_soon"] },
+    "defaults": {
+      "type": "object",
+      "required": ["port", "maxPlayers"],
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "maxPlayers": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "provision": {
+      "oneOf": [
+        { "type": "object", "required": ["type"], "properties": { "type": { "const": "none" } }, "additionalProperties": false },
+        {
+          "type": "object",
+          "required": ["type", "appId"],
+          "properties": { "type": { "const": "steamcmd" }, "appId": { "type": "integer" } },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "launch": {
+      "type": "object",
+      "required": ["executable"],
+      "properties": {
+        "runtime": { "enum": ["native", "java"] },
+        "executable": { "$ref": "#/$defs/platformValue" },
+        "args": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "detect": { "type": "array", "items": { "$ref": "#/$defs/relativePath" } },
+    "logs": {
+      "type": "object",
+      "properties": {
+        "ready": { "$ref": "#/$defs/patterns" },
+        "join": { "$ref": "#/$defs/patterns" },
+        "leave": { "$ref": "#/$defs/patterns" },
+        "dimension": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "commands": {
+      "type": "object",
+      "properties": { "stop": { "type": "string" }, "save": { "type": ["string", "null"] } },
+      "additionalProperties": false
+    },
+    "configFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "format"],
+        "properties": {
+          "path": { "$ref": "#/$defs/relativePath" },
+          "format": { "enum": ["properties", "ini", "json", "toml", "lines"] },
+          "label": { "$ref": "#/$defs/localized" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "setup": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["select", "text", "secret", "number", "toggle"] },
+          "label": { "$ref": "#/$defs/localized" },
+          "description": { "$ref": "#/$defs/localized" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["value", "label"],
+              "properties": { "value": { "type": "string" }, "label": { "$ref": "#/$defs/localized" } }
+            }
+          },
+          "default": { "type": ["string", "number", "boolean"] },
+          "required": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "players": { "type": "boolean" },
+        "mods": { "type": "boolean" },
+        "configEditor": { "type": "boolean" },
+        "bridge": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "modFormat": { "type": "string" },
+    "i18n": { "type": "object", "additionalProperties": { "type": "object", "additionalProperties": { "type": "string" } } }
+  }
+}

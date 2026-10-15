@@ -4,9 +4,12 @@ import { useDaemonSocket } from './hooks/useDaemonSocket';
 import { useDaemonHealth } from './hooks/useDaemonHealth';
 import { useInstances } from './hooks/useInstances';
 import { useModFiles } from './hooks/useModFiles';
-import { useServerProperties } from './hooks/useServerProperties';
+import { useConfigFiles } from './hooks/useConfigFiles';
+import { ConfigFilesTab } from './components/tabs/ConfigFilesTab';
+import { GamePacksDialog } from './components/modals/GamePacksDialog';
 import { useModConfigs } from './hooks/useModConfigs';
 import {
+  provisionInstance,
   toErrorPayload,
   installServer,
   uploadServerJar,
@@ -29,7 +32,6 @@ import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { PlayersTab } from './components/tabs/PlayersTab';
 import { ModFilesTab } from './components/tabs/ModFilesTab';
-import { PropertiesTab } from './components/tabs/PropertiesTab';
 import { ModsTab } from './components/tabs/ModsTab';
 import { CreateServerWizard, type WizardActions } from './components/wizard/CreateServerWizard';
 import type { WizardOrigin } from './components/wizard/wizardTypes';
@@ -89,7 +91,9 @@ export default function App() {
       void selectInstance(instanceList[0].id);
     }
   }, [activeInstance, instanceList, isLoadingInstances, selectInstance]);
-  const games = useGames(connectionState);
+  const [gamesReloadKey, setGamesReloadKey] = useState(0);
+  const [isPacksOpen, setIsPacksOpen] = useState(false);
+  const games = useGames(connectionState, gamesReloadKey);
   const metricsHistory = useMetricsHistory(metrics, status);
   const { toast } = useToast();
   const appVersion = useAppVersion();
@@ -97,7 +101,7 @@ export default function App() {
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
-  const serverProperties = useServerProperties(connectionState, handleError);
+  const configFiles = useConfigFiles(connectionState, instances.activeId, handleError);
   const modConfigs = useModConfigs(connectionState, handleError);
 
   const activeError = lastError || localError;
@@ -217,6 +221,13 @@ export default function App() {
       try {
         const created = await instances.createInstance(id, name, settings);
         await instances.selectInstance(created.id);
+        const driver = games.find((candidate) => candidate.id === settings.gameId);
+        if (driver?.provision?.type === 'steamcmd') {
+          resetProvisionLogs([`[Provisioner] Installing ${driver.name} with SteamCMD...`]);
+          const started = await provisionInstance(created.id);
+          await waitForProvisionJob(started.jobId);
+          await instances.refresh();
+        }
         return created.id;
       } catch (err) {
         handleError(err);
@@ -255,6 +266,7 @@ export default function App() {
           }}
           onCreate={() => openWizard('create')}
           onImport={() => openWizard('import')}
+          onOpenGamePacks={() => setIsPacksOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
           appVersion={appVersion}
@@ -308,6 +320,7 @@ export default function App() {
                     onRestart={handleRestartServer}
                     onInspectInventory={handleInspectInventory}
                     history={metricsHistory}
+                    gameName={activeGame?.name}
                   />
                 )}
 
@@ -348,14 +361,13 @@ export default function App() {
                 )}
 
                 {currentTab === 'properties' && (
-                  <PropertiesTab
-                    entries={serverProperties.entries}
-                    filter={serverProperties.filter}
-                    onFilterChange={serverProperties.setFilter}
-                    onUpdateEntry={serverProperties.updateEntry}
-                    onSave={async () => {
-                      await serverProperties.save();
-                      toast({ title: t('toast.saved'), variant: 'success' });
+                  <ConfigFilesTab
+                    config={{
+                      ...configFiles,
+                      save: async () => {
+                        await configFiles.save();
+                        toast({ title: t('toast.saved'), variant: 'success' });
+                      }
                     }}
                   />
                 )}
@@ -377,6 +389,12 @@ export default function App() {
         provisionJob={provisionJob}
         onCancelInstall={handleCancelInstall}
         onFinish={handleWizardFinish}
+      />
+
+      <GamePacksDialog
+        open={isPacksOpen}
+        onClose={() => setIsPacksOpen(false)}
+        onChanged={() => setGamesReloadKey((key) => key + 1)}
       />
 
       <EditServerModal

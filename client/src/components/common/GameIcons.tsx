@@ -1,5 +1,6 @@
 import React from 'react';
 import minecraftLogo from '../../assets/minecraft/Grass_Block.png';
+import { useGameLogoUrl } from './gameLogoStore';
 import zomboidLogo from '../../assets/logos/project-zomboid.webp';
 import hytaleLogo from '../../assets/logos/hytale.png';
 
@@ -55,6 +56,19 @@ export const GameLogo: React.FC<{ gameId: string; className?: string; size?: num
   className = '',
   size = 28
 }) => {
+  const packLogo = useGameLogoUrl(gameId);
+  if (packLogo) {
+    return (
+      <img
+        src={packLogo}
+        alt={gameId}
+        width={size}
+        height={size}
+        className={`shrink-0 object-contain select-none pointer-events-none ${className}`}
+      />
+    );
+  }
+
   switch (gameId) {
     case 'minecraft':
       return <MinecraftIcon className={className} size={size} />;

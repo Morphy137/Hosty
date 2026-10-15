@@ -5,14 +5,15 @@ export type TabId = 'overview' | 'players' | 'mod_files' | 'mods' | 'properties'
 const ALL_TABS: TabId[] = ['overview', 'players', 'mod_files', 'mods', 'properties'];
 
 /**
- * Tabs a server exposes, derived from the driver's capabilities instead of the game id.
- * Unknown drivers (summary not loaded yet) get the full Minecraft-style set so nothing flickers away.
+ * Tabs a server exposes, derived only from the driver's declared capabilities and config files.
+ * Unknown drivers (summary not loaded yet) get the full set so nothing flickers away.
  */
 export function availableTabs(game: GameDriverSummary | undefined): TabId[] {
   if (!game) return ALL_TABS;
   return ALL_TABS.filter((tab) => {
-    if (tab === 'mod_files' || tab === 'mods') return game.supportsMods;
-    if (tab === 'properties') return game.configFileName === 'server.properties';
+    if (tab === 'players') return game.capabilities.players;
+    if (tab === 'mod_files' || tab === 'mods') return game.capabilities.mods;
+    if (tab === 'properties') return game.capabilities.configEditor && game.configFiles.length > 0;
     return true;
   });
 }

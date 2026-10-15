@@ -51,7 +51,13 @@ describe('capability-driven tabs', () => {
     supportsCustomJava: true,
     configFileName: 'server.properties',
     badge: 'X',
-    description: ''
+    description: '',
+    status: 'available',
+    setupSchema: [],
+    capabilities: { players: true, mods: true, configEditor: true, bridge: false },
+    configFiles: [{ path: 'server.properties', format: 'properties' }],
+    source: 'builtin',
+    hasLogo: false
   };
 
   it('shows every tab for a moddable game with server.properties', () => {
@@ -59,7 +65,11 @@ describe('capability-driven tabs', () => {
   });
 
   it('hides mod and properties tabs when the driver lacks them', () => {
-    const tabs = availableTabs({ ...base, supportsMods: false, configFileName: 'servertest.ini' });
+    const tabs = availableTabs({
+      ...base,
+      capabilities: { players: true, mods: false, configEditor: false, bridge: false },
+      configFiles: []
+    });
     expect(tabs).toEqual(['overview', 'players']);
   });
 

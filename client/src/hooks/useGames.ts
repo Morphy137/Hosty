@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { fetchSupportedGames } from '../api/daemonApi';
+import i18n from 'i18next';
+import { fetchSupportedGames, getGameLogoUrl } from '../api/daemonApi';
+import { registerGameLogos } from '../components/common/gameLogoStore';
 import type { GameDriverSummary, SocketConnectionState } from '../types/daemon';
 
-/** Loads the game drivers the daemon supports; capabilities decide which tabs a server shows. */
-export function useGames(connectionState: SocketConnectionState): GameDriverSummary[] {
+/** Loads the game drivers the daemon supports and wires their logos and translations into the UI. */
+export function useGames(connectionState: SocketConnectionState, reloadKey = 0): GameDriverSummary[] {
   const [games, setGames] = useState<GameDriverSummary[]>([]);
 
   useEffect(() => {
@@ -11,7 +13,16 @@ export function useGames(connectionState: SocketConnectionState): GameDriverSumm
     let ignore = false;
     fetchSupportedGames()
       .then((response) => {
-        if (!ignore) setGames(response.games);
+        if (ignore) return;
+        const logos: Record<string, string> = {};
+        for (const game of response.games) {
+          if (game.hasLogo) logos[game.id] = getGameLogoUrl(game.id);
+          for (const [language, resources] of Object.entries(game.i18n ?? {})) {
+            i18n.addResourceBundle(language, 'translation', resources, true, true);
+          }
+        }
+        registerGameLogos(logos);
+        setGames(response.games);
       })
       .catch(() => {
         // Advisory only: without drivers the UI falls back to the full tab set.
@@ -19,7 +30,7 @@ export function useGames(connectionState: SocketConnectionState): GameDriverSumm
     return () => {
       ignore = true;
     };
-  }, [connectionState]);
+  }, [connectionState, reloadKey]);
 
   return games;
 }

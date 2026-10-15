@@ -12,6 +12,8 @@ import type {
   GameDriverSummary,
   JarInspection,
   FolderInspection,
+  ConfigFileInfo,
+  GamePackInfo,
   ProvisionJobState
 } from '../types/daemon';
 import { toConfigPayload } from '../utils/configEntries';
@@ -128,6 +130,41 @@ export async function isPortInUse(port: number): Promise<boolean> {
 /** Identifies the game and loader of an existing server folder. */
 export function inspectFolder(folderPath: string): Promise<FolderInspection> {
   return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath });
+}
+
+// Generic config files (declared by the game's driver)
+export function fetchConfigFiles(): Promise<ConfigFileInfo[]> {
+  return request<ConfigFileInfo[]>('/api/config-files');
+}
+
+export function fetchConfigEntries(filePath: string): Promise<ConfigEntry[]> {
+  return request<ConfigEntry[]>(`/api/config-files/entries?path=${encodeURIComponent(filePath)}`);
+}
+
+export async function saveConfigEntries(filePath: string, entries: ConfigEntry[]): Promise<void> {
+  await postJson<unknown>(`/api/config-files/entries?path=${encodeURIComponent(filePath)}`, toConfigPayload(entries));
+}
+
+/** Starts the SteamCMD installation of a Steam-based game for an existing instance. */
+export function provisionInstance(id: string): Promise<InstallStarted> {
+  return postJson<InstallStarted>(`/api/instances/${encodeURIComponent(id)}/provision`, {});
+}
+
+// Game packs
+export function fetchGamePacks(): Promise<{ gamesDir: string; packs: GamePackInfo[] }> {
+  return request<{ gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs');
+}
+
+export function reloadGamePacks(): Promise<{ gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ gamesDir: string; packs: GamePackInfo[] }>('/api/game-packs/reload', {});
+}
+
+export function trustGamePack(packId: string): Promise<{ ok: boolean; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; packs: GamePackInfo[] }>(`/api/game-packs/${encodeURIComponent(packId)}/trust`, {});
+}
+
+export function getGameLogoUrl(gameId: string): string {
+  return `${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`;
 }
 
 export function importInstance(folderPath: string, name?: string): Promise<{ ok: boolean; instance: InstanceInfo }> {

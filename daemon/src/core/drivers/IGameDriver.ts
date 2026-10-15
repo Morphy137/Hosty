@@ -4,14 +4,29 @@ export type GameAvailability = 'available' | 'beta' | 'coming_soon';
 export interface SetupField {
   id: string;
   type: 'select' | 'text' | 'secret' | 'number' | 'toggle' | 'custom';
-  /** i18n key (client) for the label. */
-  labelKey: string;
+  /** i18n key (client) for the label; `label` (a language map) wins when present. */
+  labelKey?: string;
+  label?: string | Record<string, string>;
   descriptionKey?: string;
-  options?: Array<{ value: string; labelKey: string }>;
+  description?: string | Record<string, string>;
+  options?: Array<{ value: string; labelKey?: string; label?: string | Record<string, string> }>;
   default?: string | number | boolean;
   required?: boolean;
   /** For `custom` fields: key of a client-registered component that renders the field. */
   component?: string;
+}
+
+export interface GameCapabilitiesSummary {
+  players: boolean;
+  mods: boolean;
+  configEditor: boolean;
+  bridge: boolean;
+}
+
+export interface ConfigFileSummary {
+  path: string;
+  format: 'properties' | 'ini' | 'json' | 'toml' | 'lines';
+  label?: string | Record<string, string>;
 }
 
 export interface GameDriverSummary {
@@ -29,6 +44,16 @@ export interface GameDriverSummary {
   description: string;
   status: GameAvailability;
   setupSchema: SetupField[];
+  capabilities: GameCapabilitiesSummary;
+  configFiles: ConfigFileSummary[];
+  /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
+  source: 'builtin' | 'pack';
+  hasLogo: boolean;
+  /** Extra UI translations contributed by the pack, keyed by language. */
+  i18n?: Record<string, Record<string, string>>;
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number };
+  /** Localized description from the pack manifest (overrides `description`). */
+  descriptionI18n?: Record<string, string>;
 }
 
 export interface ParsedLogEvent {
@@ -63,6 +88,11 @@ export interface IGameDriver {
     maxRamMb?: number;
     jvmArgs?: string[];
     port?: number;
+    maxPlayers?: number;
+    name?: string;
+    id?: string;
+    /** Values of the game's setup fields; exposed to launch templates as `{{fieldId}}`. */
+    gameConfig?: Record<string, string | number | boolean>;
   }): ProcessLaunchPlan;
   buildStopCommand(): string;
   buildSaveCommand(): string;
