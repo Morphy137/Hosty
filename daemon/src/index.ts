@@ -886,37 +886,68 @@ app.delete('/api/game-packs/:packId', (req, res, next) => {
   }
 });
 
-// ---- UI translation packs: <localesDir>/<code>.json, optional `_meta.name` -----------------------
+// ---- UI translation packs: <localesDir>/<code>.json (user) over bundled packs --------------------
+// A pack may declare `_meta: { name, extends }`; `extends` merges it over a base pack so regional
+// variants only need the keys that differ.
 const LOCALE_CODE = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+type LocaleFile = { _meta?: { name?: string; extends?: string } } & Record<string, unknown>;
 
-app.get('/api/locales', (_req, res) => {
-  const locales: Array<{ code: string; name: string }> = [];
-  if (fs.existsSync(config.localesDir)) {
-    for (const file of fs.readdirSync(config.localesDir)) {
-      if (!file.endsWith('.json')) continue;
-      const code = file.slice(0, -5);
-      if (!LOCALE_CODE.test(code)) continue;
-      try {
-        const parsed = JSON.parse(fs.readFileSync(path.join(config.localesDir, file), 'utf-8')) as {
-          _meta?: { name?: string };
-        };
-        locales.push({ code, name: parsed._meta?.name ?? code });
-      } catch {
-        // Unreadable translation files are ignored.
-      }
+const readLocaleFile = (code: string): LocaleFile | null => {
+  if (!LOCALE_CODE.test(code)) return null;
+  for (const dir of [config.localesDir, config.bundledLocalesDir]) {
+    const file = path.join(dir, `${code}.json`);
+    if (!fs.existsSync(file)) continue;
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf-8')) as LocaleFile;
+    } catch {
+      return null;
     }
   }
+  return null;
+};
+
+const mergeLocale = (base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> => {
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(overlay)) {
+    const current = result[key];
+    result[key] =
+      value && typeof value === 'object' && current && typeof current === 'object'
+        ? mergeLocale(current as Record<string, unknown>, value as Record<string, unknown>)
+        : value;
+  }
+  return result;
+};
+
+const resolveLocale = (code: string, depth = 0): LocaleFile | null => {
+  const file = readLocaleFile(code);
+  if (!file) return null;
+  const parent = file._meta?.extends;
+  if (!parent || depth > 3) return file;
+  const base = resolveLocale(parent, depth + 1);
+  return base ? ({ ...mergeLocale(base, file), _meta: file._meta } as LocaleFile) : file;
+};
+
+app.get('/api/locales', (_req, res) => {
+  const codes = new Set<string>();
+  for (const dir of [config.bundledLocalesDir, config.localesDir]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      if (file.endsWith('.json') && LOCALE_CODE.test(file.slice(0, -5))) codes.add(file.slice(0, -5));
+    }
+  }
+  const locales = [...codes]
+    .map((code) => ({ code, name: readLocaleFile(code)?._meta?.name ?? code, valid: readLocaleFile(code) !== null }))
+    .filter((locale) => locale.valid)
+    .map(({ code, name }) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   res.json({ localesDir: config.localesDir, locales });
 });
 
 app.get('/api/locales/:code', (req, res, next) => {
   try {
-    const { code } = req.params;
-    const file = path.join(config.localesDir, `${code}.json`);
-    if (!LOCALE_CODE.test(code) || !fs.existsSync(file)) {
-      throw new DaemonError('CONFIG_NOT_FOUND', `Locale "${code}" not found.`);
-    }
-    res.type('application/json').send(fs.readFileSync(file, 'utf-8'));
+    const locale = resolveLocale(req.params.code);
+    if (!locale) throw new DaemonError('CONFIG_NOT_FOUND', `Locale "${req.params.code}" not found.`);
+    res.json(locale);
   } catch (err) {
     next(err);
   }

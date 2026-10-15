@@ -55,7 +55,8 @@
       "binaries/hosty-daemon"
     ],
     "resources": {
-      "../../daemon/assets/bridge/": "bridge/"
+      "../../daemon/assets/bridge/": "bridge/",
+      "../../daemon/assets/locales/": "locales/"
     }
   },
   "plugins": {

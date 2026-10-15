@@ -53,5 +53,5 @@ Auditoría de 21 observaciones del usuario. Cada punto: causa raíz verificada e
 | 13, 14, 15 | Hecho | Import estricto por juego, DELETE + menú contextual + favoritos, wizard juego→crear/importar. |
 | 16 | Parcial | Built-ins listados, instalar/desinstalar packs. Pendiente: mover PZ/Hytale a packs en carpeta y quitar `'minecraft'` hardcodeado. |
 | 17 | Diferido | Build 42 de Project Zomboid, al implementar ese soporte. |
-| 18 | Parcial | Mecanismo + selector listos (`<locales>/<code>.json`). Pendiente: aportar las traducciones (es-419, es-ES, pt-BR, pt-PT, zh-CN, hi). |
+| 18 | Hecho | Selector + packs en carpeta. Incluidos: pt-BR, zh-CN y hi completos; pt-PT (extiende pt-BR), es-ES y es-419 (overlays sobre es). |
 | 20 | Parcial | Instalador NSIS con selector de idioma, imágenes e icono redondeado. Pendiente: paso de instalación de packs/idiomas dentro del instalador (se hace dentro de la app). |

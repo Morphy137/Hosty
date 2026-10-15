@@ -64,6 +64,8 @@ export interface DaemonConfig {
   gamesDir: string;
   /** Folder with community UI translations (`<code>.json`), served to the client. */
   localesDir: string;
+  /** Translation packs shipped with Hosty (read-only); the user's `localesDir` overrides them. */
+  bundledLocalesDir: string;
   /** When set, REST and WebSocket clients must present it (the desktop shell generates one per run). */
   apiToken: string;
   /** Accept pre-v1 bridges that cannot authenticate (transitional, off by default). */
@@ -121,6 +123,10 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
     localesDir: path.resolve(
       env.MC_NEXUS_LOCALES_DIR?.trim() ||
         path.join(path.dirname(env.MC_NEXUS_GAMES_DIR?.trim() || resolveDefaultGamesDir(env)), 'locales')
+    ),
+    bundledLocalesDir: path.resolve(
+      env.MC_NEXUS_BUNDLED_LOCALES_DIR?.trim() ||
+        path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'locales')
     ),
     apiToken: env.MC_NEXUS_API_TOKEN?.trim() || '',
     allowLegacyBridge: readBoolean(env, 'MC_NEXUS_ALLOW_LEGACY_BRIDGE', false),

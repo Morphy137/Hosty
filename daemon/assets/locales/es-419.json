@@ -1,0 +1,17 @@
+{
+  "_meta": { "name": "Español (Latinoamérica)" },
+  "header": { "mock_button": "Simular telemetría" },
+  "edit_server": {
+    "icon_hint": "La imagen debe ser un .png de 64x64.",
+    "bridge_installed_restart": "Telemetry Bridge instalado. Reinicia el servidor para activarlo."
+  },
+  "mod_files": { "empty": "No se encontraron archivos .jar en la carpeta /mods." },
+  "wizard": {
+    "default_name": "Mi servidor de {{game}}",
+    "icon_hint": "Sirve cualquier imagen: se recorta y se redimensiona a 64×64 automáticamente.",
+    "version_search": "Buscar versiones..."
+  },
+  "errors": {
+    "UPSTREAM_ERROR": "No se pudo contactar con los servidores de descarga. Revisa tu conexión a internet."
+  }
+}

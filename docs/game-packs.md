@@ -122,7 +122,9 @@ test('detects joins', () => {
 
 ## UI translation packs
 
-Drop `<code>.json` files (e.g. `pt-BR.json`, `es-419.json`) into the `locales` folder next to the games
+Hosty ships pt-BR, pt-PT, es-ES, es-419, zh-CN and hi in `daemon/assets/locales` (bundled as app resources). Your own files in the
+`locales` folder override them. Drop `<code>.json` files (e.g. `pt-BR.json`, `es-419.json`) into the `locales` folder next to the games
 folder (`MC_NEXUS_LOCALES_DIR`). Copy `client/src/i18n/locales/en.json` as the template, add
 `"_meta": { "name": "Português (Brasil)" }` and translate the keys you want; missing keys fall back to English.
+Regional variants can set `"_meta": { "extends": "pt-BR" }` and list only the keys that differ.
 The language picker (globe icon) lists them automatically.
