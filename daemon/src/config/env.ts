@@ -7,18 +7,31 @@ dotenv.config({ quiet: true });
 // Bundled single-file builds (Node SEA) have no meaningful __dirname.
 const moduleDir = typeof __dirname === 'string' ? __dirname : process.cwd();
 
+/** Per-user data folder of the app: %APPDATA%\\Hosty, ~/Library/Application Support/Hosty or $XDG_DATA_HOME/Hosty. */
+export const resolveAppDataDir = (
+  env: Record<string, string | undefined>,
+  platform: NodeJS.Platform = process.platform,
+  home: string = os.homedir()
+): string => {
+  if (platform === 'win32') {
+    return path.join(env.APPDATA?.trim() || path.join(home, 'AppData', 'Roaming'), 'Hosty');
+  }
+  if (platform === 'darwin') {
+    return path.join(home, 'Library', 'Application Support', 'Hosty');
+  }
+  return path.join(env.XDG_DATA_HOME?.trim() || path.join(home, '.local', 'share'), 'Hosty');
+};
+
 const resolveDefaultInstanceDir = (env: Record<string, string | undefined>): string => {
   if (env.NODE_ENV === 'production') {
-    const appData = env.APPDATA?.trim() || path.join(os.homedir(), 'AppData', 'Roaming');
-    return path.join(appData, 'Hosty', 'instances', 'default');
+    return path.join(resolveAppDataDir(env), 'instances', 'default');
   }
   return path.join(moduleDir, '../../../instances/default');
 };
 
 const resolveDefaultGamesDir = (env: Record<string, string | undefined>): string => {
   if (env.NODE_ENV === 'production') {
-    const appData = env.APPDATA?.trim() || path.join(os.homedir(), 'AppData', 'Roaming');
-    return path.join(appData, 'Hosty', 'games');
+    return path.join(resolveAppDataDir(env), 'games');
   }
   return path.join(moduleDir, '../../../games');
 };

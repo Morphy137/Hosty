@@ -11,8 +11,18 @@ permissions:
 
 jobs:
   release:
-    name: Build & Release Desktop App
-    runs-on: windows-latest
+    name: Build & Release (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows
+            os: windows-latest
+          - label: macOS
+            os: macos-latest
+          - label: Linux
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,58 +39,69 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: client/src-tauri
 
       - name: Install Daemon Dependencies
-        run: |
-          cd daemon
-          npm ci
+        run: npm --prefix daemon ci
 
       - name: Install Client Dependencies
-        run: |
-          cd client
-          npm ci
+        run: npm --prefix client ci
 
       - name: Verify Quality Assurance (Tests & Linter)
         run: |
-          npm run test
+          npm --prefix daemon test
+          npm --prefix client test
           npm run lint
 
       - name: Build Daemon
-        run: |
-          cd daemon
-          npm run build
+        run: npm --prefix daemon run build
 
       - name: Build Daemon Sidecar (Node SEA)
-        run: |
-          cd daemon
-          npm run build:sidecar
+        run: npm --prefix daemon run build:sidecar
 
       - name: Smoke Test Daemon Sidecar
-        shell: pwsh
+        shell: bash
         run: |
-          $exe = Get-ChildItem client/src-tauri/binaries/hosty-daemon-*.exe | Select-Object -First 1
-          $env:NODE_ENV = 'production'
-          $env:MC_NEXUS_PORT = '4871'
-          $env:MC_NEXUS_INSTANCE_DIR = Join-Path $env:RUNNER_TEMP 'hosty-smoke/instances/default'
-          $env:MC_NEXUS_ASSETS_DIR = (Resolve-Path daemon/assets/bridge).Path
-          $proc = Start-Process -FilePath $exe.FullName -PassThru -WindowStyle Hidden
-          try {
-            $ok = $false
-            for ($i = 0; $i -lt 30 -and -not $ok; $i++) {
-              Start-Sleep -Seconds 1
-              try {
-                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:4871/api/health' -TimeoutSec 2
-                $ok = $health.status -eq 'ok'
-              } catch { }
-            }
-            if (-not $ok) { throw 'Daemon sidecar did not answer /api/health' }
-            Write-Host 'Daemon sidecar healthy'
-          } finally {
-            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          export NODE_ENV=production MC_NEXUS_PORT=4871
+          export MC_NEXUS_INSTANCE_DIR="$RUNNER_TEMP/hosty-smoke/instances/default"
+          export MC_NEXUS_ASSETS_DIR="$PWD/daemon/assets/bridge"
+          for bin in client/src-tauri/binaries/hosty-daemon-*; do "$bin" & done
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4871/api/health >/dev/null; then echo "sidecar healthy"; exit 0; fi
+            sleep 1
+          done
+          echo "sidecar did not answer /api/health"; exit 1
+
+      # Optional Windows code signing (Azure Trusted Signing). Skipped when the secrets are not configured,
+      # in which case the installer is unsigned and shows a SmartScreen warning. See docs/releasing.md.
+      - name: Prepare Windows signing
+        id: signing
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TRUSTED_SIGNING_ENDPOINT: ${{ secrets.TRUSTED_SIGNING_ENDPOINT }}
+          TRUSTED_SIGNING_ACCOUNT: ${{ secrets.TRUSTED_SIGNING_ACCOUNT }}
+          TRUSTED_SIGNING_PROFILE: ${{ secrets.TRUSTED_SIGNING_PROFILE }}
+        run: |
+          if ($env:TRUSTED_SIGNING_ACCOUNT) {
+            cargo install trusted-signing-cli --locked
+            $command = "trusted-signing-cli -e $env:TRUSTED_SIGNING_ENDPOINT -a $env:TRUSTED_SIGNING_ACCOUNT -c $env:TRUSTED_SIGNING_PROFILE -d Hosty %1"
+            $config = @{ bundle = @{ windows = @{ signCommand = $command } } } | ConvertTo-Json -Depth 5 -Compress
+            Set-Content -Path client/src-tauri/signing.conf.json -Value $config
+            "args=--config src-tauri/signing.conf.json" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Host "No signing secrets configured; building an unsigned installer."
+            "args=" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
       - name: Build Tauri Desktop Bundle & Publish Release
@@ -88,6 +109,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          # macOS signing + notarization (optional; unsigned apps are blocked by Gatekeeper)
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: client
           tagName: ${{ github.ref_name }}
@@ -95,3 +127,4 @@ jobs:
           releaseBody: 'Automated release of Hosty desktop application.'
           releaseDraft: false
           prerelease: false
+          args: ${{ steps.signing.outputs.args }}
