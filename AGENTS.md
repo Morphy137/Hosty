@@ -20,7 +20,8 @@ hosty/
 ```
 
 - **Client ⇄ daemon**: REST (`/api/...`) + WebSocket. Default daemon URL `http://localhost:4000` (`VITE_DAEMON_URL`, see `client/.env.example`). Dev client runs on `http://localhost:5173`.
-- **Daemon ⇄ bridge**: the in-game bridge connects to `ws://127.0.0.1:4000/telemetry/bridge`, sends 1 Hz telemetry (TPS/MSPT, chunks, entities, players with position/health/ping/gamemode/OP) and executes silent admin commands (heal, damage, teleport, inventory, kick, freeze, kill). Auto-reconnect with backoff. Bridge jars are shipped in `daemon/assets/bridge/` and installed per instance via `POST /api/instances/:id/bridge/install`.
+- **Daemon ⇄ bridge**: protocol v1 over WebSocket (spec: [docs/bridge-protocol.md](docs/bridge-protocol.md), schema + tester in `packages/bridge-protocol`). The daemon writes `<instance>/.hosty/bridge.json` (url + per-instance token) before a server starts; the bridge sends `HELLO` with its capabilities and the UI only enables advertised features. Pre-v1 bridges are rejected. Bridge jars live in `daemon/assets/bridge/` and are installed via `POST /api/instances/:id/bridge/install` (Paper/Purpur/Spigot/Fabric; none for Forge/NeoForge yet).
+- **UI ⇄ daemon auth**: in the desktop app Rust generates `MC_NEXUS_API_TOKEN` per run and exposes it with `get_daemon_token`; REST uses `x-hosty-token`, WebSocket/`<img>` URLs use `?token=`.
 - **Tauri shell** (`client/src-tauri`) wraps the frontend and supervises the daemon as a sidecar (`binaries/hosty-daemon-<triple>`, built by `npm --prefix daemon run build:sidecar` with esbuild + Node SEA). In release builds Rust picks the port (4000 or a free one), passes `MC_NEXUS_INSTANCE_DIR`/`MC_NEXUS_ASSETS_DIR`, exposes it via the `get_daemon_url` command and logs the sidecar to `app_log_dir/daemon.log`. On exit it writes `shutdown` to the sidecar stdin so Java servers stop gracefully. In `tauri dev` the sidecar is not spawned; run `npm run dev:daemon`.
 
 ### Daemon (`daemon/src`)
@@ -43,7 +44,7 @@ hosty/
 
 ### Bridge (`bridge/`)
 
-- `paper/` (Maven, one jar for MC 1.16–1.21+, Paper/Purpur/Spigot) and `fabric/` (Gradle, server-side, 1.20.x–1.21.x). Build: `mvn clean package` / `./gradlew build`; copy outputs into `daemon/assets/bridge/` when updated.
+- `paper/` (Maven, one jar for MC 1.16–1.21+, Paper/Purpur/Spigot) and `fabric/` (Gradle, server-side, 1.20.x–1.21.x); both implement protocol v1. Build: `mvn clean package` / `./gradlew build`; copy outputs into `daemon/assets/bridge/` (as `mc-nexus-bridge-paper.jar`, `mc-nexus-bridge-fabric.jar` and the generic `mc-nexus-bridge.jar`) when updated.
 
 ## Adding a new game
 

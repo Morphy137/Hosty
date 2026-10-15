@@ -49,6 +49,10 @@ export interface DaemonConfig {
   assetsDir: string;
   /** Folder scanned for user game packs (`<id>/hosty-game.json`). */
   gamesDir: string;
+  /** When set, REST and WebSocket clients must present it (the desktop shell generates one per run). */
+  apiToken: string;
+  /** Accept pre-v1 bridges that cannot authenticate (transitional, off by default). */
+  allowLegacyBridge: boolean;
   instanceId: string;
   jarFile: string;
   javaPath: string;
@@ -99,6 +103,8 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
     instanceDir: path.resolve(env.MC_NEXUS_INSTANCE_DIR?.trim() || resolveDefaultInstanceDir(env)),
     assetsDir: path.resolve(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()),
     gamesDir: path.resolve(env.MC_NEXUS_GAMES_DIR?.trim() || resolveDefaultGamesDir(env)),
+    apiToken: env.MC_NEXUS_API_TOKEN?.trim() || '',
+    allowLegacyBridge: readBoolean(env, 'MC_NEXUS_ALLOW_LEGACY_BRIDGE', false),
     instanceId: env.MC_NEXUS_INSTANCE_ID?.trim() || DEFAULTS.instanceId,
     jarFile: env.MC_NEXUS_JAR_FILE?.trim() || DEFAULTS.jarFile,
     javaPath: env.MC_NEXUS_JAVA_PATH?.trim() || DEFAULTS.javaPath,

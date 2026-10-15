@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { resolveRuntimeDaemonUrl } from '../config/daemon';
+import { getDaemonToken, resolveRuntimeDaemonUrl } from '../config/daemon';
 
 export const BOOTSTRAP_MAX_ATTEMPTS = 40;
 export const BOOTSTRAP_RETRY_DELAY_MS = 500;
@@ -21,7 +21,8 @@ async function waitForHealth(
     if (isCancelled()) return;
     onAttempt(attempt);
     try {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const token = getDaemonToken();
+      const response = await fetch(`${baseUrl}/api/health`, token ? { headers: { 'x-hosty-token': token } } : undefined);
       if (response.ok) return;
       lastReason = `Health check returned HTTP ${response.status}`;
     } catch (error) {

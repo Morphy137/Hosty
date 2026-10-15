@@ -16,10 +16,18 @@ export function toWebSocketUrl(httpUrl: string): string {
 }
 
 let activeDaemonHttpUrl = resolveDaemonHttpUrl(import.meta.env.VITE_DAEMON_URL);
+let activeDaemonToken = '';
 
 /** Current daemon base URL. Updated at startup when the desktop shell picks the sidecar port. */
 export const getDaemonHttpUrl = (): string => activeDaemonHttpUrl;
-export const getDaemonWsUrl = (): string => toWebSocketUrl(activeDaemonHttpUrl);
+/** Per-run secret of the desktop shell's daemon; empty in browser/dev mode (no auth). */
+export const getDaemonToken = (): string => activeDaemonToken;
+
+/** Appends the API token as a query parameter (for WebSocket and <img> URLs that cannot send headers). */
+export const withDaemonToken = (url: string): string =>
+  activeDaemonToken ? `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(activeDaemonToken)}` : url;
+
+export const getDaemonWsUrl = (): string => withDaemonToken(toWebSocketUrl(activeDaemonHttpUrl));
 
 export const isTauriRuntime = (): boolean =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -32,6 +40,7 @@ export async function resolveRuntimeDaemonUrl(): Promise<string> {
   if (isTauriRuntime()) {
     const { invoke } = await import('@tauri-apps/api/core');
     activeDaemonHttpUrl = resolveDaemonHttpUrl(await invoke<string>('get_daemon_url'));
+    activeDaemonToken = await invoke<string>('get_daemon_token');
   }
   return activeDaemonHttpUrl;
 }

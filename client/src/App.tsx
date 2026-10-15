@@ -101,6 +101,9 @@ export default function App() {
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
   const modFiles = useModFiles(connectionState, instances.activeId, handleError);
+  // Bridge-only features appear only when the connected bridge advertised them (or in mock mode).
+  const canInspectInventory =
+    (metrics.bridgeCapabilities?.includes('inventory.view') ?? false) || (health?.mockEnabled ?? false);
   const configFiles = useConfigFiles(connectionState, instances.activeId, handleError);
   const modConfigs = useModConfigs(connectionState, handleError);
 
@@ -318,7 +321,7 @@ export default function App() {
                     onSendAction={sendAction}
                     onOpenEditModal={() => setIsEditModalOpen(true)}
                     onRestart={handleRestartServer}
-                    onInspectInventory={handleInspectInventory}
+                    onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
                     history={metricsHistory}
                     gameName={activeGame?.name}
                   />
@@ -329,7 +332,7 @@ export default function App() {
                     players={players}
                     onSendCommand={handleSendCommand}
                     onSendAction={sendAction}
-                    onInspectInventory={handleInspectInventory}
+                    onInspectInventory={canInspectInventory ? handleInspectInventory : undefined}
                   />
                 )}
 
