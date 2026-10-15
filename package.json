@@ -1,6 +1,6 @@
 {
   "name": "hosty",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Hosty: Friendly Local Game Server Manager",
   "private": true,
   "scripts": {
