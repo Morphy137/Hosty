@@ -28,6 +28,7 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
+import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
 import net from 'net';
 
@@ -909,6 +910,26 @@ app.get('/api/games/:gameId/logo', (req, res, next) => {
   }
 });
 
+// Images a pack ships (dimension icons, ...): only image files inside the pack folder are served.
+const PACK_IMAGE = /\.(png|jpe?g|gif|webp|svg)$/i;
+app.get('/api/games/:gameId/files', (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const relative = typeof req.query.path === 'string' ? req.query.path : '';
+    const file = PACK_IMAGE.test(relative) ? driverRegistry.resolvePackFile(gameId, relative) : null;
+    const packDir = driverRegistry.resolvePackFile(gameId, '.');
+    const rel = file && packDir ? path.relative(path.resolve(packDir), path.resolve(file)) : '..';
+    const inside = Boolean(rel) && !rel.startsWith('..') && !path.isAbsolute(rel);
+    if (!file || !inside || !fs.existsSync(file)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game "${gameId}" has no file "${relative}".`);
+    }
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.sendFile(path.resolve(file));
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get('/api/games/:gameId/setup-schema', (req, res, next) => {
   try {
     const { gameId } = req.params;
@@ -1369,84 +1390,45 @@ wss.on('connection', (ws, req) => {
         const sent = sup.sendCommand(data);
         if (sent) broadcast('CONSOLE', `> ${data}\r\n`);
       }
-      if (action === 'ACTION' && data && typeof data === 'object') {
-        const activeId = instanceManager.getActiveInstanceId();
-        const actionData = data as {
-          action:
-            | 'HEAL'
-            | 'DAMAGE'
-            | 'KILL'
-            | 'KICK'
-            | 'TELEPORT'
-            | 'INVENTORY_VIEW'
-            | 'FREEZE'
-            | 'UNFREEZE'
-            | 'SMITE'
-            | 'GIVE_EXP'
-            | 'MUTE'
-            | 'UNMUTE';
-          username: string;
-          amount?: number;
-          feed?: boolean;
-          reason?: string;
-          levels?: number;
-          expType?: 'levels' | 'points';
-          mode?: 'add' | 'set';
-          x?: number;
-          y?: number;
-          z?: number;
-          targetPlayer?: string;
-        };
-
-        const sent = registry.sendBridgeAction(activeId, actionData);
-        if (sent) {
-          broadcast('CONSOLE', `[Hypervisor] Action ${actionData.action} applied to player ${actionData.username} via Bridge.\r\n`);
-        } else {
-          // Fallback to vanilla commands / mock handling
-          if (actionData.action === 'INVENTORY_VIEW') {
-            if (config.mockEnabled) {
-              broadcast('INVENTORY_DATA', createMockInventory(actionData.username));
-            }
-          } else if (actionData.action === 'FREEZE') {
-            sup.sendCommand(`effect give ${actionData.username} minecraft:slowness infinite 255 true`);
-            sup.sendCommand(`effect give ${actionData.username} minecraft:jump_boost infinite 250 true`);
-            broadcast('CONSOLE', `[Hypervisor] Player ${actionData.username} frozen.\r\n`);
-          } else if (actionData.action === 'UNFREEZE') {
-            sup.sendCommand(`effect clear ${actionData.username} minecraft:slowness`);
-            sup.sendCommand(`effect clear ${actionData.username} minecraft:jump_boost`);
-            broadcast('CONSOLE', `[Hypervisor] Player ${actionData.username} unfrozen.\r\n`);
-          } else if (actionData.action === 'SMITE') {
-            sup.sendCommand(`execute at ${actionData.username} run summon lightning_bolt ~ ~ ~`);
-            broadcast('CONSOLE', `[Hypervisor] Lightning struck player ${actionData.username}.\r\n`);
-          } else if (actionData.action === 'GIVE_EXP') {
-            const amount = actionData.amount ?? actionData.levels ?? 5;
-            const expType = actionData.expType === 'points' ? 'points' : 'levels';
-            const mode = actionData.mode === 'set' ? 'set' : 'add';
-            sup.sendCommand(`experience ${mode} ${actionData.username} ${amount} ${expType}`);
-            broadcast('CONSOLE', `[Hypervisor] ${mode === 'set' ? 'Set' : 'Granted'} ${amount} ${expType} for ${actionData.username}.\r\n`);
-          } else if (actionData.action === 'MUTE') {
-            sup.sendCommand(`tag ${actionData.username} add muted`);
-            broadcast('CONSOLE', `[Hypervisor] Player ${actionData.username} muted.\r\n`);
-          } else if (actionData.action === 'UNMUTE') {
-            sup.sendCommand(`tag ${actionData.username} remove muted`);
-            broadcast('CONSOLE', `[Hypervisor] Player ${actionData.username} unmuted.\r\n`);
-          } else if (actionData.action === 'HEAL') {
-            sup.sendCommand(`effect give ${actionData.username} instant_health 1 ${Math.min(255, actionData.amount || 20)}`);
-            if (actionData.feed) sup.sendCommand(`effect give ${actionData.username} saturation 1 20`);
-          } else if (actionData.action === 'DAMAGE') {
-            sup.sendCommand(`damage ${actionData.username} ${actionData.amount || 4}`);
-          } else if (actionData.action === 'KILL') {
-            sup.sendCommand(`kill ${actionData.username}`);
-          } else if (actionData.action === 'KICK') {
-            sup.sendCommand(`kick ${actionData.username} ${actionData.reason || 'Kicked by administrator'}`);
-          } else if (actionData.action === 'TELEPORT') {
-            if (actionData.targetPlayer) {
-              sup.sendCommand(`tp ${actionData.username} ${actionData.targetPlayer}`);
-            } else {
-              sup.sendCommand(`tp ${actionData.username} ${actionData.x ?? 0} ${actionData.y ?? 70} ${actionData.z ?? 0}`);
-            }
-          }
+      // Player actions are declared by the game (`playerActions`): the bridge runs them when it advertises the
+      // action, otherwise their console commands are sent. Nothing here knows any game's commands.
+      if (action === 'PLAYER_ACTION' && data && typeof data === 'object') {
+        const { actionId, username, values } = data as { actionId?: unknown; username?: unknown; values?: unknown };
+        const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+        const spec = instance
+          ? driverRegistry.getDriver(instance.gameId).summary.playerActions?.find((candidate) => candidate.id === actionId)
+          : undefined;
+        if (!spec || typeof username !== 'string' || !/^[\w.\- ]{1,64}$/.test(username)) {
+          ws.send(JSON.stringify({ type: 'ERROR', payload: { code: 'INVALID_PAYLOAD', message: 'Unknown player action.' } }));
+          return;
         }
+        const actionValues = sanitizeActionValues(spec, values);
+        if (spec.bridgeAction && registry.sendBridgeAction(instance!.id, toBridgeAction(spec, username, actionValues))) {
+          broadcast('CONSOLE', `[Hypervisor] ${spec.id} applied to ${username} via Bridge.
+`);
+          return;
+        }
+        const commands = renderActionCommands(spec, username, actionValues);
+        if (commands.length === 0) {
+          ws.send(
+            JSON.stringify({
+              type: 'ERROR',
+              payload: { code: 'INVALID_PAYLOAD', message: `"${spec.id}" needs the Telemetry Bridge to be connected.` }
+            })
+          );
+          return;
+        }
+        for (const command of commands) {
+          if (sup.sendCommand(command)) broadcast('CONSOLE', `> ${command}
+`);
+        }
+      }
+      // Inventory inspection is a bridge capability (`inventory.view`), shared by every game that implements it.
+      if (action === 'INVENTORY_VIEW' && data && typeof data === 'object') {
+        const { username } = data as { username?: unknown };
+        if (typeof username !== 'string') return;
+        const sent = registry.sendBridgeAction(instanceManager.getActiveInstanceId(), { action: 'INVENTORY_VIEW', username });
+        if (!sent && config.mockEnabled) broadcast('INVENTORY_DATA', createMockInventory(username));
       }
       if (action === 'MOCK' && config.mockEnabled) {
         const mockMetrics: ServerMetrics = {

@@ -1,47 +1,40 @@
 import React, { useState } from 'react';
+import type { PlayerView } from '../../types/daemon';
 
 interface ItemSlotIconProps {
   id: string;
   fallbackText: string;
+  playerView?: PlayerView;
   className?: string;
 }
 
-/**
- * Renders direct Minecraft item or block pixel textures using mcasset CDN.
- * Automatically tries item texture, then block texture, and falls back to a clean text badge for mods.
- */
-export const ItemSlotIcon: React.FC<ItemSlotIconProps> = ({ id, fallbackText, className = '' }) => {
-  const [stage, setStage] = useState<'item' | 'block' | 'fallback'>('item');
+/** Item image from the game's declared URL templates (tried in order), else the item's initials. */
+export const ItemSlotIcon: React.FC<ItemSlotIconProps> = ({ id, fallbackText, playerView, className = '' }) => {
+  const [attempt, setAttempt] = useState(0);
+  const namespace = id.includes(':') ? id.slice(0, id.indexOf(':')).toLowerCase() : '';
+  const item = id.replace(/^.*:/, '').toLowerCase();
+  const templates = playerView?.itemIconUrls ?? [];
+  const namespaceKnown = !namespace || (playerView?.itemNamespaces ?? []).includes(namespace);
+  const template = namespaceKnown ? templates[attempt] : undefined;
 
-  const rawName = id.replace(/^.*:/, '').toLowerCase();
-  const isMinecraft = id.startsWith('minecraft:') || !id.includes(':');
-
-  if (!isMinecraft || stage === 'fallback') {
+  if (!template) {
     return (
-      <span className={`font-mono text-[10px] font-bold text-ink leading-tight truncate max-w-[36px] ${className}`}>
+      <span className={`max-w-[36px] truncate font-mono text-[10px] font-bold leading-tight text-ink ${className}`}>
         {fallbackText.slice(0, 3).toUpperCase()}
       </span>
     );
   }
 
-  const src =
-    stage === 'item'
-      ? `https://assets.mcasset.cloud/1.20.4/assets/minecraft/textures/item/${rawName}.png`
-      : `https://assets.mcasset.cloud/1.20.4/assets/minecraft/textures/block/${rawName}.png`;
-
+  const src = template
+    .replace(/\{\{\s*item\s*\}\}/g, encodeURIComponent(item))
+    .replace(/\{\{\s*namespace\s*\}\}/g, encodeURIComponent(namespace));
   return (
     <img
       src={src}
-      alt={rawName}
-      className={`w-7 h-7 object-contain image-rendering-pixelated pointer-events-none drop-shadow-xs ${className}`}
+      alt={item}
+      className={`pointer-events-none h-7 w-7 object-contain drop-shadow-xs [image-rendering:pixelated] ${className}`}
       loading="lazy"
-      onError={() => {
-        if (stage === 'item') {
-          setStage('block');
-        } else {
-          setStage('fallback');
-        }
-      }}
+      onError={() => setAttempt((current) => current + 1)}
     />
   );
 };

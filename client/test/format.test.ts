@@ -3,9 +3,7 @@ import {
   clampPercent,
   calculateRamPercent,
   formatRowIndex,
-  formatUptime,
-  formatDimensionName,
-  normalizeDimension
+  formatUptime
 } from '../src/utils/format';
 
 describe('Format utilities', () => {
@@ -34,21 +32,5 @@ describe('Format utilities', () => {
     expect(formatUptime(125)).toBe('2m 5s');
     expect(formatUptime(3665)).toBe('1h 1m 5s');
     expect(formatUptime(90061)).toBe('1d 1h 1m 1s');
-  });
-
-  it('normalizes dimension strings', () => {
-    expect(normalizeDimension('minecraft:overworld')).toBe('overworld');
-    expect(normalizeDimension('overworld')).toBe('overworld');
-    expect(normalizeDimension('minecraft:the_nether')).toBe('the_nether');
-    expect(normalizeDimension('nether')).toBe('the_nether');
-    expect(normalizeDimension('minecraft:the_end')).toBe('the_end');
-    expect(normalizeDimension('twilightforest:twilight_forest')).toBe('twilightforest:twilight_forest');
-  });
-
-  it('formats dimension names', () => {
-    const mockT = (key: string) => key;
-    expect(formatDimensionName('minecraft:overworld', mockT)).toBe('overview.players.dimension.overworld');
-    expect(formatDimensionName('twilightforest:twilight_forest', mockT)).toBe('The Twilight Forest');
-    expect(formatDimensionName('custom_mod:deep_caverns', mockT)).toBe('Deep Caverns');
   });
 });

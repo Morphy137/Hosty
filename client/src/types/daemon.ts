@@ -68,7 +68,7 @@ export const LOADER_METADATA: Record<ServerLoader, LoaderInfo> = {
   }
 };
 
-export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK' | 'ACTION';
+export type DaemonAction = 'START' | 'STOP' | 'KILL' | 'COMMAND' | 'MOCK' | 'PLAYER_ACTION' | 'INVENTORY_VIEW';
 
 export interface PlayerState {
   username: string;
@@ -245,12 +245,26 @@ export interface PlayerActionParam {
   options?: Array<{ value: string; label: LocalizedText }>;
 }
 
+/** Run by the daemon (bridge or console commands); the UI only sends the action id and parameter values. */
 export interface PlayerActionSpec {
   id: string;
   label: LocalizedText;
-  command: string;
+  command?: string | string[];
+  bridgeAction?: string;
   params?: PlayerActionParam[];
   danger?: boolean;
+  /** Shown on each player card and in the Overview; the rest live in the player's menu. */
+  quick?: boolean;
+  icon?: string;
+}
+
+export interface DimensionSpec {
+  id: string;
+  label: LocalizedText;
+  aliases?: string[];
+  /** Image inside the pack folder (served by the daemon). */
+  icon?: string;
+  primary?: boolean;
 }
 
 export interface CreationSetting {
@@ -268,6 +282,11 @@ export interface PlayerView {
   coordinates?: boolean;
   vitals?: boolean;
   avatarUrl?: string;
+  /** Inventory item image URL templates (`{{item}}`, `{{namespace}}`), tried in order. */
+  itemIconUrls?: string[];
+  itemNamespaces?: string[];
+  /** Id of the player action that empties an inventory. */
+  inventoryClearAction?: string;
 }
 
 export interface JvmFlagPreset {
@@ -300,8 +319,10 @@ export interface GameDriverSummary {
   creationSettings?: CreationSetting[];
   quickCommands?: Array<{ label: string; command: string }>;
   playerView?: PlayerView;
-  /** Id of a rich players panel the app registers for this game (bundled packs only). */
-  playerPanel?: string;
+  dimensions?: DimensionSpec[];
+  listPlayersCommand?: string;
+  /** Ticks per second the server targets (enables the TPS card). */
+  performance?: { tickRate: number };
   /** Config file kept in sync with port / motd / player limit (also marks games with those settings). */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   bridgeLoaders?: string[];

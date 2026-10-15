@@ -4,12 +4,7 @@ import {
   Cpu,
   HardDrive,
   Users,
-  Terminal,
-  Heart,
-  Gift,
-  Zap,
-  Skull,
-  LogOut,
+  Terminal,
   ChevronRight,
   Server,
   Settings,
@@ -18,29 +13,14 @@ import {
   Check,
   Layers,
   Search,
-  Activity,
-  Wifi,
-  Snowflake,
-  VolumeX,
-  Package
+  Activity,
 } from 'lucide-react';
-import type {
-  DaemonAction,
-  InstanceInfo,
-  Metrics,
-  PlayerActionSpec,
-  PlayerState,
-  PlayerView,
-  ServerStatus
-} from '../../types/daemon';
-import { PlayerActionButtons } from '../players/PlayerActionButtons';
-import { playerAvatarUrl } from '../../utils/playerActions';
-import { calculateRamPercent, formatDimensionName } from '../../utils/format';
-import { buildPlayerCommand, type PlayerAction } from '../../utils/playerCommands';
-import { DimensionIcon } from '../common/DimensionIcon';
-import { PlayerActionModal, type DynamicActionType } from '../modals/PlayerActionModal';
+import type { GameDriverSummary, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
+import { PlayerCard } from '../players/PlayerCard';
+import type { RunPlayerAction } from '../players/PlayerActionDialog';
+import { calculateRamPercent, formatUptime } from '../../utils/format';
+import { processLabel } from '../../utils/gameRuntime';
 import { getInstanceIconUrl } from '../../api/daemonApi';
-import { SlidingText } from '../common/SlidingText';
 import { GameLogo } from '../common/GameIcons';
 import { AnimatedNumber } from '../motion/AnimatedNumber';
 import { Sparkline } from '../common/Sparkline';
@@ -53,19 +33,13 @@ interface OverviewTabProps {
   instance: InstanceInfo | null;
   status: ServerStatus;
   onSendCommand: (command: string) => void;
-  onSendAction?: (action: DaemonAction, data?: unknown) => boolean;
+  onRunAction: RunPlayerAction;
   onOpenEditModal: () => void;
   onRestart: () => void;
   onInspectInventory?: (player: PlayerState) => void;
   history?: MetricsHistory;
-  /** Display name of the instance's game (from the driver summary). */
-  gameName?: string;
-  /** Console shortcuts declared by the game. */
-  quickCommands?: Array<{ label: string; command: string }>;
-  /** The game registered a rich players panel (otherwise declared `playerActions` are used). */
-  richPlayers?: boolean;
-  playerActions?: PlayerActionSpec[];
-  playerView?: PlayerView;
+  /** The instance's game: quick commands, player actions and what the Overview shows come from it. */
+  game?: GameDriverSummary;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -75,31 +49,30 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   instance,
   status,
   onSendCommand,
-  onSendAction,
+  onRunAction,
   onOpenEditModal,
   onRestart,
   onInspectInventory,
   history,
-  gameName,
-  quickCommands = [],
-  richPlayers = false,
-  playerActions = [],
-  playerView
+  game
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
   const [playerSearch, setPlayerSearch] = useState('');
   const [copiedIp, setCopiedIp] = useState(false);
-  const [actionTarget, setActionTarget] = useState<{
-    player: PlayerState;
-    type: DynamicActionType;
-  } | null>(null);
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   const ramPercent = calculateRamPercent(metrics.ramMb, metrics.maxRamMb);
-  const serverPort = instance?.port || 25565;
+  const gameName = game?.name;
+  const quickCommands = game?.quickCommands ?? [];
+  const serverPort = instance?.port || game?.defaultPort || 0;
   const serverAddress = `127.0.0.1:${serverPort}`;
-  const maxPlayersCount = instance?.maxPlayers || 20;
+  const maxPlayersCount = instance?.maxPlayers || game?.defaultMaxPlayers || 0;
+  // Tick rate the game runs at (manifest `performance.tickRate`); only then is a TPS reading meaningful.
+  const tickRate = game?.performance?.tickRate;
+  const showTps = Boolean(tickRate) && metrics.tps !== undefined;
+  const tps = metrics.tps ?? tickRate ?? 0;
+  const tpsHealth = !tickRate ? 1 : tps / tickRate;
 
   const filteredOverviewPlayers = players.filter((p) =>
     p.username.toLowerCase().includes(playerSearch.toLowerCase())
@@ -115,19 +88,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     if (!trimmed) return;
     onSendCommand(trimmed);
     setCommandInput('');
-  };
-
-  const handlePlayerAction = (username: string, action: PlayerAction) => {
-    if (onSendAction && (action === 'KILL' || action === 'KICK')) {
-      onSendAction('ACTION', {
-        action,
-        username,
-        reason: 'Kicked by administrator'
-      });
-      return;
-    }
-    const cmd = buildPlayerCommand(action, username, 'Kicked by administrator');
-    onSendCommand(cmd);
   };
 
   const handleCopyIp = () => {
@@ -269,7 +229,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <span className="text-[24px] font-semibold tracking-[-0.96px] text-ink">
               <AnimatedNumber value={metrics.cpu} fractionDigits={0} suffix="%" />
             </span>
-            <span className="font-mono text-[12px] text-mute">java.exe</span>
+            <span className="font-mono text-[12px] text-mute">{processLabel(game)}</span>
           </div>
           <div className="mt-3 h-1.5 w-full bg-surface-3 rounded-[2px] overflow-hidden">
             <div
@@ -304,7 +264,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <Sparkline className="mt-2" values={history?.ramPercent ?? []} max={100} />
         </div>
 
-        {/* TPS / MSPT Performance Card */}
+        {/* Performance (games that declare a tick rate and report TPS) or uptime */}
+        {showTps ? (
         <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[12px] uppercase text-mute">
@@ -317,17 +278,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               className={`text-[24px] font-semibold tracking-[-0.96px] ${
                 status !== 'ONLINE'
                   ? 'text-mute'
-                  : (metrics.tps ?? 20) >= 19.5
+                  : tpsHealth >= 0.975
                   ? 'text-success-fg'
-                  : (metrics.tps ?? 20) >= 15
+                  : tpsHealth >= 0.75
                   ? 'text-warning'
                   : 'text-danger-fg'
               }`}
             >
               {status === 'ONLINE'
-                ? metrics.tps !== undefined
-                  ? metrics.tps.toFixed(1)
-                  : '20.0'
+                ? tps.toFixed(1)
                 : '--'}{' '}
               <span className="text-[14px] font-normal text-mute">TPS</span>
             </span>
@@ -342,22 +301,34 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               className={`h-full transition-all duration-300 ${
                 status !== 'ONLINE'
                   ? 'bg-transparent'
-                  : (metrics.tps ?? 20) >= 19.5
+                  : tpsHealth >= 0.975
                   ? 'bg-success'
-                  : (metrics.tps ?? 20) >= 15
+                  : tpsHealth >= 0.75
                   ? 'bg-warning'
                   : 'bg-danger'
               }`}
               style={{
                 width: `${
                   status === 'ONLINE'
-                    ? Math.min(100, ((metrics.tps ?? 20) / 20) * 100)
+                    ? Math.min(100, tpsHealth * 100)
                     : 0
                 }%`
               }}
             />
           </div>
         </div>
+        ) : (
+          <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[12px] uppercase text-mute">{t('overview.metrics.uptime')}</span>
+              <Activity className="w-4 h-4 text-mute" />
+            </div>
+            <div className="mt-2 text-[24px] font-semibold tracking-[-0.96px] text-ink">
+              {status === 'ONLINE' ? formatUptime(Math.floor(metrics.uptime / 1000)) : '--'}
+            </div>
+            <div className="mt-3 h-1.5 w-full" />
+          </div>
+        )}
 
         {/* Connected Players & Port Card */}
         <div className="geist-card p-4 flex flex-col justify-between bg-surface border border-hairline">
@@ -434,168 +405,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </p>
               </div>
             ) : (
-              filteredOverviewPlayers.map((p) => {
-                const dimLabel = formatDimensionName(p.dimension, t);
-
-                if (!richPlayers) {
-                  const avatar = playerAvatarUrl(playerView?.avatarUrl, p.username);
-                  return (
-                    <div key={p.username} className="animate-in space-y-2 p-4 transition hover:bg-surface-2">
-                      <div className="flex items-center gap-3">
-                        {avatar ? (
-                          <img src={avatar} alt="" className="h-9 w-9 rounded-[6px] border border-hairline" />
-                        ) : (
-                          <span className="flex h-9 w-9 items-center justify-center rounded-[6px] bg-surface-3 text-[13px] font-semibold text-ink">
-                            {p.username.slice(0, 2).toUpperCase()}
-                          </span>
-                        )}
-                        <div className="min-w-0">
-                          <div className="truncate text-[14px] font-medium text-ink">{p.username}</div>
-                          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-mute">
-                            {playerView?.dimensions && <span>{dimLabel}</span>}
-                            {playerView?.coordinates && (
-                              <span>
-                                {p.x}, {p.y}, {p.z}
-                              </span>
-                            )}
-                            {playerView?.vitals && p.health !== undefined && <span>{p.health} HP</span>}
-                            {p.ping !== undefined && <span>{p.ping}ms</span>}
-                          </div>
-                        </div>
-                      </div>
-                      {playerActions.length > 0 && (
-                        <PlayerActionButtons player={p} actions={playerActions} onExecute={onSendCommand} />
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={p.username}
-                    className="animate-in p-4 hover:bg-surface-2 transition space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={`https://mc-heads.net/avatar/${p.username}/40`}
-                          alt={p.username}
-                          className="w-9 h-9 rounded-[6px] border border-hairline"
-                        />
-                        <div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[14px] font-medium tracking-[-0.28px] text-ink">
-                              {p.username}
-                            </span>
-                            {p.isOp && (
-                              <span className="px-1 py-0.2 rounded-[3px] bg-warning/15 border border-warning/30 text-warning font-mono text-[9px] font-bold">
-                                {t('overview.players.operator')}
-                              </span>
-                            )}
-                            {p.isFrozen && (
-                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-accent/15 border border-accent/30 text-accent-fg font-mono text-[9px] font-bold">
-                                <Snowflake className="w-2.5 h-2.5" />
-                                {t('players.frozen')}
-                              </span>
-                            )}
-                            {p.isMuted && (
-                              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-[3px] bg-danger/15 border border-danger/30 text-danger-fg font-mono text-[9px] font-bold">
-                                <VolumeX className="w-2.5 h-2.5" />
-                                {t('players.muted')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-mute flex-wrap">
-                            <span>XYZ: {p.x}, {p.y}, {p.z}</span>
-                            {p.ping !== undefined && (
-                              <>
-                                <span>&bull;</span>
-                                <span className="inline-flex items-center gap-0.5 text-success-fg">
-                                  <Wifi className="w-2.5 h-2.5" />
-                                  {p.ping}ms
-                                </span>
-                              </>
-                            )}
-                            {p.health !== undefined && (
-                              <>
-                                <span>&bull;</span>
-                                <span className="inline-flex items-center gap-0.5 text-danger-fg">
-                                  <Heart className="w-2.5 h-2.5 fill-danger-fg" />
-                                  {p.health} HP
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-surface-2 border border-hairline font-mono text-[11px] text-body">
-                        <DimensionIcon dimension={p.dimension} className="w-3.5 h-3.5" />
-                        {dimLabel}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 pt-1">
-                      {onInspectInventory && (
-                        <button
-                          type="button"
-                          onClick={() => onInspectInventory(p)}
-                          className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                          title={t('players.inventory_button')}
-                        >
-                          <Package className="w-[11px] h-[11px] text-ink shrink-0" />
-                          <SlidingText>{t('players.actions.inventory_short')}</SlidingText>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActionTarget({ player: p, type: 'HEAL' })}
-                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-danger/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                        title={t('overview.players.feed')}
-                      >
-                        <Heart className="w-[11px] h-[11px] text-danger-fg shrink-0" />
-                        <SlidingText>{t('overview.players.feed')}</SlidingText>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActionTarget({ player: p, type: 'GIFT' })}
-                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-accent/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                        title={t('players.actions.gift')}
-                      >
-                        <Gift className="w-[11px] h-[11px] text-accent-fg shrink-0" />
-                        <SlidingText>{t('players.actions.gift')}</SlidingText>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActionTarget({ player: p, type: 'DAMAGE' })}
-                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-warning/40 text-[11px] font-medium text-ink flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                        title={t('players.actions.hurt')}
-                      >
-                        <Zap className="w-[11px] h-[11px] text-warning shrink-0" />
-                        <SlidingText>{t('players.actions.hurt')}</SlidingText>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePlayerAction(p.username, 'KILL')}
-                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-danger-soft border border-hairline hover:border-danger/40 text-[11px] font-medium text-danger-fg flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                        title={t('players.actions.kill')}
-                      >
-                        <Skull className="w-[11px] h-[11px] text-danger-fg shrink-0" />
-                        <SlidingText>{t('players.actions.kill')}</SlidingText>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePlayerAction(p.username, 'KICK')}
-                        className="flex-1 h-7 rounded-[6px] bg-surface hover:bg-surface-3 border border-hairline hover:border-mute/40 text-[11px] font-medium text-body flex items-center justify-center gap-1.5 transition-colors cursor-pointer px-1.5 whitespace-nowrap overflow-hidden shadow-2xs"
-                        title={t('overview.players.kick')}
-                      >
-                        <LogOut className="w-[11px] h-[11px] shrink-0" />
-                        <SlidingText>{t('overview.players.kick')}</SlidingText>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              filteredOverviewPlayers.map((p) => (
+                <PlayerCard
+                  key={p.username}
+                  player={p}
+                  game={game}
+                  variant="row"
+                  onRunAction={onRunAction}
+                  onInspectInventory={onInspectInventory}
+                />
+              ))
             )}
           </div>
         </div>
@@ -678,14 +497,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
       </div>
 
-      {actionTarget && (
-        <PlayerActionModal
-          player={actionTarget.player}
-          actionType={actionTarget.type}
-          onClose={() => setActionTarget(null)}
-          onExecute={onSendCommand}
-        />
-      )}
     </>
   );
 };

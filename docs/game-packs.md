@@ -56,11 +56,13 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `bridgeTargets` | | Loader -> `{ dir, asset }` for the Telemetry Bridge install; `default` is the fallback. |
 | `default` | | Bundled packs only: marks the game used when none is chosen (else the first bundled game). |
 | `provision.branchField` | | For `steamcmd`: id of the setup field whose value is the Steam beta branch. |
-| `playerActions` | | Actions an operator can run on an online player: `{ id, label, command, params?, danger? }`. `{{player}}` and `{{paramId}}` are replaced; params render as a form. |
+| `playerActions` | | Actions an operator can run on an online player: `{ id, label, command?, bridgeAction?, params?, danger?, quick?, icon? }`. `command` is one command or a list; `{{player}}` and `{{paramId}}` are replaced and params render as a form. When the Telemetry Bridge is connected and advertises `bridgeAction`, it runs the action instead (it receives the param values under their ids). `quick` actions appear on every player card and in the Overview; the rest in the player's menu. |
+| `dimensions` | | Worlds players can be in: `{ id, label, aliases?, icon?, primary? }`. Labels and pack images (`icon`) are shown on cards and as filter chips; `primary` ones are always offered. |
+| `performance.tickRate` | | Ticks per second the server targets: shows the TPS card (green/amber/red relative to it) when the bridge reports TPS; otherwise the Overview shows uptime. |
+| `commands.listPlayers` | | Console command that prints who is online; offered as "Refresh list" in the Players tab. |
 | `creationSettings` | | Choices shown when creating a server and written to a config file: `{ id, label, type, options?, default?, file, key }`. |
 | `quickCommands` | | `{ label, command }` shortcuts shown above the console. |
-| `playerView` | | What the player list shows: `dimensions`, `coordinates`, `vitals` and an `avatarUrl` template. |
-| `playerPanel` | | Bundled packs only: id of a rich players panel registered by the app; packs without it get the generic list built from `playerActions`. |
+| `playerView` | | What the player cards show: `dimensions`, `coordinates`, `vitals`, an `avatarUrl` template, inventory item images (`itemIconUrls` templates with `{{item}}` / `{{namespace}}`, limited to `itemNamespaces`) and `inventoryClearAction` (id of the action the inventory viewer offers). |
 | `setup[].type: "custom"` | | Renders a component registered by the app (`component` id); used by the Minecraft loader installer. |
 
 ### Launch placeholders

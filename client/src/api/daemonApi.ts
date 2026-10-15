@@ -288,6 +288,13 @@ export function fetchLocale(code: string): Promise<Record<string, unknown>> {
   return request<Record<string, unknown>>(`/api/locales/${encodeURIComponent(code)}`);
 }
 
+/** An image shipped inside a game pack (dimension icons, ...). */
+export function getGameFileUrl(gameId: string, relativePath: string): string {
+  return withDaemonToken(
+    `${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/files?path=${encodeURIComponent(relativePath)}`
+  );
+}
+
 export function getGameLogoUrl(gameId: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/games/${encodeURIComponent(gameId)}/logo`);
 }

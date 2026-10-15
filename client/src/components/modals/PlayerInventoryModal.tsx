@@ -10,9 +10,10 @@ import {
   Sparkles,
   Package
 } from 'lucide-react';
-import type { PlayerState, PlayerInventoryData, InventorySlotItem } from '../../types/daemon';
-import { formatDimensionName } from '../../utils/format';
+import type { GameDriverSummary, PlayerState, PlayerInventoryData, InventorySlotItem } from '../../types/daemon';
+import { resolveDimension } from '../../utils/dimensions';
 import { DimensionIcon } from '../common/DimensionIcon';
+import { PlayerAvatar } from '../players/PlayerInfo';
 import { ItemSlotIcon } from '../common/ItemSlotIcon';
 import { SlidingText } from '../common/SlidingText';
 
@@ -22,7 +23,9 @@ interface PlayerInventoryModalProps {
   isLoading: boolean;
   onClose: () => void;
   onRefresh: () => void;
-  onClearInventory: () => void;
+  /** Present when the game declares an action that empties an inventory. */
+  onClearInventory?: () => void;
+  game?: GameDriverSummary;
 }
 
 export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
@@ -31,9 +34,10 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
   isLoading,
   onClose,
   onRefresh,
-  onClearInventory
+  onClearInventory,
+  game
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [hoveredItem, setHoveredItem] = useState<{
     item: InventorySlotItem;
     x: number;
@@ -50,6 +54,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
   }, []);
 
   if (!player) return null;
+  const dimension = game?.playerView?.dimensions ? resolveDimension(game, player.dimension, i18n.language) : null;
 
   const handleMouseEnter = (item: InventorySlotItem | null, e: React.MouseEvent) => {
     if (!item) {
@@ -93,7 +98,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
         {hasItem ? (
           <>
             {/* Direct item pixel texture or fallback badge */}
-            <ItemSlotIcon id={item.id} fallbackText={shortName} />
+            <ItemSlotIcon id={item.id} fallbackText={shortName} playerView={game?.playerView} />
 
             {/* Stack count badge */}
             {item.count > 1 && (
@@ -133,11 +138,7 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-hairline pb-4">
           <div className="flex items-center gap-3">
-            <img
-              src={`https://mc-heads.net/avatar/${player.username}/40`}
-              alt={player.username}
-              className="w-10 h-10 rounded-[6px] border border-hairline"
-            />
+            <PlayerAvatar player={player} game={game} size={40} />
             <div>
               <h2 className="text-[16px] font-semibold text-ink tracking-[-0.3px] flex items-center gap-2">
                 <Package className="w-4 h-4 text-accent-fg" />
@@ -145,11 +146,15 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
               </h2>
               <div className="font-mono text-[12px] text-mute flex items-center gap-2 mt-0.5">
                 <span>{player.username}</span>
-                <span>&bull;</span>
-                <span className="inline-flex items-center gap-1">
-                  <DimensionIcon dimension={player.dimension} className="w-3.5 h-3.5" />
-                  <span>{formatDimensionName(player.dimension, t)}</span>
-                </span>
+                {dimension && (
+                  <>
+                    <span>&bull;</span>
+                    <span className="inline-flex items-center gap-1">
+                      <DimensionIcon dimension={dimension} className="w-3.5 h-3.5" />
+                      <span>{dimension.label}</span>
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -238,16 +243,18 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
             </div>
 
             {/* Modal Bottom Actions */}
-            <div className="pt-2 border-t border-hairline flex items-center justify-end">
-              <button
-                type="button"
-                onClick={onClearInventory}
-                className="h-8 px-3 rounded-[4px] bg-danger-soft hover:bg-danger-soft border border-danger/30 text-[12px] font-medium text-danger-fg flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <SlidingText>{t('inventory.clear_inventory_button')}</SlidingText>
-              </button>
-            </div>
+            {onClearInventory && (
+              <div className="pt-2 border-t border-hairline flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={onClearInventory}
+                  className="h-8 px-3 rounded-[4px] bg-danger-soft hover:bg-danger-soft border border-danger/30 text-[12px] font-medium text-danger-fg flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <SlidingText>{t('inventory.clear_inventory_button')}</SlidingText>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

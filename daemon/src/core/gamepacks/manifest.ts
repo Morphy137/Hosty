@@ -98,14 +98,36 @@ export interface PlayerActionParam {
   options?: Array<{ value: string; label: LocalizedText }>;
 }
 
-/** A console command an operator can run against an online player, rendered generically by the UI. */
+/**
+ * Something an operator can do to an online player, rendered generically by the UI and run by the daemon.
+ * `command` (one or several console commands) is used unless the Telemetry Bridge is connected and advertises
+ * `bridgeAction`; the bridge then receives `{ action: bridgeAction, username, ...param values }`.
+ */
 export interface PlayerActionSpec {
   id: string;
   label: LocalizedText;
-  /** `{{player}}` and `{{<param id>}}` are replaced before the command is sent. */
-  command: string;
+  /** `{{player}}` and `{{<param id>}}` are replaced before each command is sent. */
+  command?: string | string[];
+  /** Telemetry Bridge action used instead of `command` when the bridge is connected. */
+  bridgeAction?: string;
   params?: PlayerActionParam[];
   danger?: boolean;
+  /** Shown as a button on each player card (and in the Overview); the rest live in the player's menu. */
+  quick?: boolean;
+  /** Icon name from the app's icon set (see PLAYER_ACTION_ICONS in the docs). */
+  icon?: string;
+}
+
+/** A world/dimension players can be in: shown as a filter chip, label and icon. */
+export interface DimensionSpec {
+  id: string;
+  label: LocalizedText;
+  /** Other ids the game or its bridge reports for the same place (e.g. `minecraft:the_nether`, `world_nether`). */
+  aliases?: string[];
+  /** Image inside the pack folder. */
+  icon?: string;
+  /** Listed as a filter chip even when nobody is there. */
+  primary?: boolean;
 }
 
 /** A creation-time choice written into one of the game's config files (shown in the wizard's customize step). */
@@ -141,6 +163,14 @@ export interface PlayerView {
   vitals?: boolean;
   /** Avatar image URL template (`{{player}}`); omitted = initials. */
   avatarUrl?: string;
+  /**
+   * Inventory item image URL templates tried in order (`{{item}}` = id without namespace, `{{namespace}}`).
+   * Items whose namespace is not listed in `itemNamespaces` show their initials.
+   */
+  itemIconUrls?: string[];
+  itemNamespaces?: string[];
+  /** Id of the player action that empties an inventory (offered in the inventory viewer). */
+  inventoryClearAction?: string;
 }
 
 export interface GameCapabilities {
@@ -179,8 +209,10 @@ export interface GameManifest {
   creationSettings?: CreationSetting[];
   quickCommands?: QuickCommand[];
   playerView?: PlayerView;
-  /** Id of a rich players panel registered by the app (bundled packs); generic list otherwise. */
-  playerPanel?: string;
+  /** Worlds/dimensions players can be in (labels, icons, filter chips). */
+  dimensions?: DimensionSpec[];
+  /** Ticks per second the server targets; enables the TPS card when the bridge reports TPS. */
+  performance?: { tickRate: number };
   /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
   extension?: string;
   playerQueries?: PlayerQuery[];
@@ -201,7 +233,8 @@ export interface GameManifest {
     /** Dimension / world label shown for players joined through log parsing. */
     dimension?: string;
   };
-  commands?: { stop?: string; save?: string | null };
+  /** `listPlayers`: console command that makes the server print who is online (offered as "refresh list"). */
+  commands?: { stop?: string; save?: string | null; listPlayers?: string };
   configFiles?: ManifestConfigFile[];
   setup?: ManifestSetupField[];
   capabilities?: Partial<GameCapabilities>;
@@ -344,11 +377,40 @@ export function validateManifest(raw: unknown): ManifestValidation {
           isObject(action) &&
           typeof action.id === 'string' &&
           isLocalized(action.label) &&
-          typeof action.command === 'string' &&
+          (typeof action.command === 'string' ||
+            (isStringList(action.command) && (action.command as string[]).length > 0) ||
+            (action.command === undefined && typeof action.bridgeAction === 'string')) &&
+          (action.bridgeAction === undefined || typeof action.bridgeAction === 'string') &&
+          (action.icon === undefined || typeof action.icon === 'string') &&
+          (action.quick === undefined || typeof action.quick === 'boolean') &&
           (action.params === undefined || (Array.isArray(action.params) && action.params.every(paramOk)))
       )
     ) {
-      errors.push('playerActions must be a list of { id, label, command, params? }');
+      errors.push('playerActions must be a list of { id, label, command (text or list) and/or bridgeAction, params?, quick?, icon? }');
+    }
+  }
+
+  if (raw.performance !== undefined) {
+    const performance = raw.performance;
+    if (!isObject(performance) || typeof performance.tickRate !== 'number' || performance.tickRate <= 0) {
+      errors.push('performance must be { tickRate (> 0) }');
+    }
+  }
+
+  if (raw.dimensions !== undefined) {
+    const dimensions = raw.dimensions;
+    if (
+      !Array.isArray(dimensions) ||
+      !dimensions.every(
+        (dimension) =>
+          isObject(dimension) &&
+          typeof dimension.id === 'string' &&
+          isLocalized(dimension.label) &&
+          (dimension.aliases === undefined || isStringList(dimension.aliases)) &&
+          (dimension.icon === undefined || isSafeRelativePath(dimension.icon))
+      )
+    ) {
+      errors.push('dimensions must be a list of { id, label, aliases?, icon? (relative path) }');
     }
   }
 
@@ -408,7 +470,6 @@ export function validateManifest(raw: unknown): ManifestValidation {
   }
 
   if (raw.playerView !== undefined && !isObject(raw.playerView)) errors.push('playerView must be an object');
-  if (raw.playerPanel !== undefined && typeof raw.playerPanel !== 'string') errors.push('playerPanel must be a string');
 
   if (raw.extension !== undefined && (typeof raw.extension !== 'string' || !ID_PATTERN.test(raw.extension))) {
     errors.push('extension must be an extension id (lowercase letters, digits and dashes)');

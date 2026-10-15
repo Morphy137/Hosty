@@ -1,3 +1,5 @@
+import type { DimensionSpec, PlayerActionSpec, PlayerView } from '../gamepacks/manifest';
+
 export type GameAvailability = 'available' | 'beta' | 'coming_soon';
 
 /** One input of a game's setup step, rendered by the client from data (no per-game UI code). */
@@ -85,19 +87,7 @@ export interface GameDriverSummary {
   capabilities: GameCapabilitiesSummary;
   configFiles: ConfigFileSummary[];
   launchDefaults?: LaunchDefaults;
-  playerActions?: Array<{
-    id: string;
-    label: string | Record<string, string>;
-    command: string;
-    params?: Array<{
-      id: string;
-      label: string | Record<string, string>;
-      type: 'text' | 'number' | 'select';
-      default?: string | number;
-      options?: Array<{ value: string; label: string | Record<string, string> }>;
-    }>;
-    danger?: boolean;
-  }>;
+  playerActions?: PlayerActionSpec[];
   instanceFolders?: string[];
   modLayout?: { modsDir?: string; configDir?: string };
   bridgeTargets?: Record<string, { dir: string; asset: string }>;
@@ -111,8 +101,11 @@ export interface GameDriverSummary {
     key: string;
   }>;
   quickCommands?: Array<{ label: string; command: string }>;
-  playerView?: { dimensions?: boolean; coordinates?: boolean; vitals?: boolean; avatarUrl?: string };
-  playerPanel?: string;
+  playerView?: PlayerView;
+  dimensions?: DimensionSpec[];
+  performance?: { tickRate: number };
+  /** Console command that prints the online players (manifest `commands.listPlayers`). */
+  listPlayersCommand?: string;
   /** Config file kept in sync with the instance's port / motd / player limit. */
   configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   /** Loaders a Telemetry Bridge exists for (empty/absent = no bridge). */
