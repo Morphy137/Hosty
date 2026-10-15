@@ -10,7 +10,8 @@
     "mod_files": "Mods",
     "mods": "Mod Configs",
     "properties": "server.properties",
-    "status": "STATUS"
+    "status": "STATUS",
+    "backups": "Backups"
   },
   "header": {
     "title": "Hosty",
@@ -129,7 +130,10 @@
         "label": "Silence Unsafe warning",
         "desc": "Hides the sun.misc.Unsafe deprecation warning printed by JOML on Java 23+. Do not use on older Java: the server will not start."
       }
-    }
+    },
+    "auto_restart_label": "Restart automatically after a crash",
+    "scheduled_restart_label": "Scheduled restart every N hours (0 = off)",
+    "backups_kept_label": "Backups kept"
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -480,5 +484,18 @@
       "beta": "Beta",
       "alpha": "Alpha"
     }
+  },
+  "backups": {
+    "title": "Backups",
+    "description": "Zip copies of the server data. Restoring replaces the current files.",
+    "create": "Create backup",
+    "empty": "No backups yet.",
+    "restore": "Restore",
+    "delete": "Delete",
+    "confirm_restore": "Restore this backup? A safety copy of the current state is created first.",
+    "stop_first": "Stop the server to restore a backup.",
+    "created": "Backup created",
+    "restored": "Backup restored",
+    "deleted": "Backup deleted"
   }
 }

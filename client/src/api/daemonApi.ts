@@ -1,5 +1,6 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
+  BackupInfo,
   CatalogFilters,
   ModFacets,
   ModSearchHit,
@@ -100,6 +101,27 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
 
 function deleteRequest<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
+}
+
+export function fetchBackups(instanceId: string): Promise<{ backups: BackupInfo[] }> {
+  return request<{ backups: BackupInfo[] }>(`/api/instances/${encodeURIComponent(instanceId)}/backups`);
+}
+
+export function createBackup(instanceId: string): Promise<{ ok: boolean; backup: BackupInfo }> {
+  return postJson<{ ok: boolean; backup: BackupInfo }>(`/api/instances/${encodeURIComponent(instanceId)}/backups`, {});
+}
+
+export function restoreBackup(instanceId: string, name: string): Promise<{ ok: boolean }> {
+  return postJson<{ ok: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/backups/${encodeURIComponent(name)}/restore`,
+    {}
+  );
+}
+
+export function deleteBackup(instanceId: string, name: string): Promise<{ ok: boolean }> {
+  return deleteRequest<{ ok: boolean }>(
+    `/api/instances/${encodeURIComponent(instanceId)}/backups/${encodeURIComponent(name)}`
+  );
 }
 
 export function fetchHealth(): Promise<HealthResponse> {

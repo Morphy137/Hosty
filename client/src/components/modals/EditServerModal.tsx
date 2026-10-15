@@ -82,6 +82,9 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
 
   const [forceSaveOnStop, setForceSaveOnStop] = useState(instance.forceSaveOnStop !== false);
   const [autostart, setAutostart] = useState(instance.autostart || false);
+  const [autoRestart, setAutoRestart] = useState(instance.autoRestart || false);
+  const [scheduledRestartHours, setScheduledRestartHours] = useState(String(instance.scheduledRestartHours ?? 0));
+  const [backupsKept, setBackupsKept] = useState(String(instance.backupsKept ?? 5));
   const [javaPath, setJavaPath] = useState(instance.javaPath || '');
   const [jvmArgsString, setJvmArgsString] = useState(instance.jvmArgs?.join(' ') || '');
 
@@ -200,6 +203,9 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
         maxRamMb: calculatedMaxRamMb,
         forceSaveOnStop,
         autostart,
+        autoRestart,
+        scheduledRestartHours: Math.max(0, Math.floor(Number(scheduledRestartHours) || 0)),
+        backupsKept: Math.max(1, Math.floor(Number(backupsKept) || 5)),
         javaPath: javaPath.trim(),
         jvmArgs: parsedJvmArgs
       });
@@ -359,6 +365,38 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                       className="w-4 h-4 rounded border-hairline accent-ink focus:ring-0 cursor-pointer"
                     />
                     <span>{t('edit_server.autostart_label')}</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-ink">
+                    <input
+                      type="checkbox"
+                      checked={autoRestart}
+                      onChange={(e) => setAutoRestart(e.target.checked)}
+                      className="w-4 h-4 rounded border-hairline accent-ink focus:ring-0 cursor-pointer"
+                    />
+                    <span>{t('edit_server.auto_restart_label')}</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-[13px] text-ink">
+                    <input
+                      type="number"
+                      min={0}
+                      value={scheduledRestartHours}
+                      onChange={(e) => setScheduledRestartHours(e.target.value)}
+                      className="w-16 rounded-[6px] border border-hairline bg-surface px-2 py-1 text-[13px]"
+                    />
+                    <span>{t('edit_server.scheduled_restart_label')}</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-[13px] text-ink">
+                    <input
+                      type="number"
+                      min={1}
+                      value={backupsKept}
+                      onChange={(e) => setBackupsKept(e.target.value)}
+                      className="w-16 rounded-[6px] border border-hairline bg-surface px-2 py-1 text-[13px]"
+                    />
+                    <span>{t('edit_server.backups_kept_label')}</span>
                   </label>
                 </div>
               </div>

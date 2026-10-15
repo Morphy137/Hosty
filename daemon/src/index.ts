@@ -27,6 +27,7 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
+import { BackupManager } from './core/BackupManager';
 import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
 import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
@@ -334,6 +335,70 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
   }
 });
 
+const requireInstance = (id: string) => {
+  const instance = instanceManager.getInstance(id);
+  if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
+  return instance;
+};
+
+app.get('/api/instances/:id/backups', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    res.json({ backups: new BackupManager(instance.dir).list() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/backups', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    const driver = driverRegistry.getDriver(instance.gameId);
+    // Flush the world to disk first when the server is running.
+    const sup = registry.getSupervisor(instance.id);
+    if (sup?.getStatus() === 'ONLINE') sup.sendCommand(driver.buildSaveCommand().trim());
+    const backup = new BackupManager(instance.dir).create(driver.backupPaths?.(), instance.backupsKept);
+    res.json({ ok: true, backup });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/backups/:name/restore', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    if (registry.getSupervisor(instance.id)?.isRunning()) {
+      throw new DaemonError('SERVER_RUNNING', 'Stop the server before restoring a backup.');
+    }
+    const manager = new BackupManager(instance.dir);
+    const driver = driverRegistry.getDriver(instance.gameId);
+    // Safety copy so a wrong restore is never destructive.
+    manager.create(driver.backupPaths?.(), instance.backupsKept + 1, 'prerestore');
+    try {
+      manager.restore(req.params.name);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/instances/:id/backups/:name', (req, res, next) => {
+  try {
+    const instance = requireInstance(req.params.id);
+    try {
+      new BackupManager(instance.dir).remove(req.params.name);
+    } catch (error) {
+      throw new DaemonError('INVALID_PAYLOAD', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/instances/:id/settings', (req, res, next) => {
   try {
     const updated = instanceManager.updateInstanceSettings(req.params.id, req.body as Partial<InstanceSettings>);
@@ -344,7 +409,9 @@ app.post('/api/instances/:id/settings', (req, res, next) => {
         minRamMb: updated.minRamMb,
         maxRamMb: updated.maxRamMb,
         jvmArgs: updated.jvmArgs,
-        forceSaveOnStop: updated.forceSaveOnStop
+        forceSaveOnStop: updated.forceSaveOnStop,
+        autoRestart: updated.autoRestart,
+        scheduledRestartHours: updated.scheduledRestartHours
       });
     }
     broadcast('CONSOLE', `[Hypervisor] Settings updated for server "${updated.name}".\r\n`);

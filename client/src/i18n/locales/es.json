@@ -10,7 +10,8 @@
     "mod_files": "Mods",
     "mods": "Configuración Mods",
     "properties": "server.properties",
-    "status": "ESTADO"
+    "status": "ESTADO",
+    "backups": "Copias"
   },
   "header": {
     "title": "Hosty",
@@ -129,7 +130,10 @@
         "label": "Silenciar aviso de Unsafe",
         "desc": "Oculta el aviso de obsolescencia de sun.misc.Unsafe que imprime JOML en Java 23+. No usar en Java anterior: el servidor no iniciará."
       }
-    }
+    },
+    "auto_restart_label": "Reiniciar automáticamente tras un fallo",
+    "scheduled_restart_label": "Reinicio programado cada N horas (0 = desactivado)",
+    "backups_kept_label": "Copias conservadas"
   },
   "mod_files": {
     "total_mods": "Total de Mods",
@@ -480,5 +484,18 @@
       "beta": "Beta",
       "alpha": "Alfa"
     }
+  },
+  "backups": {
+    "title": "Copias de seguridad",
+    "description": "Copias zip de los datos del servidor. Restaurar reemplaza los archivos actuales.",
+    "create": "Crear copia",
+    "empty": "Aún no hay copias.",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "confirm_restore": "¿Restaurar esta copia? Antes se crea una copia de seguridad del estado actual.",
+    "stop_first": "Detén el servidor para restaurar una copia.",
+    "created": "Copia creada",
+    "restored": "Copia restaurada",
+    "deleted": "Copia eliminada"
   }
 }

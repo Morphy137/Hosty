@@ -61,6 +61,8 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `dimensions` | | Worlds players can be in: `{ id, label, aliases?, icon?, primary? }`. Labels and pack images (`icon`) are shown on cards and as filter chips; `primary` ones are always offered. |
 | `performance.tickRate` | | Ticks per second the server targets: shows the TPS card (green/amber/red relative to it) when the bridge reports TPS; otherwise the Overview shows uptime. |
 | `commands.listPlayers` | | Console command that prints who is online; offered as "Refresh list" in the Players tab. |
+| `commands.broadcast` | | Console command that announces `{{message}}` to all players; used to warn before scheduled restarts. |
+| `backup` | | `{ "paths": ["world", "config"] }`: instance-relative paths a backup zips. Without it the whole instance is backed up. |
 | `creationSettings` | | Choices shown when creating a server and written to a config file: `{ id, label, type, options?, default?, file, key }`. |
 | `quickCommands` | | `{ label, command }` shortcuts shown above the console. |
 | `playerView` | | What the player cards show: `dimensions`, `coordinates`, `vitals`, an `avatarUrl` template, inventory item images (`itemIconUrls` templates with `{{item}}` / `{{namespace}}`, limited to `itemNamespaces`) and `inventoryClearAction` (id of the action the inventory viewer offers). |

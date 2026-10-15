@@ -90,6 +90,9 @@ export interface InstanceSettings {
   javaPath?: string;
   forceSaveOnStop?: boolean;
   autostart?: boolean;
+  autoRestart?: boolean;
+  scheduledRestartHours?: number;
+  backupsKept?: number;
   favorite?: boolean;
   loader?: string;
   loaderVersion?: string;
@@ -323,6 +326,9 @@ export interface InstanceInfo {
   javaPath: string;
   forceSaveOnStop: boolean;
   autostart: boolean;
+  autoRestart?: boolean;
+  scheduledRestartHours?: number;
+  backupsKept?: number;
   favorite?: boolean;
   status?: ServerStatus;
   onlinePlayersCount?: number;
@@ -439,4 +445,10 @@ export interface FolderInspection {
   port: number | null;
   motd: string | null;
   maxPlayers: number | null;
+}
+
+export interface BackupInfo {
+  name: string;
+  sizeBytes: number;
+  createdAt: string;
 }
