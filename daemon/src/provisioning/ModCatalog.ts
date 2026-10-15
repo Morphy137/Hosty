@@ -84,7 +84,34 @@ export const isAllowedDownloadHost = (downloadUrl: string, baseUrl: string): boo
   }
 };
 
+const MAX_ICON_BYTES = 2 * 1024 * 1024;
+
 export class ModCatalog {
+  /**
+   * Fetches a catalog image (project icon) on behalf of the UI, whose CSP only allows the daemon origin.
+   * The URL must be https and belong to the catalog's own domain.
+   */
+  public static async fetchIcon(source: ModSourceSummary, url: string): Promise<{ type: string; data: Buffer }> {
+    if (!isAllowedDownloadHost(url, source.baseUrl)) {
+      throw new DaemonError('INVALID_PAYLOAD', 'The image does not belong to this catalog.');
+    }
+    let response: Response;
+    try {
+      response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    } catch (error) {
+      throw new DaemonError('UPSTREAM_ERROR', `Could not reach the catalog image: ${(error as Error).message}`);
+    }
+    const type = response.headers.get('content-type') ?? '';
+    if (!response.ok || !type.startsWith('image/')) {
+      throw new DaemonError('UPSTREAM_ERROR', 'The catalog did not return an image.');
+    }
+    const data = Buffer.from(await response.arrayBuffer());
+    if (data.length > MAX_ICON_BYTES) {
+      throw new DaemonError('UPSTREAM_ERROR', 'The catalog image is too large.');
+    }
+    return { type, data };
+  }
+
   /** Search a catalog, filtered by the instance's loader and game version when known. */
   public static async search(
     source: ModSourceSummary,

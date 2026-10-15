@@ -50,3 +50,33 @@ describe('ModCatalog.search', () => {
     await expect(ModCatalog.search(source, { dir: '.' }, 'x')).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });
   });
 });
+
+describe('ModCatalog.fetchIcon', () => {
+  it('serves images from the catalog domain only', async () => {
+    await expect(ModCatalog.fetchIcon(source, 'https://evil.example.com/a.png')).rejects.toMatchObject({
+      code: 'INVALID_PAYLOAD'
+    });
+    await expect(ModCatalog.fetchIcon(source, 'http://cdn.modrinth.com/a.png')).rejects.toMatchObject({
+      code: 'INVALID_PAYLOAD'
+    });
+  });
+
+  it('returns the image bytes and refuses non-image answers', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(new Response('PNGDATA', { headers: { 'content-type': 'image/png' } }))
+    );
+    const icon = await ModCatalog.fetchIcon(source, 'https://cdn.modrinth.com/data/x/icon.png');
+    expect(icon.type).toBe('image/png');
+    expect(icon.data.toString()).toBe('PNGDATA');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(new Response('<html>', { headers: { 'content-type': 'text/html' } }))
+    );
+    await expect(ModCatalog.fetchIcon(source, 'https://cdn.modrinth.com/data/x/icon.png')).rejects.toMatchObject({
+      code: 'UPSTREAM_ERROR'
+    });
+  });
+});
+

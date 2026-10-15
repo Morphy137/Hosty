@@ -191,6 +191,14 @@ export function searchCatalogMods(
   );
 }
 
+/** Catalog images go through the daemon (the app's CSP does not allow third-party image hosts). */
+export function getCatalogIconUrl(instanceId: string, sourceId: string, imageUrl: string): string {
+  const params = new URLSearchParams({ source: sourceId, url: imageUrl });
+  return withDaemonToken(
+    `${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(instanceId)}/mods/icon?${params.toString()}`
+  );
+}
+
 export function installCatalogMod(
   instanceId: string,
   sourceId: string,

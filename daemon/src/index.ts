@@ -456,6 +456,18 @@ app.get('/api/instances/:id/mods/search', async (req, res, next) => {
   }
 });
 
+app.get('/api/instances/:id/mods/icon', async (req, res, next) => {
+  try {
+    const { source } = resolveModSource(req.params.id, req.query.source);
+    const url = typeof req.query.url === 'string' ? req.query.url : '';
+    const icon = await ModCatalog.fetchIcon(source, url);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.type(icon.type).send(icon.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/instances/:id/mods/install', async (req, res, next) => {
   try {
     const { source: sourceId, projectId } = req.body as { source?: string; projectId?: string };

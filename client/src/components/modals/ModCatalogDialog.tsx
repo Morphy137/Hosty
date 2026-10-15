@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, Loader2, Search } from 'lucide-react';
-import { installCatalogMod, searchCatalogMods } from '../../api/daemonApi';
+import { getCatalogIconUrl, installCatalogMod, searchCatalogMods } from '../../api/daemonApi';
 import { toErrorPayload } from '../../api/daemonApi';
 import type { ModSearchHit, ModSourceInfo } from '../../types/daemon';
 import { Button } from '../ui/Button';
@@ -42,29 +42,38 @@ export const ModCatalogDialog: React.FC<ModCatalogDialogProps> = ({
 
   const source = sources.find((candidate) => candidate.id === sourceId) ?? sources[0];
 
+  // Only the newest request may update the list (typing fires many searches).
+  const latestRequest = useRef(0);
+
   const runSearch = useCallback(
     async (text: string, offset: number) => {
       if (!source) return;
+      const requestId = ++latestRequest.current;
       setIsSearching(true);
       setError(null);
       try {
         const result = await searchCatalogMods(instanceId, source.id, text, offset);
+        if (requestId !== latestRequest.current) return;
         setHits((current) => (offset > 0 ? [...current, ...result.hits] : result.hits));
         setTotal(result.total);
       } catch (err) {
+        if (requestId !== latestRequest.current) return;
         const payload = toErrorPayload(err);
         setError(t(`errors.${payload.code}`, { defaultValue: payload.message }));
       } finally {
-        setIsSearching(false);
+        if (requestId === latestRequest.current) setIsSearching(false);
       }
     },
     [instanceId, source, t]
   );
 
-  // Show the most popular results as soon as the dialog opens.
+  // Search as you type (debounced); the empty query shows the most popular results on open.
   useEffect(() => {
-    if (open) void Promise.resolve().then(() => runSearch('', 0));
-  }, [open, runSearch]);
+    if (!open) return;
+    const delay = query.trim() ? 350 : 0;
+    const timer = window.setTimeout(() => void runSearch(query.trim(), 0), delay);
+    return () => window.clearTimeout(timer);
+  }, [open, query, runSearch]);
 
   const handleInstall = async (hit: ModSearchHit) => {
     if (!source) return;
@@ -135,7 +144,12 @@ export const ModCatalogDialog: React.FC<ModCatalogDialogProps> = ({
           {hits.map((hit) => (
             <li key={hit.projectId} className="flex items-start gap-3 rounded-[8px] border border-hairline bg-surface-2 p-3">
               {hit.iconUrl ? (
-                <img src={hit.iconUrl} alt="" className="h-10 w-10 shrink-0 rounded-[6px] object-cover" loading="lazy" />
+                <img
+                  src={source ? getCatalogIconUrl(instanceId, source.id, hit.iconUrl) : hit.iconUrl}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-[6px] bg-surface-3 object-cover"
+                  loading="lazy"
+                />
               ) : (
                 <div className="h-10 w-10 shrink-0 rounded-[6px] bg-surface-3" />
               )}
