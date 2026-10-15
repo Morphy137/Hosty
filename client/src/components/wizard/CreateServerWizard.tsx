@@ -119,7 +119,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   // Reset to a fresh draft every time the wizard opens.
   useEffect(() => {
     if (isOpen && !wasOpen.current) {
-      const minecraft = games.find((candidate) => candidate.id === 'minecraft');
+      const minecraft = games.find((candidate) => candidate.status === 'available') ?? games[0];
       setDraft({
         ...INITIAL_DRAFT,
         origin: initialOrigin,

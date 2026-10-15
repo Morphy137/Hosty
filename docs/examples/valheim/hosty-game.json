@@ -1,0 +1,33 @@
+{
+  "apiVersion": 1,
+  "id": "valheim",
+  "name": "Valheim",
+  "version": "1.0.0",
+  "description": { "en": "Valheim dedicated server", "es": "Servidor dedicado de Valheim" },
+  "category": "survival",
+  "status": "beta",
+  "defaults": { "port": 2456, "maxPlayers": 10 },
+  "provision": { "type": "steamcmd", "appId": 896660 },
+  "launch": {
+    "runtime": "native",
+    "executable": { "win32": "valheim_server.exe", "default": "valheim_server.x86_64" },
+    "args": ["-name", "{{name}}", "-port", "{{port}}", "-world", "Dedicated", "-password", "{{password}}"]
+  },
+  "detect": ["valheim_server.exe", "valheim_server.x86_64"],
+  "logs": {
+    "ready": "Game server connected",
+    "join": "Got connection SteamID (?<username>\\d+)",
+    "leave": "Closing socket (?<username>\\d+)"
+  },
+  "commands": { "stop": "ctrl+c", "save": null },
+  "configFiles": [{ "path": "adminlist.txt", "format": "lines" }],
+  "setup": [
+    {
+      "id": "password",
+      "type": "secret",
+      "label": { "en": "Server password", "es": "Contraseña del servidor" },
+      "required": true
+    }
+  ],
+  "capabilities": { "players": true, "mods": false, "configEditor": false, "bridge": false }
+}

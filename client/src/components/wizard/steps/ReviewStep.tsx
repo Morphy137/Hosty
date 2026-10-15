@@ -5,6 +5,7 @@ import type { GameDriverSummary, ProvisionJobState, ProvisionPhase } from '../..
 import { LOADER_METADATA } from '../../../types/daemon';
 import { GameLogo } from '../../common/GameIcons';
 import { Button } from '../../ui/Button';
+import { usesLoaderInstall } from '../wizardPlan';
 import { cn } from '../../../utils/cn';
 import type { WizardDraft } from '../wizardTypes';
 
@@ -28,7 +29,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ draft, game, isBusy, job
 
   const engine = isImport
     ? draft.importInfo?.loader ?? draft.importInfo?.gameId ?? '—'
-    : game?.id === 'minecraft'
+    : usesLoaderInstall(game)
       ? usesJar
         ? install.jarFile?.name ?? t('create_server.engine_custom_jar')
         : `${LOADER_METADATA[install.loader].name} ${install.version}`

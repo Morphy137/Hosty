@@ -44,6 +44,8 @@ export interface InstanceInfo {
   loader?: string;
   loaderVersion?: string;
   gameId: string;
+  pzBranch?: string;
+  gameConfig?: Record<string, string | number | boolean>;
 }
 
 interface RegistryData {
@@ -376,7 +378,9 @@ export class InstanceManager {
       autostart: settings.autostart ?? false,
       loader: settings.loader,
       loaderVersion: settings.loaderVersion,
-      gameId
+      gameId,
+      pzBranch: settings.pzBranch,
+      gameConfig: settings.gameConfig
     };
   }
 

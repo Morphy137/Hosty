@@ -165,12 +165,17 @@ export interface InstanceSettings {
 export type GameAvailability = 'available' | 'beta' | 'coming_soon';
 
 /** One input of a game's setup step, rendered from data. */
+export type LocalizedText = string | Record<string, string>;
+
 export interface SetupField {
   id: string;
   type: 'select' | 'text' | 'secret' | 'number' | 'toggle' | 'custom';
-  labelKey: string;
+  /** i18n key; `label` (language map from a game pack) wins when present. */
+  labelKey?: string;
+  label?: LocalizedText;
   descriptionKey?: string;
-  options?: Array<{ value: string; labelKey: string }>;
+  description?: LocalizedText;
+  options?: Array<{ value: string; labelKey?: string; label?: LocalizedText }>;
   default?: string | number | boolean;
   required?: boolean;
   /** For `custom` fields: key of a client-registered component. */
@@ -192,6 +197,40 @@ export interface GameDriverSummary {
   description: string;
   status: GameAvailability;
   setupSchema: SetupField[];
+  capabilities: GameCapabilities;
+  configFiles: ConfigFileInfo[];
+  source: 'builtin' | 'pack';
+  hasLogo: boolean;
+  /** Extra UI translations contributed by the pack, keyed by language. */
+  i18n?: Record<string, Record<string, string>>;
+  descriptionI18n?: Record<string, string>;
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number };
+}
+
+export interface GameCapabilities {
+  players: boolean;
+  mods: boolean;
+  configEditor: boolean;
+  bridge: boolean;
+}
+
+export interface ConfigFileInfo {
+  path: string;
+  format: 'properties' | 'ini' | 'json' | 'toml' | 'lines';
+  label?: LocalizedText;
+  exists?: boolean;
+}
+
+export interface GamePackInfo {
+  id: string | null;
+  name: string | null;
+  version: string | null;
+  dir: string;
+  source: 'builtin' | 'external';
+  hasCode: boolean;
+  trusted: boolean;
+  loaded: boolean;
+  errors: string[];
 }
 
 export interface InstanceInfo {

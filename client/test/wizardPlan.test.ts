@@ -17,7 +17,11 @@ const minecraft: GameDriverSummary = {
   badge: 'MC',
   description: '',
   status: 'available',
-  setupSchema: []
+  setupSchema: [{ id: 'install', type: 'custom', labelKey: 'x', component: 'minecraft-install' }],
+  capabilities: { players: true, mods: true, configEditor: true, bridge: true },
+  configFiles: [{ path: 'server.properties', format: 'properties' }],
+  source: 'builtin',
+  hasLogo: false
 };
 
 const baseDraft: WizardDraft = {
@@ -62,7 +66,13 @@ describe('buildCreationPlan', () => {
   });
 
   it('creates non-Minecraft instances directly and forwards the schema values', () => {
-    const zomboid = { ...minecraft, id: 'project-zomboid', configFileName: 'servertest.ini' };
+    const zomboid: GameDriverSummary = {
+      ...minecraft,
+      id: 'project-zomboid',
+      configFileName: 'servertest.ini',
+      setupSchema: [],
+      provision: { type: 'steamcmd', appId: 380870 }
+    };
     const plan = buildCreationPlan(
       { ...baseDraft, gameId: 'project-zomboid', setupValues: { pzBranch: 'unstable' } },
       zomboid

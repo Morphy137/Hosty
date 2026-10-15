@@ -72,7 +72,11 @@ export class MinecraftDriver implements IGameDriver {
     status: 'available',
     setupSchema: [
       { id: 'install', type: 'custom', labelKey: 'create_server.steps.installation', component: 'minecraft-install' }
-    ]
+    ],
+    capabilities: { players: true, mods: true, configEditor: true, bridge: true },
+    configFiles: [{ path: 'server.properties', format: 'properties' }],
+    source: 'builtin',
+    hasLogo: false
   };
 
   public validateInstallation(instanceDir: string): boolean {

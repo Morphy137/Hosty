@@ -421,7 +421,8 @@
     "new_server": "Nuevo servidor",
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
-    "version": "v{{version}}"
+    "version": "v{{version}}",
+    "game_packs": "Paquetes de juegos"
   },
   "titlebar": {
     "minimize": "Minimizar",
@@ -517,5 +518,23 @@
     "done_desc": "Tu servidor fue creado. Puedes iniciarlo ahora o abrir su panel para seguir configurándolo.",
     "start_now": "Iniciar servidor ahora",
     "open_panel": "Abrir panel"
+  },
+  "config": {
+    "no_files": "Este juego no tiene archivos de configuración editables.",
+    "file_label": "Archivo de configuración",
+    "file_missing": "{{file}} todavía no existe. Inicia el servidor una vez para que el juego lo cree."
+  },
+  "packs": {
+    "title": "Paquetes de juegos",
+    "description": "Añade juegos a Hosty soltando la carpeta de un paquete en el directorio de juegos.",
+    "folder_hint": "Carpeta de juegos:",
+    "empty": "Todavía no hay paquetes de juegos instalados.",
+    "reload": "Recargar paquetes",
+    "loaded": "Cargado",
+    "invalid": "Inválido",
+    "code_trusted": "Código de confianza",
+    "code_untrusted": "Código sin confianza",
+    "trust_warning": "Este paquete incluye código (driver.js) que se ejecutaría con los mismos permisos que Hosty. Confía solo en paquetes de autores que conozcas.",
+    "trust_button": "Confiar y activar el código"
   }
 }

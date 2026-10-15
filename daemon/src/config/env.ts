@@ -15,6 +15,14 @@ const resolveDefaultInstanceDir = (env: Record<string, string | undefined>): str
   return path.join(moduleDir, '../../../instances/default');
 };
 
+const resolveDefaultGamesDir = (env: Record<string, string | undefined>): string => {
+  if (env.NODE_ENV === 'production') {
+    const appData = env.APPDATA?.trim() || path.join(os.homedir(), 'AppData', 'Roaming');
+    return path.join(appData, 'Hosty', 'games');
+  }
+  return path.join(moduleDir, '../../../games');
+};
+
 const resolveDefaultAssetsDir = (): string => path.join(moduleDir, '../../assets/bridge');
 
 const DEFAULTS = {
@@ -39,6 +47,8 @@ export interface DaemonConfig {
   instanceDir: string;
   /** Directory holding the bundled bridge jars. */
   assetsDir: string;
+  /** Folder scanned for user game packs (`<id>/hosty-game.json`). */
+  gamesDir: string;
   instanceId: string;
   jarFile: string;
   javaPath: string;
@@ -88,6 +98,7 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
     allowedOrigins: readList(env, 'MC_NEXUS_ALLOWED_ORIGINS', DEFAULTS.allowedOrigins),
     instanceDir: path.resolve(env.MC_NEXUS_INSTANCE_DIR?.trim() || resolveDefaultInstanceDir(env)),
     assetsDir: path.resolve(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()),
+    gamesDir: path.resolve(env.MC_NEXUS_GAMES_DIR?.trim() || resolveDefaultGamesDir(env)),
     instanceId: env.MC_NEXUS_INSTANCE_ID?.trim() || DEFAULTS.instanceId,
     jarFile: env.MC_NEXUS_JAR_FILE?.trim() || DEFAULTS.jarFile,
     javaPath: env.MC_NEXUS_JAVA_PATH?.trim() || DEFAULTS.javaPath,

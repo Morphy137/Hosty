@@ -48,6 +48,8 @@ interface OverviewTabProps {
   onRestart: () => void;
   onInspectInventory?: (player: PlayerState) => void;
   history?: MetricsHistory;
+  /** Display name of the instance's game (from the driver summary). */
+  gameName?: string;
 }
 
 const QUICK_COMMANDS = [
@@ -68,7 +70,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onOpenEditModal,
   onRestart,
   onInspectInventory,
-  history
+  history,
+  gameName
 }) => {
   const { t } = useTranslation();
   const [commandInput, setCommandInput] = useState('');
@@ -158,13 +161,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </span>
               <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-surface-2 border border-hairline text-soft uppercase flex items-center gap-1.5">
                 <GameLogo gameId={instance?.gameId || 'minecraft'} size={14} />
-                <span>
-                  {instance?.gameId === 'project-zomboid'
-                    ? 'Project Zomboid'
-                    : instance?.gameId === 'hytale'
-                    ? 'Hytale'
-                    : 'Minecraft'}
-                </span>
+                <span>{gameName ?? instance?.gameId ?? ''}</span>
               </span>
               {metrics.bridgeConnected && (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-success/10 dark:bg-success/15 border border-success/30 text-success-fg font-mono text-[10px] font-bold uppercase tracking-wider">

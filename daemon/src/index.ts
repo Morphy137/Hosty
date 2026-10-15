@@ -24,9 +24,12 @@ import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
+import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
+import { installWithSteamCmd } from './provisioning/SteamCmd';
 import net from 'net';
 
 const config = loadConfig();
+driverRegistry.loadPacks(config.gamesDir);
 
 const app = express();
 app.use(
@@ -667,6 +670,139 @@ app.post('/api/mods/configs/:filename', (req, res, next) => {
     ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body);
     broadcast('CONSOLE', `[Hypervisor] Mod config ${req.params.filename} saved.\r\n`);
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Game packs: logos, setup schema, pack management ------------------------------------------
+app.get('/api/games/:gameId/logo', (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const manifest = driverRegistry.getManifest(gameId);
+    const file = manifest?.logo ? driverRegistry.resolvePackFile(gameId, manifest.logo) : null;
+    if (!file || !fs.existsSync(file)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game "${gameId}" has no logo.`);
+    }
+    res.sendFile(path.resolve(file));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/games/:gameId/setup-schema', (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    if (!driverRegistry.hasDriver(gameId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game driver "${gameId}" not supported.`);
+    }
+    res.json({ gameId, fields: driverRegistry.getDriver(gameId).summary.setupSchema });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/game-packs', (_req, res) => {
+  res.json({ gamesDir: config.gamesDir, packs: driverRegistry.getPackInfos() });
+});
+
+app.post('/api/game-packs/reload', (_req, res) => {
+  res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadPacks() });
+});
+
+app.post('/api/game-packs/:packId/trust', (req, res, next) => {
+  try {
+    if (!driverRegistry.trustPack(req.params.packId)) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game pack "${req.params.packId}" has no driver to trust.`);
+    }
+    res.json({ ok: true, packs: driverRegistry.getPackInfos() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Generic config file editor (driven by the game's `configFiles`) ----------------------------
+const getDeclaredConfigFile = (relativePath: unknown) => {
+  const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+  if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', 'No server instance is selected.');
+  const declared = driverRegistry
+    .getDriver(instance.gameId)
+    .summary.configFiles.find((file) => file.path === relativePath);
+  if (!declared) throw new DaemonError('INVALID_FILENAME', 'That file is not an editable config file of this game.');
+  return { file: resolveConfigPath(instance.dir, declared.path), format: declared.format, instance };
+};
+
+app.get('/api/config-files', (_req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+    if (!instance) {
+      res.json([]);
+      return;
+    }
+    const files = driverRegistry.getDriver(instance.gameId).summary.configFiles.map((declared) => ({
+      ...declared,
+      exists: fs.existsSync(resolveConfigPath(instance.dir, declared.path))
+    }));
+    res.json(files);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/config-files/entries', (req, res, next) => {
+  try {
+    const { file, format } = getDeclaredConfigFile(req.query.path);
+    res.json(readConfigFile(file, format));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/config-files/entries', (req, res, next) => {
+  try {
+    const { file, format } = getDeclaredConfigFile(req.query.path);
+    const updates = parseConfigUpdates(req.body);
+    writeConfigFile(file, format, updates);
+    broadcast('CONSOLE', `[Hypervisor] ${path.basename(file)} updated on disk.\r\n`);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Installs a Steam-based game with SteamCMD for an existing instance (as a tracked job)
+app.post('/api/instances/:id/provision', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" does not exist.`);
+
+    const provision = driverRegistry.getDriver(instance.gameId).summary.provision;
+    if (!provision || provision.type !== 'steamcmd') {
+      throw new DaemonError('INVALID_PAYLOAD', 'This game does not use SteamCMD provisioning.');
+    }
+    assertInstanceIdle(instance.id, 'install server software');
+    if (provisionJobs.hasRunning()) {
+      throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
+    }
+
+    const branch = (instance.gameConfig?.pzBranch as string | undefined) ?? instance.pzBranch;
+    const jobId = startProvisionJob({
+      instanceId: instance.id,
+      loader: provision.type,
+      version: branch ?? 'stable',
+      javaPath: instance.javaPath || config.javaPath,
+      run: (hooks) =>
+        installWithSteamCmd(
+          {
+            appId: provision.appId,
+            branch,
+            installDir: instance.dir,
+            toolsDir: path.join(path.dirname(instancesRootDir), 'tools', 'steamcmd')
+          },
+          hooks
+        )
+    });
+    res.status(202).json({ ok: true, jobId, instanceId: instance.id });
   } catch (err) {
     next(err);
   }

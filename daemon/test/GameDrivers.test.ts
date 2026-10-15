@@ -4,8 +4,6 @@ import path from 'path';
 import os from 'os';
 import { GameDriverRegistry, driverRegistry } from '../src/core/drivers/GameDriverRegistry';
 import { MinecraftDriver } from '../src/core/drivers/MinecraftDriver';
-import { ProjectZomboidDriver } from '../src/core/drivers/ProjectZomboidDriver';
-import { HytaleDriver } from '../src/core/drivers/HytaleDriver';
 
 describe('Game Drivers Architecture', () => {
   let tmpDir: string;
@@ -113,7 +111,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('ProjectZomboidDriver', () => {
-    const driver = new ProjectZomboidDriver();
+    const driver = new GameDriverRegistry().getDriver('project-zomboid');
 
     it('validates server installation based on Zomboid executables or ini', () => {
       expect(driver.validateInstallation(tmpDir)).toBe(false);
@@ -156,7 +154,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('HytaleDriver', () => {
-    const driver = new HytaleDriver();
+    const driver = new GameDriverRegistry().getDriver('hytale');
 
     it('validates server installation based on HytaleServer.jar or config.json', () => {
       expect(driver.validateInstallation(tmpDir)).toBe(false);

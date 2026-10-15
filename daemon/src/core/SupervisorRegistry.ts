@@ -70,7 +70,11 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
         maxRamMb: instance.maxRamMb,
         jvmArgs: instance.jvmArgs,
         forceSaveOnStop: instance.forceSaveOnStop,
-        gameId: instance.gameId
+        gameId: instance.gameId,
+        name: instance.name,
+        port: instance.port,
+        maxPlayers: instance.maxPlayers,
+        gameConfig: instance.gameConfig
       });
       return existing;
     }
@@ -87,7 +91,11 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
       positionPollIntervalMs: this.defaults.positionPollIntervalMs,
       jvmArgs: instance.jvmArgs,
       forceSaveOnStop: instance.forceSaveOnStop,
-      gameId: instance.gameId
+      gameId: instance.gameId,
+      name: instance.name,
+      port: instance.port,
+      maxPlayers: instance.maxPlayers,
+      gameConfig: instance.gameConfig
     };
 
     const supervisor = new ProcessSupervisor(config);

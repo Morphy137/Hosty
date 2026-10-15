@@ -421,7 +421,8 @@
     "new_server": "New server",
     "language_to_es": "Cambiar a español",
     "language_to_en": "Switch to English",
-    "version": "v{{version}}"
+    "version": "v{{version}}",
+    "game_packs": "Game packs"
   },
   "titlebar": {
     "minimize": "Minimize",
@@ -517,5 +518,23 @@
     "done_desc": "Your server was created. You can start it now or open its panel to keep configuring.",
     "start_now": "Start server now",
     "open_panel": "Open panel"
+  },
+  "config": {
+    "no_files": "This game has no editable configuration files.",
+    "file_label": "Configuration file",
+    "file_missing": "{{file}} does not exist yet. Start the server once so the game creates it."
+  },
+  "packs": {
+    "title": "Game packs",
+    "description": "Add games to Hosty by dropping a game pack folder into the games directory.",
+    "folder_hint": "Games folder:",
+    "empty": "No game packs installed yet.",
+    "reload": "Reload packs",
+    "loaded": "Loaded",
+    "invalid": "Invalid",
+    "code_trusted": "Code trusted",
+    "code_untrusted": "Code not trusted",
+    "trust_warning": "This pack includes code (driver.js) that would run with the same permissions as Hosty. Only trust packs from authors you know.",
+    "trust_button": "Trust and enable code"
   }
 }
