@@ -1,6 +1,13 @@
 {
-  "_meta": { "name": "Português (Brasil)" },
-  "common": { "cancel": "Cancelar", "apply": "Aplicar", "save": "Salvar", "close": "Fechar" },
+  "_meta": {
+    "name": "Português (Brasil)"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "save": "Salvar",
+    "close": "Fechar"
+  },
   "nav": {
     "overview": "Visão geral",
     "players": "Jogadores",
@@ -51,7 +58,9 @@
       "status_starting": "INICIANDO",
       "status_stopping": "PARANDO"
     },
-    "quick_commands": { "title": "Atalhos rápidos" },
+    "quick_commands": {
+      "title": "Atalhos rápidos"
+    },
     "players": {
       "title": "Jogadores conectados",
       "empty": "Nenhum jogador conectado ao servidor",
@@ -72,7 +81,11 @@
       "food": "Fome",
       "ping": "Ping",
       "operator": "OP",
-      "dimension": { "overworld": "Overworld", "the_nether": "Nether", "the_end": "The End" }
+      "dimension": {
+        "overworld": "Overworld",
+        "the_nether": "Nether",
+        "the_end": "The End"
+      }
     },
     "console": {
       "title": "Terminal ao vivo",
@@ -301,7 +314,11 @@
     "save": "Salvar alterações",
     "saved": "Salvo!",
     "empty": "Nenhuma propriedade corresponde ao filtro.",
-    "headers": { "key": "Propriedade", "type": "Tipo", "value": "Valor" }
+    "headers": {
+      "key": "Propriedade",
+      "type": "Tipo",
+      "value": "Valor"
+    }
   },
   "mods": {
     "title": "Configurações dos mods",
@@ -313,7 +330,12 @@
     "empty": "Nenhuma entrada de configuração encontrada.",
     "no_files": "Nenhum arquivo de configuração de mod encontrado na pasta config/.",
     "directory_hint": "pasta /config",
-    "headers": { "index": "#", "path": "Caminho do nó", "type": "Tipo", "value": "Valor" }
+    "headers": {
+      "index": "#",
+      "path": "Caminho do nó",
+      "type": "Tipo",
+      "value": "Valor"
+    }
   },
   "provisioning": {
     "title": "Provisionamento do motor do servidor",
@@ -449,7 +471,12 @@
     "delete_created_desc": "\"{{name}}\" e todos os seus arquivos (mundos, mods, configurações) serão excluídos permanentemente do disco.",
     "language": "Idioma"
   },
-  "titlebar": { "minimize": "Minimizar", "maximize": "Maximizar", "restore": "Restaurar", "close": "Fechar" },
+  "titlebar": {
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Fechar"
+  },
   "server_header": {
     "not_installed": "Não instalado",
     "more_actions": "Mais ações",
@@ -460,9 +487,18 @@
     "kill_confirm_desc": "O processo é encerrado imediatamente. O progresso não salvo do mundo pode ser perdido.",
     "kill_confirm_action": "Forçar fechamento"
   },
-  "toast": { "saved": "Alterações salvas", "command_sent": "Comando enviado" },
+  "toast": {
+    "saved": "Alterações salvas",
+    "command_sent": "Comando enviado"
+  },
   "wizard": {
-    "steps": { "origin": "Origem", "game": "Jogo", "setup": "Configuração", "customize": "Personalizar", "review": "Instalar" },
+    "steps": {
+      "origin": "Origem",
+      "game": "Jogo",
+      "setup": "Configuração",
+      "customize": "Personalizar",
+      "review": "Instalar"
+    },
     "step_desc": {
       "origin": "Crie um novo servidor ou importe um que você já tem.",
       "game": "Escolha o jogo que este servidor vai executar.",
@@ -477,7 +513,11 @@
     "import_detecting": "Inspecionando a pasta...",
     "import_detected": "Detectado: {{game}} · {{loader}} · {{version}}",
     "import_unknown": "Esta pasta não é um servidor válido de nenhum jogo suportado, então não pode ser importada.",
-    "game_status": { "available": "Disponível", "beta": "Beta", "coming_soon": "Em breve" },
+    "game_status": {
+      "available": "Disponível",
+      "beta": "Beta",
+      "coming_soon": "Em breve"
+    },
     "game_desc": {
       "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
       "project-zomboid": "Servidor dedicado via SteamCMD (AppID 380870)",
@@ -499,8 +539,18 @@
     "ram_min_hint": "Heap inicial (-Xms): {{min}} MB",
     "gamemode": "Modo de jogo",
     "difficulty": "Dificuldade",
-    "gamemodes": { "survival": "Sobrevivência", "creative": "Criativo", "adventure": "Aventura", "spectator": "Espectador" },
-    "difficulties": { "peaceful": "Pacífico", "easy": "Fácil", "normal": "Normal", "hard": "Difícil" },
+    "gamemodes": {
+      "survival": "Sobrevivência",
+      "creative": "Criativo",
+      "adventure": "Aventura",
+      "spectator": "Espectador"
+    },
+    "difficulties": {
+      "peaceful": "Pacífico",
+      "easy": "Fácil",
+      "normal": "Normal",
+      "hard": "Difícil"
+    },
     "advanced": "Avançado",
     "port_taken_instance": "Outro servidor seu já usa esta porta.",
     "port_in_use": "Esta porta está em uso por outro programa neste PC.",
@@ -543,7 +593,8 @@
     "install_title": "Selecione uma pasta de pacote de jogo",
     "install_button": "Instalar",
     "builtin": "Integrado",
-    "uninstall": "Desinstalar pacote"
+    "uninstall": "Desinstalar pacote",
+    "copy_manifest": "Copiar manifest como modelo"
   },
   "mod_catalog": {
     "title": "Buscar mods",

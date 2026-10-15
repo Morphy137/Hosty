@@ -1,6 +1,13 @@
 {
-  "_meta": { "name": "简体中文" },
-  "common": { "cancel": "取消", "apply": "应用", "save": "保存", "close": "关闭" },
+  "_meta": {
+    "name": "简体中文"
+  },
+  "common": {
+    "cancel": "取消",
+    "apply": "应用",
+    "save": "保存",
+    "close": "关闭"
+  },
   "nav": {
     "overview": "概览",
     "players": "玩家",
@@ -51,7 +58,9 @@
       "status_starting": "启动中",
       "status_stopping": "停止中"
     },
-    "quick_commands": { "title": "快捷预设" },
+    "quick_commands": {
+      "title": "快捷预设"
+    },
     "players": {
       "title": "已连接的玩家",
       "empty": "没有玩家连接到服务器",
@@ -72,7 +81,11 @@
       "food": "饥饿值",
       "ping": "延迟",
       "operator": "OP",
-      "dimension": { "overworld": "主世界", "the_nether": "下界", "the_end": "末地" }
+      "dimension": {
+        "overworld": "主世界",
+        "the_nether": "下界",
+        "the_end": "末地"
+      }
     },
     "console": {
       "title": "实时终端",
@@ -219,12 +232,23 @@
     "delete": "删除模组",
     "delete_confirm": "确定要删除 {{filename}} 吗？",
     "directory_hint": "/mods 目录",
-    "headers": { "index": "#", "name": "模组名称 / Jar 文件", "size": "文件大小", "status": "状态", "actions": "操作" }
+    "headers": {
+      "index": "#",
+      "name": "模组名称 / Jar 文件",
+      "size": "文件大小",
+      "status": "状态",
+      "actions": "操作"
+    }
   },
   "create_server": {
     "modal_title": "新建游戏服务器",
     "modal_subtitle": "配置并自动创建一个新的本地游戏服务器实例。",
-    "steps": { "game": "1. 游戏引擎", "installation": "2. 安装", "settings": "3. 服务器规格", "review": "4. 部署" },
+    "steps": {
+      "game": "1. 游戏引擎",
+      "installation": "2. 安装",
+      "settings": "3. 服务器规格",
+      "review": "4. 部署"
+    },
     "step_desc": {
       "game": "为此实例选择专用游戏服务器引擎。",
       "installation": "配置加载器、服务端软件，或附加自定义程序。",
@@ -290,7 +314,11 @@
     "save": "保存更改",
     "saved": "已保存！",
     "empty": "没有找到符合筛选条件的属性。",
-    "headers": { "key": "属性名", "type": "类型", "value": "值" }
+    "headers": {
+      "key": "属性名",
+      "type": "类型",
+      "value": "值"
+    }
   },
   "mods": {
     "title": "模组配置",
@@ -302,7 +330,12 @@
     "empty": "没有找到配置项。",
     "no_files": "在 config/ 目录中没有找到模组配置文件。",
     "directory_hint": "/config 目录",
-    "headers": { "index": "#", "path": "配置节点路径", "type": "类型", "value": "值" }
+    "headers": {
+      "index": "#",
+      "path": "配置节点路径",
+      "type": "类型",
+      "value": "值"
+    }
   },
   "provisioning": {
     "title": "服务器引擎部署",
@@ -438,7 +471,12 @@
     "delete_created_desc": "“{{name}}”及其所有文件（世界、模组、配置）将从磁盘永久删除。",
     "language": "语言"
   },
-  "titlebar": { "minimize": "最小化", "maximize": "最大化", "restore": "还原", "close": "关闭" },
+  "titlebar": {
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
+    "close": "关闭"
+  },
   "server_header": {
     "not_installed": "未安装",
     "more_actions": "更多操作",
@@ -449,9 +487,18 @@
     "kill_confirm_desc": "进程将被立即终止，未保存的世界进度可能丢失。",
     "kill_confirm_action": "强制关闭"
   },
-  "toast": { "saved": "更改已保存", "command_sent": "命令已发送" },
+  "toast": {
+    "saved": "更改已保存",
+    "command_sent": "命令已发送"
+  },
   "wizard": {
-    "steps": { "origin": "来源", "game": "游戏", "setup": "设置", "customize": "自定义", "review": "安装" },
+    "steps": {
+      "origin": "来源",
+      "game": "游戏",
+      "setup": "设置",
+      "customize": "自定义",
+      "review": "安装"
+    },
     "step_desc": {
       "origin": "创建新服务器，或导入已有的服务器。",
       "game": "选择此服务器要运行的游戏。",
@@ -466,7 +513,11 @@
     "import_detecting": "正在检查文件夹...",
     "import_detected": "已识别：{{game}} · {{loader}} · {{version}}",
     "import_unknown": "此文件夹不是任何受支持游戏的有效服务器，因此无法导入。",
-    "game_status": { "available": "可用", "beta": "测试版", "coming_soon": "即将推出" },
+    "game_status": {
+      "available": "可用",
+      "beta": "测试版",
+      "coming_soon": "即将推出"
+    },
     "game_desc": {
       "minecraft": "Mojang、Fabric、Paper、Purpur、Forge、NeoForge",
       "project-zomboid": "SteamCMD 专用服务器 (AppID 380870)",
@@ -488,8 +539,18 @@
     "ram_min_hint": "初始堆 (-Xms)：{{min}} MB",
     "gamemode": "游戏模式",
     "difficulty": "难度",
-    "gamemodes": { "survival": "生存", "creative": "创造", "adventure": "冒险", "spectator": "旁观" },
-    "difficulties": { "peaceful": "和平", "easy": "简单", "normal": "普通", "hard": "困难" },
+    "gamemodes": {
+      "survival": "生存",
+      "creative": "创造",
+      "adventure": "冒险",
+      "spectator": "旁观"
+    },
+    "difficulties": {
+      "peaceful": "和平",
+      "easy": "简单",
+      "normal": "普通",
+      "hard": "困难"
+    },
     "advanced": "高级",
     "port_taken_instance": "你的另一个服务器已在使用此端口。",
     "port_in_use": "此端口已被这台电脑上的其他程序占用。",
@@ -532,7 +593,8 @@
     "install_title": "选择游戏包文件夹",
     "install_button": "安装",
     "builtin": "内置",
-    "uninstall": "卸载游戏包"
+    "uninstall": "卸载游戏包",
+    "copy_manifest": "复制清单作为模板"
   },
   "mod_catalog": {
     "title": "查找模组",

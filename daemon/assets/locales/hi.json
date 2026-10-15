@@ -1,6 +1,13 @@
 {
-  "_meta": { "name": "हिन्दी" },
-  "common": { "cancel": "रद्द करें", "apply": "लागू करें", "save": "सहेजें", "close": "बंद करें" },
+  "_meta": {
+    "name": "हिन्दी"
+  },
+  "common": {
+    "cancel": "रद्द करें",
+    "apply": "लागू करें",
+    "save": "सहेजें",
+    "close": "बंद करें"
+  },
   "nav": {
     "overview": "अवलोकन",
     "players": "खिलाड़ी",
@@ -51,7 +58,9 @@
       "status_starting": "शुरू हो रहा है",
       "status_stopping": "रुक रहा है"
     },
-    "quick_commands": { "title": "त्वरित प्रीसेट" },
+    "quick_commands": {
+      "title": "त्वरित प्रीसेट"
+    },
     "players": {
       "title": "जुड़े हुए खिलाड़ी",
       "empty": "सर्वर से कोई खिलाड़ी जुड़ा नहीं है",
@@ -72,7 +81,11 @@
       "food": "भूख",
       "ping": "पिंग",
       "operator": "OP",
-      "dimension": { "overworld": "ओवरवर्ल्ड", "the_nether": "नेदर", "the_end": "द एंड" }
+      "dimension": {
+        "overworld": "ओवरवर्ल्ड",
+        "the_nether": "नेदर",
+        "the_end": "द एंड"
+      }
     },
     "console": {
       "title": "लाइव टर्मिनल",
@@ -219,12 +232,23 @@
     "delete": "मॉड हटाएँ",
     "delete_confirm": "क्या आप वाकई {{filename}} हटाना चाहते हैं?",
     "directory_hint": "/mods डायरेक्टरी",
-    "headers": { "index": "#", "name": "मॉड का नाम / Jar फ़ाइल", "size": "फ़ाइल आकार", "status": "स्थिति", "actions": "कार्रवाइयाँ" }
+    "headers": {
+      "index": "#",
+      "name": "मॉड का नाम / Jar फ़ाइल",
+      "size": "फ़ाइल आकार",
+      "status": "स्थिति",
+      "actions": "कार्रवाइयाँ"
+    }
   },
   "create_server": {
     "modal_title": "नया गेम सर्वर",
     "modal_subtitle": "नया स्थानीय गेम सर्वर इंस्टेंस कॉन्फ़िगर करें और अपने आप बनाएँ।",
-    "steps": { "game": "1. गेम इंजन", "installation": "2. इंस्टॉलेशन", "settings": "3. सर्वर विनिर्देश", "review": "4. डिप्लॉय" },
+    "steps": {
+      "game": "1. गेम इंजन",
+      "installation": "2. इंस्टॉलेशन",
+      "settings": "3. सर्वर विनिर्देश",
+      "review": "4. डिप्लॉय"
+    },
     "step_desc": {
       "game": "इस इंस्टेंस के लिए डेडिकेटेड गेम इंजन चुनें।",
       "installation": "लोडर, सर्वर सॉफ़्टवेयर कॉन्फ़िगर करें या कस्टम बाइनरी जोड़ें।",
@@ -290,7 +314,11 @@
     "save": "बदलाव सहेजें",
     "saved": "सहेजा गया!",
     "empty": "आपके फ़िल्टर से मेल खाती कोई प्रॉपर्टी नहीं मिली।",
-    "headers": { "key": "प्रॉपर्टी कुंजी", "type": "प्रकार", "value": "मान" }
+    "headers": {
+      "key": "प्रॉपर्टी कुंजी",
+      "type": "प्रकार",
+      "value": "मान"
+    }
   },
   "mods": {
     "title": "मॉड कॉन्फ़िगरेशन",
@@ -302,7 +330,12 @@
     "empty": "कोई कॉन्फ़िगरेशन प्रविष्टि नहीं मिली।",
     "no_files": "config/ डायरेक्टरी में कोई मॉड कॉन्फ़िगरेशन फ़ाइल नहीं मिली।",
     "directory_hint": "/config डायरेक्टरी",
-    "headers": { "index": "#", "path": "कॉन्फ़िग नोड पथ", "type": "प्रकार", "value": "मान" }
+    "headers": {
+      "index": "#",
+      "path": "कॉन्फ़िग नोड पथ",
+      "type": "प्रकार",
+      "value": "मान"
+    }
   },
   "provisioning": {
     "title": "सर्वर इंजन प्रोविज़निंग",
@@ -438,7 +471,12 @@
     "delete_created_desc": "\"{{name}}\" और उसकी सभी फ़ाइलें (वर्ल्ड, मॉड, कॉन्फ़िग) डिस्क से हमेशा के लिए हटा दी जाएँगी।",
     "language": "भाषा"
   },
-  "titlebar": { "minimize": "छोटा करें", "maximize": "बड़ा करें", "restore": "पुनर्स्थापित करें", "close": "बंद करें" },
+  "titlebar": {
+    "minimize": "छोटा करें",
+    "maximize": "बड़ा करें",
+    "restore": "पुनर्स्थापित करें",
+    "close": "बंद करें"
+  },
   "server_header": {
     "not_installed": "इंस्टॉल नहीं है",
     "more_actions": "और कार्रवाइयाँ",
@@ -449,9 +487,18 @@
     "kill_confirm_desc": "प्रोसेस तुरंत समाप्त हो जाती है। वर्ल्ड की बिना सहेजी प्रगति खो सकती है।",
     "kill_confirm_action": "ज़बरदस्ती बंद करें"
   },
-  "toast": { "saved": "बदलाव सहेजे गए", "command_sent": "कमांड भेज दी गई" },
+  "toast": {
+    "saved": "बदलाव सहेजे गए",
+    "command_sent": "कमांड भेज दी गई"
+  },
   "wizard": {
-    "steps": { "origin": "स्रोत", "game": "गेम", "setup": "सेटअप", "customize": "अनुकूलन", "review": "इंस्टॉल" },
+    "steps": {
+      "origin": "स्रोत",
+      "game": "गेम",
+      "setup": "सेटअप",
+      "customize": "अनुकूलन",
+      "review": "इंस्टॉल"
+    },
     "step_desc": {
       "origin": "नया सर्वर बनाएँ या पहले से मौजूद सर्वर आयात करें।",
       "game": "वह गेम चुनें जो यह सर्वर चलाएगा।",
@@ -466,7 +513,11 @@
     "import_detecting": "फ़ोल्डर की जाँच हो रही है...",
     "import_detected": "पहचाना गया: {{game}} · {{loader}} · {{version}}",
     "import_unknown": "यह फ़ोल्डर किसी भी समर्थित गेम का मान्य सर्वर नहीं है, इसलिए इसे आयात नहीं किया जा सकता।",
-    "game_status": { "available": "उपलब्ध", "beta": "बीटा", "coming_soon": "जल्द आ रहा है" },
+    "game_status": {
+      "available": "उपलब्ध",
+      "beta": "बीटा",
+      "coming_soon": "जल्द आ रहा है"
+    },
     "game_desc": {
       "minecraft": "Mojang, Fabric, Paper, Purpur, Forge, NeoForge",
       "project-zomboid": "SteamCMD डेडिकेटेड सर्वर (AppID 380870)",
@@ -488,8 +539,18 @@
     "ram_min_hint": "प्रारंभिक हीप (-Xms): {{min}} MB",
     "gamemode": "गेम मोड",
     "difficulty": "कठिनाई",
-    "gamemodes": { "survival": "सर्वाइवल", "creative": "क्रिएटिव", "adventure": "एडवेंचर", "spectator": "स्पेक्टेटर" },
-    "difficulties": { "peaceful": "शांतिपूर्ण", "easy": "आसान", "normal": "सामान्य", "hard": "कठिन" },
+    "gamemodes": {
+      "survival": "सर्वाइवल",
+      "creative": "क्रिएटिव",
+      "adventure": "एडवेंचर",
+      "spectator": "स्पेक्टेटर"
+    },
+    "difficulties": {
+      "peaceful": "शांतिपूर्ण",
+      "easy": "आसान",
+      "normal": "सामान्य",
+      "hard": "कठिन"
+    },
     "advanced": "उन्नत",
     "port_taken_instance": "आपका एक और सर्वर यही पोर्ट इस्तेमाल कर रहा है।",
     "port_in_use": "यह पोर्ट इस PC पर किसी दूसरे प्रोग्राम द्वारा इस्तेमाल हो रहा है।",
@@ -532,7 +593,8 @@
     "install_title": "गेम पैक फ़ोल्डर चुनें",
     "install_button": "इंस्टॉल करें",
     "builtin": "अंतर्निहित",
-    "uninstall": "पैक अनइंस्टॉल करें"
+    "uninstall": "पैक अनइंस्टॉल करें",
+    "copy_manifest": "टेम्पलेट के रूप में manifest कॉपी करें"
   },
   "mod_catalog": {
     "title": "मॉड खोजें",

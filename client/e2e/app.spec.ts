@@ -14,7 +14,7 @@ test('shows the empty state and switches theme and language', async ({ page }) =
   await expect(page.locator('html')).toHaveClass(/dark/);
 
   await page.getByRole('button', { name: 'Language' }).click();
-  await page.getByRole('menuitem', { name: /Español/ }).click();
+  await page.getByRole('menuitem', { name: 'Español', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Bienvenido a Hosty' })).toBeVisible();
 });
 

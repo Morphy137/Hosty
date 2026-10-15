@@ -855,6 +855,19 @@ app.post('/api/game-packs/reload', (_req, res) => {
   res.json({ gamesDir: config.gamesDir, packs: driverRegistry.reloadPacks() });
 });
 
+// Declarative manifest of a game (built-ins included) so authors can use it as a template.
+app.get('/api/game-packs/:packId/manifest', (req, res, next) => {
+  try {
+    const manifest = driverRegistry.getManifest(req.params.packId);
+    if (!manifest) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Game "${req.params.packId}" has no declarative manifest.`);
+    }
+    res.json(manifest);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/game-packs/install', (req, res, next) => {
   try {
     const { path: sourcePath } = req.body as { path?: string };

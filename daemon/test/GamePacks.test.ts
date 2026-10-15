@@ -238,3 +238,14 @@ describe('pack install, uninstall and built-in listing', () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 });
+
+describe('documented example packs', () => {
+  it.each(['valheim', 'project-zomboid', 'hytale'])('docs/examples/%s is a valid manifest with its logo', (name) => {
+    const dir = path.resolve(__dirname, '../../docs/examples', name);
+    const raw = JSON.parse(fs.readFileSync(path.join(dir, 'hosty-game.json'), 'utf-8'));
+    const result = validateManifest(raw);
+    expect(result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
+    if (raw.logo) expect(fs.existsSync(path.join(dir, raw.logo))).toBe(true);
+  });
+});
