@@ -16,7 +16,9 @@ my-game/
 ```
 
 Scaffold one with `npm create hosty-game my-game`, then copy the folder into the games folder and press
-**Reload packs**. A full example lives in [`docs/examples/valheim`](examples/valheim/hosty-game.json).
+**Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
+[`project-zomboid`](examples/project-zomboid/hosty-game.json) and [`hytale`](examples/hytale/hosty-game.json) (the built-in games
+expressed as packs). In the app, the Game packs dialog can copy any built-in game's manifest as a template.
 
 ## Manifest (`hosty-game.json`, `apiVersion: 1`)
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, FolderInput, FolderOpen, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
-import { fetchGamePacks, installGamePack, reloadGamePacks, trustGamePack, uninstallGamePack } from '../../api/daemonApi';
+import { AlertTriangle, Copy, FolderInput, FolderOpen, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { fetchGamePackManifest, fetchGamePacks, installGamePack, reloadGamePacks, trustGamePack, uninstallGamePack } from '../../api/daemonApi';
 import { isTauriRuntime } from '../../config/daemon';
 import { Input } from '../ui/Input';
 import type { GamePackInfo } from '../../types/daemon';
@@ -130,6 +130,22 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {pack.source === 'builtin' && <Badge variant="neutral">{t('packs.builtin')}</Badge>}
+                  {pack.source === 'builtin' && !pack.hasCode && pack.id && (
+                    <button
+                      type="button"
+                      title={t('packs.copy_manifest')}
+                      aria-label={t('packs.copy_manifest')}
+                      className="cursor-pointer rounded-[4px] p-1 text-mute hover:bg-surface-3 hover:text-ink"
+                      onClick={() =>
+                        void fetchGamePackManifest(pack.id as string)
+                          .then((manifest) => navigator.clipboard.writeText(JSON.stringify(manifest, null, 2)))
+                          .then(() => setError(null))
+                          .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+                      }
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {pack.loaded ? <Badge variant="success">{t('packs.loaded')}</Badge> : <Badge variant="danger">{t('packs.invalid')}</Badge>}
                   {pack.source === 'external' && pack.id && (
                     <button

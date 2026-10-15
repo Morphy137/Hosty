@@ -202,6 +202,10 @@ export function installCatalogMod(
   );
 }
 
+export function fetchGamePackManifest(packId: string): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/api/game-packs/${encodeURIComponent(packId)}/manifest`);
+}
+
 export interface LocaleInfo {
   code: string;
   name: string;

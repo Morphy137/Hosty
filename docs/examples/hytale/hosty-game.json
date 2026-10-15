@@ -1,0 +1,71 @@
+{
+  "apiVersion": 1,
+  "id": "hytale",
+  "name": "Hytale",
+  "version": "1.0.0",
+  "badge": "HY",
+  "category": "voxel",
+  "status": "coming_soon",
+  "description": {
+    "en": "Hytale Dedicated Server (engine spec & preview)",
+    "es": "Servidor dedicado de Hytale (especificación y preview)"
+  },
+  "defaults": {
+    "port": 25565,
+    "maxPlayers": 40
+  },
+  "provision": {
+    "type": "none"
+  },
+  "launch": {
+    "runtime": "java",
+    "executable": "HytaleServer.jar",
+    "args": [
+      "--port",
+      "{{port}}"
+    ]
+  },
+  "detect": [
+    "HytaleServer.jar",
+    "hytale-server.exe",
+    "hytale-server",
+    "config.json"
+  ],
+  "logs": {
+    "ready": [
+      "Hytale Server started successfully",
+      "Ready for connections",
+      "Server listening on",
+      "Server started in \\d+(\\.\\d+)?s"
+    ],
+    "join": [
+      "Player\\s+\"?(?<username>[^\"\\s]+)\"?\\s+joined the world",
+      "Player\\s+\"?(?<username>[^\"\\s]+)\"?\\s+connected",
+      "\\*\\*\\*\\s+Player\\s+(?<username>[^\\s]+)\\s+joined"
+    ],
+    "leave": [
+      "Player\\s+\"?(?<username>[^\"\\s]+)\"?\\s+left the world",
+      "Player\\s+\"?(?<username>[^\"\\s]+)\"?\\s+disconnected",
+      "\\*\\*\\*\\s+Player\\s+(?<username>[^\\s]+)\\s+left"
+    ],
+    "dimension": "orbis"
+  },
+  "commands": {
+    "stop": "stop",
+    "save": "save"
+  },
+  "configFiles": [
+    {
+      "path": "config.json",
+      "format": "json"
+    }
+  ],
+  "capabilities": {
+    "players": true,
+    "mods": true,
+    "configEditor": true,
+    "bridge": false
+  },
+  "modFormat": "Hytale Mod Package / Script",
+  "logo": "logo.webp"
+}

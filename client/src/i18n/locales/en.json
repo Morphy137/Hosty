@@ -590,7 +590,8 @@
     "install_title": "Select a game pack folder",
     "install_button": "Install",
     "builtin": "Built-in",
-    "uninstall": "Uninstall pack"
+    "uninstall": "Uninstall pack",
+    "copy_manifest": "Copy manifest as a template"
   },
   "mod_catalog": {
     "title": "Find mods",
