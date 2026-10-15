@@ -8,7 +8,7 @@
 
 Create, run and manage dedicated servers on your own PC — no terminals, no config-file hunting, no headaches.
 
-![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.5.1--alpha-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -29,21 +29,22 @@ It is **not tied to a single game**. Hosty is built as a multi-game platform, an
 | Game | Status |
 | --- | --- |
 | **Minecraft** (Vanilla, Paper, Purpur, Fabric, Forge, NeoForge) | Available |
-| **Project Zomboid** | Early support |
-| **Hytale** | Early support |
-| More games | Coming over time |
+| **Project Zomboid** | Beta (SteamCMD install) |
+| **Hytale** | Coming soon |
+| **Any game** | Add it yourself with a [game pack](docs/game-packs.md) |
 
 ## Highlights
 
-- **Guided server creation** — a step-by-step wizard picks the game, installs the server for you and sets sensible defaults.
-- **One-click control** — start, stop and restart from the top bar, with safe saving on shutdown.
+- **Guided server creation** — a step-by-step wizard picks the game, installs the server for you (including Forge and NeoForge), detects the loader of a jar you bring and sets sensible defaults.
+- **One-click control** — a single Start/Stop button per server, with restart and a confirmed force-close in the menu, and safe saving on shutdown.
 - **Live dashboard** — watch CPU, memory, server performance and who is online, in real time.
 - **Live console** — read the server output and send commands, with handy shortcuts.
 - **Player management** — see where everyone is and heal, gift, hurt, kick or inspect inventories without typing commands.
 - **Mods made easy** — enable, disable or remove mods, and edit their settings from the app.
 - **Easy settings** — tweak server properties with a clean editor instead of raw text files.
-- **Import existing servers** — bring a server you already have and manage it from Hosty.
-- **Multiple servers** — keep several servers and switch between them instantly.
+- **Import existing servers** — pick a folder and Hosty detects the game, loader and version.
+- **Multiple servers** — keep several servers in the sidebar and switch between them instantly.
+- **Extensible** — add games with a small [game pack](docs/game-packs.md) and connect in-game bridges through an open [protocol](docs/bridge-protocol.md).
 - **Light & dark themes**, available in **English** and **Spanish**.
 
 <table>
@@ -59,7 +60,7 @@ It is **not tied to a single game**. Hosty is built as a multi-game platform, an
 
 ## Requirements
 
-- Windows 10 / 11 (64-bit)
+- Windows 10 / 11 (64-bit). macOS and Linux builds are produced by CI but are not validated yet.
 - Java 17 or 21 (only for games that need it, such as Minecraft)
 
 ## Getting started
@@ -75,13 +76,16 @@ You will need Node.js 20+ (22 LTS recommended) and the stable Rust toolchain.
 npm --prefix daemon install
 npm --prefix client install
 
-# Launch the full desktop app
+# Terminal 1: the daemon (the desktop app uses it in dev mode)
+npm run dev:daemon
+
+# Terminal 2: the full desktop app
 npm run tauri:dev
 ```
 
 ## Project status
 
-Hosty is in **alpha** (`0.1.0`) and evolving quickly. Feedback and ideas are very welcome.
+Hosty is in **alpha** (`0.5.x`) and evolving quickly. Feedback and ideas are very welcome. See [docs/releasing.md](docs/releasing.md) for platform status and code signing.
 
 ## License
 

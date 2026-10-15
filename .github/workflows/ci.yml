@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            daemon/package-lock.json
+            client/package-lock.json
+            packages/game-sdk/package-lock.json
+            packages/bridge-protocol/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm --prefix daemon ci
+          npm --prefix client ci
+          npm --prefix packages/game-sdk ci
+          npm --prefix packages/bridge-protocol ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and component tests
+        run: npm test
+
+      - name: Build daemon and client
+        run: npm run build
+
+      - name: Type-check the game SDK
+        run: npm --prefix packages/game-sdk run typecheck
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            daemon/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm --prefix daemon ci
+          npm --prefix client ci
+
+      - name: Install browser
+        run: npx --prefix client playwright install --with-deps chromium
+
+      - name: Run Playwright
+        run: npm --prefix client run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: client/test-results
+          retention-days: 7
+
+  desktop:
+    name: Desktop shell (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            daemon/package-lock.json
+            client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: client/src-tauri
+
+      - name: Install dependencies
+        run: |
+          npm --prefix daemon ci
+          npm --prefix client ci
+
+      - name: Build the daemon sidecar
+        run: npm --prefix daemon run build:sidecar
+
+      - name: Smoke-test the sidecar
+        shell: bash
+        run: |
+          export NODE_ENV=production MC_NEXUS_PORT=4871
+          export MC_NEXUS_INSTANCE_DIR="$RUNNER_TEMP/hosty-smoke/instances/default"
+          export MC_NEXUS_ASSETS_DIR="$PWD/daemon/assets/bridge"
+          client/src-tauri/binaries/hosty-daemon-*.exe &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4871/api/health >/dev/null; then echo "sidecar healthy"; exit 0; fi
+            sleep 1
+          done
+          echo "sidecar did not answer /api/health"; exit 1
+
+      - name: Compile the Tauri shell
+        run: cargo check --manifest-path client/src-tauri/Cargo.toml --locked

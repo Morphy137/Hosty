@@ -24,13 +24,14 @@ import { inspectJar, type JarInspection } from './provisioning/JarInspector';
 import { runServerInstaller } from './provisioning/JavaInstallerRunner';
 import { parseConfigUpdates } from './parsers/configUpdates';
 import { DaemonError, toErrorResponse } from './errors';
-import { detectJavaEnvironment } from './core/EnvironmentDetector';
+import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
 import { installWithSteamCmd } from './provisioning/SteamCmd';
 import net from 'net';
 
 const config = loadConfig();
+config.javaPath = resolveJavaExecutable(config.javaPath);
 driverRegistry.loadPacks(config.gamesDir);
 
 const app = express();

@@ -1,4 +1,6 @@
 import { spawnSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 export interface JavaEnvironmentInfo {
   detected: boolean;
@@ -24,6 +26,60 @@ export function parseJavaVersionString(output: string): number | null {
   if (!match || !match[1]) return null;
   const parsed = parseInt(match[1], 10);
   return Number.isNaN(parsed) ? null : parsed;
+}
+
+/**
+ * Likely Java executables outside PATH. GUI-launched apps (macOS Finder, Linux desktop entries,
+ * Windows services) often do not inherit the shell PATH, so `java` alone is not enough.
+ */
+export function javaCandidates(
+  env: Record<string, string | undefined> = process.env,
+  platform: NodeJS.Platform = process.platform,
+  listDirs: (dir: string) => string[] = (dir) => {
+    try {
+      return fs.readdirSync(dir);
+    } catch {
+      return [];
+    }
+  }
+): string[] {
+  const exe = platform === 'win32' ? 'java.exe' : 'java';
+  const candidates: string[] = [];
+  if (env.JAVA_HOME) candidates.push(path.join(env.JAVA_HOME, 'bin', exe));
+
+  const fromRoots = (roots: string[], suffix: string[]) => {
+    for (const root of roots) {
+      for (const entry of listDirs(root).sort().reverse()) {
+        candidates.push(path.join(root, entry, ...suffix, exe));
+      }
+    }
+  };
+
+  if (platform === 'win32') {
+    const programFiles = [env.ProgramFiles, env['ProgramFiles(x86)']].filter((value): value is string => Boolean(value));
+    const vendors = ['Eclipse Adoptium', 'Java', 'Microsoft', 'Zulu', 'BellSoft', 'Amazon Corretto', 'Semeru'];
+    fromRoots(
+      programFiles.flatMap((base) => vendors.map((vendor) => path.join(base, vendor))),
+      ['bin']
+    );
+  } else if (platform === 'darwin') {
+    fromRoots(['/Library/Java/JavaVirtualMachines'], ['Contents', 'Home', 'bin']);
+    candidates.push('/opt/homebrew/opt/openjdk/bin/java', '/usr/local/opt/openjdk/bin/java');
+  } else {
+    fromRoots(['/usr/lib/jvm', '/usr/java', '/opt/java'], ['bin']);
+  }
+  return candidates;
+}
+
+/** Resolves the Java executable to launch with: the configured one if it works, otherwise a known install. */
+export function resolveJavaExecutable(configured = 'java'): string {
+  if (detectJavaEnvironment(configured).detected) return configured;
+  // A custom path that does not work must not be silently replaced.
+  if (configured !== 'java') return configured;
+  for (const candidate of javaCandidates()) {
+    if (fs.existsSync(candidate) && detectJavaEnvironment(candidate).detected) return candidate;
+  }
+  return configured;
 }
 
 /**

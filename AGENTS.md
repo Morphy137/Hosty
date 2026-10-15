@@ -4,7 +4,7 @@ Project context for AI coding agents. The user-facing presentation lives in [REA
 
 ## Project overview
 
-**Hosty** (repo/folder name: `mc-nexus`) is a Windows desktop app to create and manage **local dedicated game servers** for **multiple games**. It is intentionally game-agnostic: each game is a pluggable driver, and new games are added over time. Minecraft is the most complete; Project Zomboid and Hytale have early drivers.
+**Hosty** (repo/folder name: `mc-nexus`) is a desktop app (Windows is the supported platform; macOS/Linux builds exist in CI but are not validated yet, see [docs/releasing.md](docs/releasing.md)) to create and manage **local dedicated game servers** for **multiple games**. It is intentionally game-agnostic: each game is a pluggable driver, and new games are added over time. Minecraft is the most complete; Project Zomboid and Hytale have early drivers.
 
 Naming note: the product is "Hosty", but legacy "MC-Nexus" naming remains in env vars (`MC_NEXUS_*`), Java packages (`com.mcnexus.bridge`) and bridge jar names. Do not rename without approval.
 
@@ -67,7 +67,7 @@ npm run build           # tsc daemon + client build
 npm run tauri:build     # desktop bundle
 ```
 
-Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, Java 17/21 for Minecraft servers and bridge builds.
+Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, Java 17/21 for Minecraft servers and bridge builds. Extra checks: `npm --prefix client run test:e2e` (Playwright), `npm --prefix client run screenshots`, `npm --prefix packages/game-sdk run typecheck`.
 
 ## Conventions
 
@@ -76,5 +76,6 @@ Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, J
 - No hardcoded UI strings: use i18n keys present in both `en.json` and `es.json`.
 - Run lint, build and tests before considering a task complete.
 - Never commit `.env*` (except `.env.example`), `instances/`, or edit lockfiles manually.
-- Release: pushing a `v*` tag triggers `.github/workflows/release.yml` (tests, lint, daemon build, Tauri release).
-- README screenshots live in `docs/screenshots/`; keep them in sync when the UI changes noticeably.
+- Release: pushing a `v*` tag triggers `.github/workflows/release.yml` (tests, lint, daemon build, sidecar smoke test, Tauri release for Windows/macOS/Linux).
+- README screenshots live in `docs/screenshots/`; regenerate them with `npm --prefix client run screenshots` when the UI changes noticeably.
+- CI (`.github/workflows/ci.yml`) runs lint, tests, build, SDK type-check and Playwright on every PR; releases are described in [docs/releasing.md](docs/releasing.md).
