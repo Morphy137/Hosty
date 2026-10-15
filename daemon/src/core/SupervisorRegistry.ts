@@ -93,7 +93,7 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
     const config: ServerConfig = {
       id: instance.id,
       workingDir: instance.dir,
-      jarFile: this.defaults.defaultJarFile,
+      jarFile: instance.launchFile || this.defaults.defaultJarFile,
       javaPath: instance.javaPath || this.defaults.defaultJavaPath,
       minRamMb: instance.minRamMb,
       maxRamMb: instance.maxRamMb,

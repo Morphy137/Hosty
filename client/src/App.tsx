@@ -117,6 +117,18 @@ export default function App() {
 
   const activeError = lastError || localError;
 
+  // Manual checks always answer: new version (the banner shows), up to date, or why it failed.
+  const handleManualUpdateCheck = useCallback(async () => {
+    const result = await updater.checkForUpdates();
+    if (result.status === 'up_to_date') {
+      toast({ title: t('updater.up_to_date'), variant: 'info' });
+    } else if (result.status === 'error') {
+      toast({ title: t('updater.check_failed'), description: result.message, variant: 'error' });
+    } else {
+      toast({ title: t('updater.update_available_title'), description: result.version, variant: 'success' });
+    }
+  }, [t, toast, updater]);
+
   const handleSendCommand = useCallback(
     (command: string) => {
       sendAction('COMMAND', command);
@@ -297,7 +309,7 @@ export default function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           appVersion={appVersion}
-          onCheckUpdates={isTauriRuntime() ? updater.checkForUpdates : undefined}
+          onCheckUpdates={isTauriRuntime() ? handleManualUpdateCheck : undefined}
           isCheckingUpdates={updater.isChecking}
           onMock={import.meta.env.DEV && health?.mockEnabled ? () => sendAction('MOCK') : undefined}
         />

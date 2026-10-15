@@ -152,7 +152,8 @@ export interface IGameDriver {
   readonly name: string;
   readonly summary: GameDriverSummary;
 
-  validateInstallation(instanceDir: string): boolean;
+  /** `launchFile`: the file the user picked to start the server, when it is not the conventional name. */
+  validateInstallation(instanceDir: string, launchFile?: string): boolean;
   buildLaunchPlan(config: {
     workingDir: string;
     javaPath?: string;
@@ -173,7 +174,7 @@ export interface IGameDriver {
   /** Creates the game's initial files for a new instance (e.g. a default config). */
   scaffoldInstance?(instanceDir: string, options: { port: number; motd: string; maxPlayers: number }): void;
   /** Identifies what an existing folder contains (loader / version) so importing needs no user input. */
-  inspectFolder?(instanceDir: string): { loader?: string | null; version?: string | null };
+  inspectFolder?(instanceDir: string, launchFile?: string): { loader?: string | null; version?: string | null };
   consumeQueryResponse?(
     line: string,
     pendingQueries: Set<string>

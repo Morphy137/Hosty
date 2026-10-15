@@ -79,3 +79,15 @@ npm --prefix client run screenshots            # regenerate docs/screenshots
   (run from `client/`). Keep the source square with transparent rounded corners (about 22% radius).
 - Game packs and UI language packs are installed from inside the app (Game packs dialog / `locales` folder);
   the installer does not bundle them, so the installer language choice is installer-only.
+
+## Auto-update feed
+
+The app checks `https://github.com/<owner>/Hosty/releases/latest/download/latest.json` (see
+`plugins.updater.endpoints` in `tauri.conf.json`). GitHub serves that URL **only to anonymous clients when the
+repository is public**; for a private repository the request returns 404 and the check fails (the app now
+reports "Could not check for updates" with the reason). To ship updates, publish the release assets somewhere
+public (make the repository public, or point `endpoints` at a public host that mirrors `latest.json` and the
+installers).
+
+macOS signing is optional: without the `APPLE_*` secrets the macOS bundle is built unsigned/ad-hoc and
+Gatekeeper will warn. Setting `APPLE_CERTIFICATE` (and the rest) switches the workflow to the signed build.

@@ -31,6 +31,28 @@ describe('inspectServerFolder', () => {
     });
   });
 
+  it('accepts a renamed jar when the file itself is chosen, and remembers its name', () => {
+    const zip = new AdmZip();
+    zip.addFile('io/papermc/paperclip/Main.class', Buffer.from('x'));
+    zip.addFile('META-INF/versions.list', Buffer.from('abc\t1.20.4/paper-1.20.4.jar\n'));
+    const jar = path.join(dir, 'my-custom-paper-build.jar');
+    zip.writeZip(jar);
+
+    // Choosing the folder cannot work: there is no server.jar next to it.
+    expect(inspectServerFolder(dir, 'minecraft').gameId).toBeNull();
+    // A file is only trusted by the game the user selected, never by an unrelated one.
+    expect(inspectServerFolder(jar).gameId).toBeNull();
+
+    const result = inspectServerFolder(jar, 'minecraft');
+    expect(result).toMatchObject({
+      gameId: 'minecraft',
+      loader: 'paper',
+      mcVersion: '1.20.4',
+      launchFile: 'my-custom-paper-build.jar',
+      path: dir
+    });
+  });
+
   it('identifies a NeoForge install by its args file', () => {
     const argsName = process.platform === 'win32' ? 'win_args.txt' : 'unix_args.txt';
     const argsDir = path.join(dir, 'libraries', 'net', 'neoforged', 'neoforge', '21.1.172');

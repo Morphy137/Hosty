@@ -132,8 +132,8 @@ export async function isPortInUse(port: number): Promise<boolean> {
 }
 
 /** Identifies the game and loader of an existing server folder. */
-export function inspectFolder(folderPath: string): Promise<FolderInspection> {
-  return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath });
+export function inspectFolder(folderPath: string, gameId?: string): Promise<FolderInspection> {
+  return postJson<FolderInspection>('/api/instances/inspect-folder', { path: folderPath, gameId });
 }
 
 // Generic config files (declared by the game's driver)

@@ -282,14 +282,14 @@
   },
   "import_server": {
     "modal_title": "导入现有服务器",
-    "path_label": "服务器文件夹路径",
-    "path_hint": "包含 server.properties 或 server.jar 的文件夹的绝对路径。",
+    "path_label": "服务器文件路径",
+    "path_hint": "选择启动服务器的文件（例如 server.jar，即使已重命名）。也可以直接输入文件夹路径。",
     "name_label": "显示名称（可选）",
     "submit_button": "导入服务器",
     "submitting": "正在导入...",
     "display_name_placeholder": "自定义显示名称（可选）",
     "browse": "浏览...",
-    "picker_title": "选择服务器文件夹"
+    "picker_title": "选择服务器文件"
   },
   "properties": {
     "title": "服务器属性",

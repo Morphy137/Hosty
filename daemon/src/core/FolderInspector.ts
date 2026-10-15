@@ -5,7 +5,10 @@ import { readSyncedValues } from './ConfigSync';
 import { DaemonError } from '../errors';
 
 export interface FolderInspection {
+  /** Server folder (the parent folder when a file was chosen). */
   path: string;
+  /** File the user picked to start the server, relative to `path`; null when a folder was chosen. */
+  launchFile: string | null;
   /** Folder name, used as the suggested display name. */
   suggestedName: string;
   /** Matching game driver id, or null when nothing recognisable was found. */
@@ -29,11 +32,20 @@ const readInstanceSettings = (dir: string): { gameId?: string; loader?: string; 
  * Identifies the game and (for Minecraft) the loader of an existing server folder, reusing the jar
  * detector, so importing does not require the user to know what they have.
  */
-export function inspectServerFolder(folderPath: string): FolderInspection {
-  const dir = path.resolve(folderPath);
-  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
-    throw new DaemonError('CONFIG_NOT_FOUND', `Directory "${dir}" does not exist.`);
+/**
+ * `expectedGameId` (the game chosen in the wizard) lets a user-picked file with an unconventional name be
+ * validated by that game; without it only conventional layouts are recognised.
+ */
+export function inspectServerFolder(folderOrFile: string, expectedGameId?: string): FolderInspection {
+  const target = path.resolve(folderOrFile);
+  if (!fs.existsSync(target)) {
+    throw new DaemonError('CONFIG_NOT_FOUND', `"${target}" does not exist.`);
   }
+  // Choosing the server file (e.g. a renamed .jar) is allowed: its folder is the server and the file
+  // name is kept so it can be launched as-is.
+  const isFile = fs.statSync(target).isFile();
+  const dir = isFile ? path.dirname(target) : target;
+  const launchFile = isFile ? path.basename(target) : undefined;
 
   const settings = readInstanceSettings(dir);
   let gameId: string | null = settings.gameId && driverRegistry.hasDriver(settings.gameId) ? settings.gameId : null;
@@ -46,6 +58,10 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
       .map((summary) => summary.id)
       .sort((a, b) => (a === fallback ? 1 : b === fallback ? -1 : 0));
     gameId = ids.find((id) => driverRegistry.getDriver(id).validateInstallation(dir)) ?? null;
+    // A chosen file is only trusted by the game the user said this server is.
+    if (!gameId && launchFile && expectedGameId && driverRegistry.hasDriver(expectedGameId)) {
+      if (driverRegistry.getDriver(expectedGameId).validateInstallation(dir, launchFile)) gameId = expectedGameId;
+    }
   }
 
   let loader: string | null = settings.loader ?? null;
@@ -53,7 +69,7 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
 
   // Game-specific details (loader, version) come from the driver, never from a game check here.
   if (gameId) {
-    const detected = driverRegistry.getDriver(gameId).inspectFolder?.(dir);
+    const detected = driverRegistry.getDriver(gameId).inspectFolder?.(dir, launchFile);
     loader = detected?.loader ?? loader;
     mcVersion = detected?.version ?? mcVersion;
   }
@@ -63,6 +79,7 @@ export function inspectServerFolder(folderPath: string): FolderInspection {
 
   return {
     path: dir,
+    launchFile: launchFile ?? null,
     suggestedName: path.basename(dir),
     gameId,
     loader,

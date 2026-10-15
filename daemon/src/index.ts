@@ -515,9 +515,9 @@ app.post('/api/instances/create', (req, res, next) => {
 
 app.post('/api/instances/inspect-folder', (req, res, next) => {
   try {
-    const { path: folderPath } = req.body as { path?: string };
+    const { path: folderPath, gameId } = req.body as { path?: string; gameId?: string };
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
-    res.json(inspectServerFolder(folderPath));
+    res.json(inspectServerFolder(folderPath, gameId));
   } catch (err) {
     next(err);
   }
@@ -529,7 +529,7 @@ app.post('/api/instances/import', (req, res, next) => {
     if (!folderPath) throw new DaemonError('INVALID_PAYLOAD', 'Folder path is required.');
 
     // Only folders a driver recognises can be imported: anything else would never start.
-    const inspection = inspectServerFolder(folderPath);
+    const inspection = inspectServerFolder(folderPath, gameId);
     if (!inspection.gameId) {
       throw new DaemonError('INVALID_FOLDER', 'This folder does not look like a supported game server.');
     }
@@ -540,9 +540,10 @@ app.post('/api/instances/import', (req, res, next) => {
       );
     }
 
-    const imported = instanceManager.importInstance(folderPath, name, inspection.gameId);
+    const imported = instanceManager.importInstance(inspection.path, name, inspection.gameId);
     const detected: Partial<InstanceSettings> = {
       gameId: inspection.gameId,
+      ...(inspection.launchFile ? { launchFile: inspection.launchFile } : {}),
       ...(inspection.loader ? { loader: inspection.loader } : {}),
       ...(inspection.mcVersion ? { loaderVersion: inspection.mcVersion } : {})
     };

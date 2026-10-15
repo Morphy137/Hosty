@@ -282,14 +282,14 @@
   },
   "import_server": {
     "modal_title": "Importar servidor existente",
-    "path_label": "Caminho da pasta do servidor",
-    "path_hint": "Caminho absoluto de uma pasta com server.properties ou server.jar.",
+    "path_label": "Caminho do arquivo do servidor",
+    "path_hint": "Escolha o arquivo que inicia o servidor (por exemplo server.jar, mesmo renomeado). Você também pode digitar o caminho de uma pasta.",
     "name_label": "Nome de exibição (opcional)",
     "submit_button": "Importar servidor",
     "submitting": "Importando...",
     "display_name_placeholder": "Nome de exibição personalizado (opcional)",
     "browse": "Procurar...",
-    "picker_title": "Selecione a pasta do servidor"
+    "picker_title": "Selecione o arquivo do servidor"
   },
   "properties": {
     "title": "Propriedades do servidor",

@@ -62,8 +62,8 @@ test('imports an existing server folder and detects its game', async ({ page }) 
 
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Continue' }).click(); // game step
-  await dialog.getByLabel('Server Folder Path').fill(folder);
-  await dialog.getByLabel('Server Folder Path').blur();
+  await dialog.getByLabel('Server File Path').fill(folder);
+  await dialog.getByLabel('Server File Path').blur();
   await expect(dialog.getByText(/Detected: minecraft/)).toBeVisible();
 
   await dialog.getByRole('button', { name: 'Continue' }).click();

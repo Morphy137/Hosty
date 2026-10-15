@@ -30,10 +30,11 @@ const OPTIONS: Array<{ id: WizardOrigin; icon: React.ReactNode; titleKey: string
   }
 ];
 
-async function pickFolder(title: string): Promise<string | null> {
+/** Lets the user pick the server file itself, so a renamed jar is launched with its real name. */
+async function pickServerFile(title: string): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   const { open } = await import('@tauri-apps/plugin-dialog');
-  const selected = await open({ directory: true, multiple: false, title });
+  const selected = await open({ directory: false, multiple: false, title });
   return typeof selected === 'string' ? selected : null;
 }
 
@@ -56,7 +57,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
 
     setIsInspecting(true);
     try {
-      const info = await inspectFolder(trimmed);
+      const info = await inspectFolder(trimmed, draft.gameId);
       if (info.gameId && info.gameId !== draft.gameId) {
         // Reject folders of another game up front instead of failing at install time.
         update({ importPath: folder, importInfo: null });
@@ -81,7 +82,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
 
   const handleBrowse = async () => {
     try {
-      const selected = await pickFolder(t('import_server.picker_title'));
+      const selected = await pickServerFile(t('import_server.picker_title'));
       if (selected) await runInspection(selected);
     } catch {
       // The picker is a convenience; the path can still be typed.
@@ -124,7 +125,7 @@ export const OriginStep: React.FC<OriginStepProps> = ({
               id="wizard-import-path"
               value={draft.importPath}
               disabled={disabled}
-              placeholder="C:\Servers\MyServer"
+              placeholder="C:\Servers\MyServer\server.jar"
               className="font-mono text-[12px]"
               onChange={(event) => update({ importPath: event.target.value, importInfo: null })}
               onBlur={() => draft.importPath.trim() && !draft.importInfo && void runInspection(draft.importPath)}

@@ -282,14 +282,14 @@
   },
   "import_server": {
     "modal_title": "मौजूदा सर्वर आयात करें",
-    "path_label": "सर्वर फ़ोल्डर पथ",
-    "path_hint": "server.properties या server.jar वाले फ़ोल्डर का पूरा पथ।",
+    "path_label": "सर्वर फ़ाइल पथ",
+    "path_hint": "सर्वर शुरू करने वाली फ़ाइल चुनें (जैसे server.jar, नाम बदला हो तब भी)। आप फ़ोल्डर का पथ भी लिख सकते हैं।",
     "name_label": "प्रदर्शन नाम (वैकल्पिक)",
     "submit_button": "सर्वर आयात करें",
     "submitting": "आयात हो रहा है...",
     "display_name_placeholder": "कस्टम प्रदर्शन नाम (वैकल्पिक)",
     "browse": "ब्राउज़ करें...",
-    "picker_title": "सर्वर फ़ोल्डर चुनें"
+    "picker_title": "सर्वर फ़ाइल चुनें"
   },
   "properties": {
     "title": "सर्वर प्रॉपर्टीज़",

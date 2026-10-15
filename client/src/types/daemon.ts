@@ -412,6 +412,8 @@ export interface JarInspection {
 
 export interface FolderInspection {
   path: string;
+  /** File picked to start the server (relative to `path`), null when a folder was chosen. */
+  launchFile?: string | null;
   suggestedName: string;
   gameId: string | null;
   loader: string | null;

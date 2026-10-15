@@ -279,14 +279,14 @@
   },
   "import_server": {
     "modal_title": "Import Existing Server",
-    "path_label": "Server Folder Path",
-    "path_hint": "Absolute path to a folder containing server.properties or server.jar.",
+    "path_label": "Server File Path",
+    "path_hint": "Choose the file that starts the server (for example server.jar, even if it was renamed). You can also type a folder path.",
     "name_label": "Display Name (optional)",
     "submit_button": "Import Server",
     "submitting": "Importing...",
     "display_name_placeholder": "Custom display name (optional)",
     "browse": "Browse...",
-    "picker_title": "Select the server folder"
+    "picker_title": "Select the server file"
   },
   "properties": {
     "title": "Server Properties",

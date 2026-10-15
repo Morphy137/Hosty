@@ -174,7 +174,7 @@ describe('CreateServerWizard', () => {
     const dialog = await screen.findByRole('dialog');
     // The wizard starts at the game step; the folder is then checked against the chosen game.
     await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
-    const input = await within(dialog).findByLabelText('Server Folder Path');
+    const input = await within(dialog).findByLabelText('Server File Path');
     await user.type(input, 'C:/servers/old');
     await user.tab();
 

@@ -107,8 +107,12 @@ export class MinecraftDriver extends DeclarativeGameDriver {
     if (!fs.existsSync(eulaPath)) fs.writeFileSync(eulaPath, 'eula=true\n', 'utf-8');
   }
 
-  public inspectFolder(instanceDir: string): { loader?: string | null; version?: string | null } {
-    const launch = resolveMinecraftLaunchTarget(instanceDir);
+  public inspectFolder(instanceDir: string, launchFile?: string): { loader?: string | null; version?: string | null } {
+    // A file chosen by the user wins over the conventional names.
+    const chosen = launchFile && fs.existsSync(path.join(instanceDir, launchFile)) ? launchFile : undefined;
+    const launch = chosen
+      ? ({ mode: 'jar', target: chosen } as const)
+      : resolveMinecraftLaunchTarget(instanceDir);
     if (launch?.mode === 'argsFile') {
       const versionDir = launch.target.split('/').slice(-2, -1)[0] ?? '';
       return {

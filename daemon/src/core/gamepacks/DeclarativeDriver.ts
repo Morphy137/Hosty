@@ -177,7 +177,11 @@ export class DeclarativeGameDriver implements IGameDriver {
     return null;
   }
 
-  public validateInstallation(instanceDir: string): boolean {
+  public validateInstallation(instanceDir: string, launchFile?: string): boolean {
+    // A file the user explicitly chose for this game counts as its launch file.
+    if (launchFile && this.manifest.launch.runtime === 'java' && /\.jar$/i.test(launchFile)) {
+      if (fs.existsSync(path.join(instanceDir, launchFile))) return true;
+    }
     const markers = [...(this.manifest.detect ?? []), ...this.executableCandidates()];
     if (markers.some((marker) => fs.existsSync(path.join(instanceDir, marker)))) return true;
     return this.discoverLaunch(path.resolve(instanceDir)) !== null;
