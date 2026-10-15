@@ -10,17 +10,36 @@
     "en": "Project Zomboid Dedicated Server (SteamCMD AppID 380870)",
     "es": "Servidor dedicado de Project Zomboid (SteamCMD AppID 380870)"
   },
-  "defaults": { "port": 16261, "maxPlayers": 32 },
-  "provision": { "type": "steamcmd", "appId": 380870 },
+  "defaults": {
+    "port": 16261,
+    "maxPlayers": 32
+  },
+  "provision": {
+    "type": "steamcmd",
+    "appId": 380870
+  },
   "launch": {
     "runtime": "native",
     "executable": {
       "win32": "ProjectZomboid64.exe|StartServer64.bat",
       "default": "start-server.sh"
     },
-    "args": ["-servername", "servertest", "-memory", "{{maxRamMb}}m", "-port", "{{port}}"]
+    "args": [
+      "-servername",
+      "servertest",
+      "-memory",
+      "{{maxRamMb}}m",
+      "-port",
+      "{{port}}"
+    ]
   },
-  "detect": ["ProjectZomboid64.exe", "StartServer64.bat", "start-server.sh", "ProjectZomboid64.json", "servertest.ini"],
+  "detect": [
+    "ProjectZomboid64.exe",
+    "StartServer64.bat",
+    "start-server.sh",
+    "ProjectZomboid64.json",
+    "servertest.ini"
+  ],
   "logs": {
     "ready": [
       "SERVER STARTED",
@@ -39,20 +58,49 @@
     ],
     "dimension": "knox_county"
   },
-  "commands": { "stop": "quit", "save": "save" },
-  "configFiles": [{ "path": "servertest.ini", "format": "ini" }],
+  "commands": {
+    "stop": "quit",
+    "save": "save"
+  },
+  "configFiles": [
+    {
+      "path": "servertest.ini",
+      "format": "ini"
+    }
+  ],
   "setup": [
     {
       "id": "pzBranch",
       "type": "select",
-      "label": { "en": "SteamCMD branch", "es": "Rama de SteamCMD" },
+      "label": {
+        "en": "SteamCMD branch",
+        "es": "Rama de SteamCMD"
+      },
       "default": "stable",
       "options": [
-        { "value": "stable", "label": { "en": "Public release (Build 41+)", "es": "Versión pública (Build 41+)" } },
-        { "value": "unstable", "label": { "en": "Unstable / Beta branch", "es": "Rama inestable / Beta" } }
+        {
+          "value": "stable",
+          "label": {
+            "en": "Public release (Build 41+)",
+            "es": "Versión pública (Build 41+)"
+          }
+        },
+        {
+          "value": "unstable",
+          "label": {
+            "en": "Unstable / Beta branch",
+            "es": "Rama inestable / Beta"
+          }
+        }
       ]
     }
   ],
-  "capabilities": { "players": true, "mods": true, "configEditor": true, "bridge": false },
-  "modFormat": "Steam Workshop / Lua"
+  "capabilities": {
+    "players": true,
+    "mods": true,
+    "configEditor": true,
+    "bridge": false
+  },
+  "modFormat": "Steam Workshop / Lua",
+  "logo": "logo.webp"
 }

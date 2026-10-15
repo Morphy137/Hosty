@@ -278,5 +278,7 @@
       },
       "defaultInstallDir": "mods"
     }
-  ]
+  ],
+  "logo": "logo.svg",
+  "extension": "minecraft"
 }

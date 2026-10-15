@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
-import { PropertiesParser } from '../parsers/PropertiesParser';
 import { driverRegistry } from './drivers/GameDriverRegistry';
+import { readSyncedValues, writeSyncedValues } from './ConfigSync';
 import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 
 const defaultGameId = (): string => driverRegistry.getDefaultGameId();
@@ -231,14 +231,8 @@ export class InstanceManager {
 
     // Keep the game's own config file in sync with the instance settings (declared by the driver).
     const sync = driverRegistry.getDriver(merged.gameId || defaultGameId()).summary.configSync;
-    if (sync && sync.format === 'properties') {
-      const updates: Record<string, string | number | boolean> = {};
-      if (patch.port !== undefined && sync.map.port) updates[sync.map.port] = patch.port;
-      if (patch.motd !== undefined && sync.map.motd) updates[sync.map.motd] = patch.motd;
-      if (patch.maxPlayers !== undefined && sync.map.maxPlayers) updates[sync.map.maxPlayers] = patch.maxPlayers;
-      if (Object.keys(updates).length > 0) {
-        PropertiesParser.updateFile(path.join(instance.dir, sync.file), updates);
-      }
+    if (sync) {
+      writeSyncedValues(instance.dir, sync, { port: patch.port, motd: patch.motd, maxPlayers: patch.maxPlayers });
     }
 
     return this.getInstance(id)!;
@@ -338,18 +332,16 @@ export class InstanceManager {
     const gameId = settings.gameId || defaultGameId();
     const driver = driverRegistry.getDriver(gameId);
 
-    const configSync = driver.summary.configSync;
-    const propsPath = configSync ? path.join(dir, configSync.file) : '';
     let port = settings.port ?? driver.summary.defaultPort ?? DEFAULT_PORT;
     let motd = settings.motd ?? id;
     let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers ?? DEFAULT_MAX_PLAYERS;
 
-    if (configSync && fs.existsSync(propsPath)) {
-      const values = PropertiesParser.readValues(propsPath);
-      const asNumber = (raw: string | undefined) => (raw !== undefined && raw !== '' && !isNaN(Number(raw)) ? Number(raw) : undefined);
-      if (configSync.map.port) port = asNumber(values[configSync.map.port]) ?? port;
-      if (configSync.map.motd && values[configSync.map.motd] !== undefined) motd = values[configSync.map.motd];
-      if (configSync.map.maxPlayers) maxPlayers = asNumber(values[configSync.map.maxPlayers]) ?? maxPlayers;
+    // The game's own config file wins over stored settings (it is what the server really uses).
+    if (driver.summary.configSync) {
+      const synced = readSyncedValues(dir, driver.summary.configSync);
+      port = synced.port ?? port;
+      motd = synced.motd ?? motd;
+      maxPlayers = synced.maxPlayers ?? maxPlayers;
     }
 
     const stat = fs.statSync(dir);

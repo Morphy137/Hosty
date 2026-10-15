@@ -11,6 +11,7 @@ import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSup
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
 import { SupervisorRegistry } from './core/SupervisorRegistry';
 import { ModCatalog } from './provisioning/ModCatalog';
+import { buildProvisionRunner } from './provisioning/InstallProviders';
 import { ModJarManager } from './core/ModJarManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
 import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
@@ -28,12 +29,11 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
-import { installWithSteamCmd } from './provisioning/SteamCmd';
 import net from 'net';
 
 const config = loadConfig();
 config.javaPath = resolveJavaExecutable(config.javaPath);
-driverRegistry.loadPacks(config.gamesDir);
+driverRegistry.loadPacks(config.gamesDir, config.bundledGamesDir);
 
 const app = express();
 app.use(
@@ -1037,30 +1037,27 @@ app.post('/api/instances/:id/provision', (req, res, next) => {
     if (!instance) throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" does not exist.`);
 
     const provision = driverRegistry.getDriver(instance.gameId).summary.provision;
-    if (!provision || provision.type !== 'steamcmd') {
-      throw new DaemonError('INVALID_PAYLOAD', 'This game does not use SteamCMD provisioning.');
+    const branch = (instance.gameConfig?.pzBranch as string | undefined) ?? instance.pzBranch;
+    // The game declares how its server files are obtained (steamcmd, download...); core only dispatches.
+    const runner = buildProvisionRunner(provision, {
+      instanceDir: instance.dir,
+      toolsDir: path.join(path.dirname(instancesRootDir), 'tools', 'steamcmd'),
+      branch
+    });
+    if (!runner) {
+      throw new DaemonError('INVALID_PAYLOAD', 'This game does not declare a server installation step.');
     }
     assertInstanceIdle(instance.id, 'install server software');
     if (provisionJobs.hasRunning()) {
       throw new DaemonError('INSTALL_IN_PROGRESS', 'An installation is already in progress.');
     }
 
-    const branch = (instance.gameConfig?.pzBranch as string | undefined) ?? instance.pzBranch;
     const jobId = startProvisionJob({
       instanceId: instance.id,
-      loader: provision.type,
-      version: branch ?? 'stable',
+      loader: runner.provider,
+      version: runner.version,
       javaPath: instance.javaPath || config.javaPath,
-      run: (hooks) =>
-        installWithSteamCmd(
-          {
-            appId: provision.appId,
-            branch,
-            installDir: instance.dir,
-            toolsDir: path.join(path.dirname(instancesRootDir), 'tools', 'steamcmd')
-          },
-          hooks
-        )
+      run: runner.run
     });
     res.status(202).json({ ok: true, jobId, instanceId: instance.id });
   } catch (err) {

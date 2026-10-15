@@ -88,3 +88,22 @@ Phase 1 is implemented: Minecraft is `builtin/minecraft.json` plus a thin `Minec
 setup fields exist in the daemon, the SDK types, the JSON schema and the docs. `InstanceManager`,
 `FolderInspector`, the bridge route and the wizard no longer contain game checks (the only remaining game id is
 the registry's configurable default). Phases 2-4 stay open.
+
+## Status (branch `feature/bundled-packs-installers`, 0.2.1)
+
+- **Phase 2 done.** Minecraft, Project Zomboid and Hytale are pack folders in `daemon/assets/games/<id>`
+  (manifest + logo), shipped as app resources (`bundle.resources`) and loaded by `loadBundledPacks` from
+  `MC_NEXUS_BUNDLED_GAMES_DIR` (default: next to the bridge assets). They are read-only and always trusted. The only
+  code is the `extension` hook: a bundled manifest may name an in-app extension (`BUNDLED_EXTENSIONS`, today
+  `minecraft`); user packs that set `extension` are rejected. Verified with a packaged sidecar.
+- **Phase 3 done (core part).** `provision` is a declared installer: `none`, `steamcmd` or `download`
+  (https + optional sha256), dispatched by `buildProvisionRunner` and the generic
+  `POST /api/instances/:id/provision`. The Minecraft loader catalog (versions per loader, Forge/NeoForge installers)
+  still runs through `/api/provisioning/*` and the `minecraft-install` client component.
+- **Phase 4 done.** `configSync` supports `properties`, `ini`, `json` and `toml` (`core/ConfigSync.ts`).
+
+### Still open
+
+- Move the Minecraft loader catalog behind a declared provider (`provision: { type: "catalog" }`) so the wizard
+  needs no `minecraft-install` component.
+- Compile an optional `driver.js` for bundled packs so extensions can live inside the pack folder.

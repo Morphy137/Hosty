@@ -64,6 +64,8 @@ export interface DaemonConfig {
   gamesDir: string;
   /** Folder with community UI translations (`<code>.json`), served to the client. */
   localesDir: string;
+  /** Games that ship with Hosty (read-only pack folders). */
+  bundledGamesDir: string;
   /** Translation packs shipped with Hosty (read-only); the user's `localesDir` overrides them. */
   bundledLocalesDir: string;
   /** When set, REST and WebSocket clients must present it (the desktop shell generates one per run). */
@@ -120,6 +122,10 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
     instanceDir: path.resolve(env.MC_NEXUS_INSTANCE_DIR?.trim() || resolveDefaultInstanceDir(env)),
     assetsDir: path.resolve(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()),
     gamesDir: path.resolve(env.MC_NEXUS_GAMES_DIR?.trim() || resolveDefaultGamesDir(env)),
+    bundledGamesDir: path.resolve(
+      env.MC_NEXUS_BUNDLED_GAMES_DIR?.trim() ||
+        path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'games')
+    ),
     localesDir: path.resolve(
       env.MC_NEXUS_LOCALES_DIR?.trim() ||
         path.join(path.dirname(env.MC_NEXUS_GAMES_DIR?.trim() || resolveDefaultGamesDir(env)), 'locales')

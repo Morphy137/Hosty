@@ -383,3 +383,38 @@ describe('extensible manifest surface', () => {
     expect(registry.getManifest('minecraft')?.playerQueries?.length).toBeGreaterThan(0);
   });
 });
+
+describe('bundled packs', () => {
+  it('loads Minecraft, Project Zomboid and Hytale from pack folders with logos', () => {
+    const registry = new GameDriverRegistry();
+    for (const id of ['minecraft', 'project-zomboid', 'hytale']) {
+      const info = registry.getPackInfos().find((pack) => pack.id === id);
+      expect(info, id).toMatchObject({ source: 'builtin', loaded: true, trusted: true });
+      expect(registry.getDriver(id).summary.hasLogo).toBe(true);
+      expect(registry.resolvePackFile(id, 'hosty-game.json')).toContain(path.join('assets', 'games', id));
+    }
+    expect(registry.getPackInfos().find((pack) => pack.id === 'minecraft')?.hasCode).toBe(true);
+  });
+
+  it('rejects the bundled-only `extension` field in user packs', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-ext-'));
+    const pack = path.join(root, 'games', 'sneaky');
+    fs.mkdirSync(pack, { recursive: true });
+    fs.writeFileSync(
+      path.join(pack, 'hosty-game.json'),
+      JSON.stringify({ ...validManifest, id: 'sneaky', name: 'Sneaky', extension: 'minecraft' })
+    );
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(path.join(root, 'games'));
+    const info = registry.getPackInfos().find((entry) => entry.id === 'sneaky');
+    expect(info?.loaded).toBe(false);
+    expect(info?.errors.join(' ')).toMatch(/reserved for packs bundled/);
+    expect(registry.hasDriver('sneaky')).toBe(false);
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('explains a missing bundled folder instead of failing obscurely', () => {
+    const registry = new GameDriverRegistry(path.join(os.tmpdir(), 'hosty-no-such-bundled-dir'));
+    expect(() => registry.getDriver('minecraft')).toThrow(/MC_NEXUS_BUNDLED_GAMES_DIR/);
+  });
+});

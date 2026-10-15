@@ -10,14 +10,27 @@
     "en": "Hytale Dedicated Server (engine spec & preview)",
     "es": "Servidor dedicado de Hytale (especificación y preview)"
   },
-  "defaults": { "port": 25565, "maxPlayers": 40 },
-  "provision": { "type": "none" },
+  "defaults": {
+    "port": 25565,
+    "maxPlayers": 40
+  },
+  "provision": {
+    "type": "none"
+  },
   "launch": {
     "runtime": "java",
     "executable": "HytaleServer.jar",
-    "args": ["--port", "{{port}}"]
+    "args": [
+      "--port",
+      "{{port}}"
+    ]
   },
-  "detect": ["HytaleServer.jar", "hytale-server.exe", "hytale-server", "config.json"],
+  "detect": [
+    "HytaleServer.jar",
+    "hytale-server.exe",
+    "hytale-server",
+    "config.json"
+  ],
   "logs": {
     "ready": [
       "Hytale Server started successfully",
@@ -37,8 +50,22 @@
     ],
     "dimension": "orbis"
   },
-  "commands": { "stop": "stop", "save": "save" },
-  "configFiles": [{ "path": "config.json", "format": "json" }],
-  "capabilities": { "players": true, "mods": true, "configEditor": true, "bridge": false },
-  "modFormat": "Hytale Mod Package / Script"
+  "commands": {
+    "stop": "stop",
+    "save": "save"
+  },
+  "configFiles": [
+    {
+      "path": "config.json",
+      "format": "json"
+    }
+  ],
+  "capabilities": {
+    "players": true,
+    "mods": true,
+    "configEditor": true,
+    "bridge": false
+  },
+  "modFormat": "Hytale Mod Package / Script",
+  "logo": "logo.webp"
 }

@@ -56,7 +56,8 @@
     ],
     "resources": {
       "../../daemon/assets/bridge/": "bridge/",
-      "../../daemon/assets/locales/": "locales/"
+      "../../daemon/assets/locales/": "locales/",
+      "../../daemon/assets/games/": "games/"
     }
   },
   "plugins": {

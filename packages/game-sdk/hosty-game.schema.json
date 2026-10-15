@@ -163,6 +163,30 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "url"
+          ],
+          "properties": {
+            "type": {
+              "const": "download"
+            },
+            "url": {
+              "type": "string",
+              "pattern": "^https://"
+            },
+            "filename": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[A-Fa-f0-9]{64}$"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -458,7 +482,10 @@
         },
         "format": {
           "enum": [
-            "properties"
+            "properties",
+            "ini",
+            "json",
+            "toml"
           ]
         },
         "map": {
@@ -575,6 +602,10 @@
           }
         }
       }
+    },
+    "extension": {
+      "type": "string",
+      "description": "Reserved for packs bundled with Hosty."
     }
   }
 }

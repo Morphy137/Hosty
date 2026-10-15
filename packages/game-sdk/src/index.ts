@@ -28,7 +28,11 @@ export interface ConfigFileManifest {
   label?: LocalizedText;
 }
 
-export type ProvisionSpec = { type: 'none' } | { type: 'steamcmd'; appId: number };
+export type ProvisionSpec =
+  | { type: 'none' }
+  | { type: 'steamcmd'; appId: number }
+  /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
+  | { type: 'download'; url: string; filename?: string; sha256?: string };
 
 export interface GameCapabilities {
   players: boolean;
@@ -65,7 +69,7 @@ export interface PlayerQuery {
 /** Keeps port / description / player limit in sync with a game config file. */
 export interface ConfigSync {
   file: string;
-  format: 'properties';
+  format: 'properties' | 'ini' | 'json' | 'toml';
   map: { port?: string; motd?: string; maxPlayers?: string };
 }
 
@@ -113,6 +117,8 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  /** Reserved for packs bundled with Hosty; user packs that set it are rejected. */
+  extension?: string;
   playerQueries?: PlayerQuery[];
   configSync?: ConfigSync;
   /** Loaders a Telemetry Bridge exists for. */

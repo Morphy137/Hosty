@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import type { ParsedLogEvent } from './IGameDriver';
-import minecraftManifest from '../gamepacks/builtin/minecraft.json';
 import { DeclarativeGameDriver } from '../gamepacks/DeclarativeDriver';
-import { validateManifest, type GameManifest } from '../gamepacks/manifest';
+import type { GameManifest } from '../gamepacks/manifest';
 import { inspectJar } from '../../provisioning/JarInspector';
 import { PropertiesParser } from '../../parsers/PropertiesParser';
 import {
@@ -54,19 +53,14 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
   return legacy ? { mode: 'jar', target: legacy } : null;
 }
 
-const validation = validateManifest(minecraftManifest);
-if (!validation.ok || !validation.manifest) {
-  throw new Error(`Invalid built-in Minecraft manifest: ${validation.errors.join('; ')}`);
-}
-
 /**
- * Minecraft is described by `builtin/minecraft.json` (launch discovery, player queries, config sync,
+ * Minecraft is described by the bundled pack `assets/games/minecraft` (launch discovery, player queries, config sync,
  * presets, mod catalog). Only what data cannot express lives here: richer log parsing (positions in
  * login lines), jar inspection and the default `server.properties`.
  */
 export class MinecraftDriver extends DeclarativeGameDriver {
-  constructor() {
-    super(validation.manifest as GameManifest, null, 'builtin');
+  constructor(manifest: GameManifest, packDir: string | null) {
+    super(manifest, packDir, 'builtin');
   }
 
   public override parseLogLine(line: string): ParsedLogEvent | null {

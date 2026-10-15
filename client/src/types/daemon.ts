@@ -232,7 +232,7 @@ export interface GameDriverSummary {
   configFiles: ConfigFileInfo[];
   launchDefaults?: { memoryMb?: number };
   /** Config file kept in sync with port / motd / player limit (also marks games with those settings). */
-  configSync?: { file: string; format: 'properties'; map: { port?: string; motd?: string; maxPlayers?: string } };
+  configSync?: { file: string; format: 'properties' | 'ini' | 'json' | 'toml'; map: { port?: string; motd?: string; maxPlayers?: string } };
   bridgeLoaders?: string[];
   jvmFlagPresets?: JvmFlagPreset[];
   modSources?: ModSourceInfo[];
@@ -241,7 +241,7 @@ export interface GameDriverSummary {
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;
   descriptionI18n?: Record<string, string>;
-  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number };
+  provision?: { type: 'none' } | { type: 'steamcmd'; appId: number } | { type: 'download'; url: string; filename?: string; sha256?: string };
 }
 
 export interface GameCapabilities {

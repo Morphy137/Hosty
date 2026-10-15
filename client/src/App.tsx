@@ -229,8 +229,8 @@ export default function App() {
         const created = await instances.createInstance(id, name, settings);
         await instances.selectInstance(created.id);
         const driver = games.find((candidate) => candidate.id === settings.gameId);
-        if (driver?.provision?.type === 'steamcmd') {
-          resetProvisionLogs([`[Provisioner] Installing ${driver.name} with SteamCMD...`]);
+        if (driver?.provision && driver.provision.type !== 'none') {
+          resetProvisionLogs([`[Provisioner] Installing ${driver.name}...`]);
           const started = await provisionInstance(created.id);
           await waitForProvisionJob(started.jobId);
           await instances.refresh();

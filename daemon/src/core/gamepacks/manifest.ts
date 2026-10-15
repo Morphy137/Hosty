@@ -31,7 +31,11 @@ export interface ManifestConfigFile {
   label?: LocalizedText;
 }
 
-export type ProvisionSpec = { type: 'none' } | { type: 'steamcmd'; appId: number };
+export type ProvisionSpec =
+  | { type: 'none' }
+  | { type: 'steamcmd'; appId: number }
+  /** One https file downloaded into the instance folder (optionally verified with `sha256`). */
+  | { type: 'download'; url: string; filename?: string; sha256?: string };
 
 /** An argument; objects are only included when `ifExists` (a path relative to the instance) exists. */
 export type LaunchArg = string | { arg: string; ifExists: string };
@@ -61,7 +65,7 @@ export interface PlayerQuery {
 /** Keeps port / description / player limit of the instance in sync with a game config file. */
 export interface ConfigSync {
   file: string;
-  format: 'properties';
+  format: 'properties' | 'ini' | 'json' | 'toml';
   map: { port?: string; motd?: string; maxPlayers?: string };
 }
 
@@ -111,6 +115,8 @@ export interface GameManifest {
     args?: string[];
     discover?: LaunchDiscovery[];
   };
+  /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
+  extension?: string;
   playerQueries?: PlayerQuery[];
   configSync?: ConfigSync;
   /** Loaders (or variants) a Telemetry Bridge artifact exists for. */
@@ -248,6 +254,10 @@ export function validateManifest(raw: unknown): ManifestValidation {
     }
   }
 
+  if (raw.extension !== undefined && (typeof raw.extension !== 'string' || !ID_PATTERN.test(raw.extension))) {
+    errors.push('extension must be an extension id (lowercase letters, digits and dashes)');
+  }
+
   if (raw.playerQueries !== undefined) {
     const queries = raw.playerQueries;
     if (
@@ -275,8 +285,8 @@ export function validateManifest(raw: unknown): ManifestValidation {
 
   if (raw.configSync !== undefined) {
     const sync = raw.configSync;
-    if (!isObject(sync) || !isSafeRelativePath(sync.file) || sync.format !== 'properties' || !isObject(sync.map)) {
-      errors.push('configSync must be { file (relative), format: "properties", map }');
+    if (!isObject(sync) || !isSafeRelativePath(sync.file) || !['properties', 'ini', 'json', 'toml'].includes(String(sync.format)) || !isObject(sync.map)) {
+      errors.push('configSync must be { file (relative), format (properties|ini|json|toml), map }');
     }
   }
 
@@ -288,8 +298,18 @@ export function validateManifest(raw: unknown): ManifestValidation {
     const provision = raw.provision;
     const valid =
       isObject(provision) &&
-      (provision.type === 'none' || (provision.type === 'steamcmd' && Number.isInteger(provision.appId)));
-    if (!valid) errors.push('provision must be { "type": "none" } or { "type": "steamcmd", "appId": <number> }');
+      (provision.type === 'none' ||
+        (provision.type === 'steamcmd' && Number.isInteger(provision.appId)) ||
+        (provision.type === 'download' &&
+          typeof provision.url === 'string' &&
+          /^https:\/\//i.test(provision.url) &&
+          (provision.filename === undefined || typeof provision.filename === 'string') &&
+          (provision.sha256 === undefined || /^[a-f0-9]{64}$/i.test(String(provision.sha256)))));
+    if (!valid) {
+      errors.push(
+        'provision must be { "type": "none" }, { "type": "steamcmd", "appId": <number> } or { "type": "download", "url": "https://...", "sha256"?: <hex> }'
+      );
+    }
   }
 
   if (raw.detect !== undefined && !(isStringList(raw.detect) && (raw.detect as string[]).every(isSafeRelativePath))) {
