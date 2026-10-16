@@ -14,6 +14,8 @@ import { ModCatalog, type ModSort } from './provisioning/ModCatalog';
 import { buildProvisionRunner } from './provisioning/InstallProviders';
 import { ModFileManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModFileManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
+import { CATALOG_PUBLIC_KEY } from './core/catalog/catalogKey';
+import { installFromCatalog, listCatalog } from './core/catalog/CatalogService';
 import { TelemetryBridgeManager, telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
 import { tokensMatch } from './core/bridge/BridgeAuth';
@@ -1162,6 +1164,27 @@ app.get('/api/games/:gameId/setup-schema', (req, res, next) => {
 
 app.get('/api/game-packs', (_req, res) => {
   res.json({ gamesDir: config.gamesDir, packs: driverRegistry.getPackInfos() });
+});
+
+const catalogSource = () => ({ baseUrl: config.catalogUrl, publicKey: CATALOG_PUBLIC_KEY });
+
+app.get('/api/catalog', async (_req, res, next) => {
+  try {
+    res.json({ url: config.catalogUrl, packs: await listCatalog(catalogSource(), driverRegistry.getPackInfos()) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/catalog/install', async (req, res, next) => {
+  try {
+    const { id } = req.body as { id?: unknown };
+    if (typeof id !== 'string' || !id) throw new DaemonError('INVALID_PAYLOAD', 'Pack id is required.');
+    const packs = await installFromCatalog(catalogSource(), id, driverRegistry);
+    res.json({ ok: true, gamesDir: config.gamesDir, packs });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post('/api/game-packs/reload', (_req, res) => {

@@ -436,6 +436,23 @@ describe('bundled packs', () => {
     expect(installedName()).toBe('Upgraded');
   });
 
+  it('keeps a newer version installed from the catalog when the app bundles an older one', () => {
+    const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
+    const games = freshGamesDir();
+    const writePack = (dir: string, version: string) => {
+      fs.mkdirSync(path.join(dir, 'valheim'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'valheim', 'hosty-game.json'), JSON.stringify({ ...validManifest, version }));
+    };
+    const installedVersion = () => JSON.parse(fs.readFileSync(path.join(games, 'valheim', 'hosty-game.json'), 'utf-8')).version;
+
+    writePack(bundled, '1.0.0');
+    new GameDriverRegistry().loadPacks(games, bundled);
+    writePack(games, '1.5.0'); // updated from the catalog
+    writePack(bundled, '1.1.0'); // the app update bundles something older than that
+    new GameDriverRegistry().loadPacks(games, bundled);
+    expect(installedVersion()).toBe('1.5.0');
+  });
+
   it('never overwrites a pack of the same id that the user installed first', () => {
     const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
     const games = freshGamesDir();
