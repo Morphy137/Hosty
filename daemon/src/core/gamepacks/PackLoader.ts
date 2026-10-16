@@ -6,6 +6,7 @@ import type { IGameDriver } from '../drivers/IGameDriver';
 import { DeclarativeGameDriver } from './DeclarativeDriver';
 import { validateManifest, type GameManifest } from './manifest';
 import { BUNDLED_EXTENSIONS } from './extensions';
+import { readJsonFile, writeJsonAtomic } from '../JsonStore';
 
 export const MANIFEST_FILE = 'hosty-game.json';
 export const DRIVER_FILE = 'driver.js';
@@ -51,11 +52,9 @@ export class PackLoader {
   }
 
   private readTrust(): TrustStore {
-    try {
-      return JSON.parse(fs.readFileSync(this.trustFile(), 'utf-8')) as TrustStore;
-    } catch {
-      return {};
-    }
+    // An unreadable store only means nothing is trusted: code packs stay off until approved again.
+    const stored = readJsonFile<TrustStore>(this.trustFile());
+    return stored.status === 'ok' ? stored.value : {};
   }
 
   /** Records approval of the current `driver.js` of a pack. Returns false when there is nothing to trust. */
@@ -67,8 +66,7 @@ export class PackLoader {
 
     const store = this.readTrust();
     store[packId] = sha256(driverFile);
-    fs.mkdirSync(this.gamesDir, { recursive: true });
-    fs.writeFileSync(this.trustFile(), JSON.stringify(store, null, 2), 'utf-8');
+    writeJsonAtomic(this.trustFile(), store);
     return true;
   }
 
@@ -116,7 +114,7 @@ export class PackLoader {
   public revoke(packId: string): void {
     const store = this.readTrust();
     delete store[packId];
-    if (fs.existsSync(this.gamesDir)) fs.writeFileSync(this.trustFile(), JSON.stringify(store, null, 2), 'utf-8');
+    if (fs.existsSync(this.gamesDir)) writeJsonAtomic(this.trustFile(), store);
   }
 
   private findPackDir(packId: string): string | null {

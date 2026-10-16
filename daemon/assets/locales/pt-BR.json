@@ -267,6 +267,8 @@
     "INVALID_LOADER": "Loader do servidor inválido.",
     "INVALID_FOLDER": "Esta pasta não é um servidor válido para o jogo selecionado.",
     "BRIDGE_ASSET_MISSING": "O arquivo do Telemetry Bridge não está presente nesta instalação do Hosty.",
+    "GAME_UNAVAILABLE": "O jogo deste servidor não está instalado ou não pôde ser carregado. Ative ou reinstale o pacote do jogo.",
+    "SETTINGS_CORRUPT": "O arquivo de configurações do servidor está danificado e não pôde ser recuperado. Verifique o instance.json na pasta do servidor.",
     "INSTALL_CANCELLED": "Instalação cancelada.",
     "INTERNAL_ERROR": "Erro interno. Consulte o log do daemon para mais detalhes.",
     "UNAUTHORIZED": "O daemon rejeitou a solicitação (token inválido).",

@@ -75,6 +75,8 @@ export interface GameDriverSummary {
   name: string;
   category: 'voxel' | 'survival' | 'sandbox';
   defaultPort: number;
+  /** Consecutive ports a server of this game uses, starting at its port (default 1). */
+  portStride?: number;
   defaultMaxPlayers: number;
   executableName: string;
   /** Launch arguments as declared (placeholders unrendered), for previews. */
@@ -188,6 +190,8 @@ export interface IGameDriver {
     maxPlayers?: number;
     name?: string;
     id?: string;
+    /** Installed variant (loader); restricts `launch.discover` entries that declare `variants`. */
+    loader?: string;
     /** Values of the game's setup fields; exposed to launch templates as `{{fieldId}}`. */
     gameConfig?: Record<string, string | number | boolean>;
   }): ProcessLaunchPlan;

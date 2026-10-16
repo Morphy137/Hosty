@@ -264,6 +264,8 @@
     "INVALID_LOADER": "Invalid server engine loader.",
     "INVALID_FOLDER": "This folder is not a valid server for the selected game.",
     "BRIDGE_ASSET_MISSING": "The Telemetry Bridge file is missing from this Hosty installation.",
+    "GAME_UNAVAILABLE": "The game of this server is not installed or failed to load. Enable or reinstall its game pack.",
+    "SETTINGS_CORRUPT": "The server settings file is damaged and could not be recovered. Check instance.json in the server folder.",
     "INSTALL_CANCELLED": "Installation cancelled.",
     "INTERNAL_ERROR": "Internal error. Check the daemon log for details.",
     "UNAUTHORIZED": "The daemon rejected the request (invalid token).",

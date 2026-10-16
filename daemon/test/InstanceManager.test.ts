@@ -141,5 +141,57 @@ describe('InstanceManager', () => {
     manager.createInstance('bad-icon', 'Bad');
     expect(() => manager.saveInstanceIcon('bad-icon', Buffer.from('not-a-png'))).toThrow(/PNG/);
   });
+
+  it('gives multi-port games non-overlapping port ranges', () => {
+    const manager = new InstanceManager(tmpDir);
+    expect(manager.createInstance('pz-1', 'PZ 1', { gameId: 'project-zomboid' }).port).toBe(16261);
+    // 16262 is the first server's second port.
+    expect(manager.createInstance('pz-2', 'PZ 2', { gameId: 'project-zomboid' }).port).toBe(16263);
+  });
+
+  it('lists a server whose game is not loaded as unavailable instead of as another game', () => {
+    const manager = new InstanceManager(tmpDir);
+    const dir = path.join(tmpDir, 'orphan');
+    fs.mkdirSync(dir);
+    fs.writeFileSync(path.join(dir, 'instance.json'), JSON.stringify({ name: 'Orphan', gameId: 'removed-game', port: 7777 }));
+
+    const orphan = manager.getInstance('orphan');
+    expect(orphan).toMatchObject({ gameId: 'removed-game', port: 7777, gameAvailable: false, hasJar: false });
+    expect(fs.existsSync(path.join(dir, 'server.properties'))).toBe(false);
+    expect(() => manager.updateInstanceSettings('orphan', { gameId: 'removed-game-2' })).toThrow(/not installed/);
+    // Renaming still works without touching any game config file.
+    expect(manager.updateInstanceSettings('orphan', { name: 'Renamed' }).name).toBe('Renamed');
+    expect(fs.existsSync(path.join(dir, 'server.properties'))).toBe(false);
+  });
+
+  it('recovers settings from the previous copy and refuses to overwrite unrecoverable ones', () => {
+    const manager = new InstanceManager(tmpDir);
+    manager.createInstance('safe', 'Safe', { gameId: 'project-zomboid', maxRamMb: 6144 });
+    manager.updateInstanceSettings('safe', { motd: 'v2' });
+    const settingsFile = path.join(tmpDir, 'safe', 'instance.json');
+
+    fs.writeFileSync(settingsFile, '{"name": "Sa');
+    expect(manager.getInstance('safe')).toMatchObject({ gameId: 'project-zomboid', maxRamMb: 6144, gameAvailable: true });
+
+    fs.writeFileSync(`${settingsFile}.bak`, 'garbage');
+    expect(manager.getInstance('safe')?.gameAvailable).toBe(false);
+    expect(() => manager.updateInstanceSettings('safe', { name: 'x' })).toThrow(DaemonError);
+    expect(fs.readFileSync(settingsFile, 'utf-8')).toBe('{"name": "Sa');
+  });
+
+  it('keeps a damaged registry aside instead of overwriting it with an empty one', () => {
+    const external = fs.mkdtempSync(path.join(os.tmpdir(), 'mc-nexus-ext-'));
+    try {
+      fs.writeFileSync(path.join(external, 'server.properties'), 'server-port=25565\n');
+      new InstanceManager(tmpDir).importInstance(external, 'Ext', 'minecraft');
+      fs.writeFileSync(path.join(tmpDir, 'instances_registry.json'), '{broken');
+      fs.rmSync(path.join(tmpDir, 'instances_registry.json.bak'), { force: true });
+
+      new InstanceManager(tmpDir).listInstances();
+      expect(fs.readdirSync(tmpDir).some((file) => file.startsWith('instances_registry.json.corrupt-'))).toBe(true);
+    } finally {
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
 });
 

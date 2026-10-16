@@ -12,16 +12,22 @@ interface SetupStepProps extends StepProps {
   onValidityChange: (valid: boolean) => void;
 }
 
+const isFilled = (value: string | number | boolean | undefined): boolean =>
+  value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+
 /** Game-specific step: rendered entirely from the driver's `setupSchema`. */
 export const SetupStep: React.FC<SetupStepProps> = ({ game, draft, update, disabled, javaMajor, onValidityChange }) => {
   const { t } = useTranslation();
   const customFields = game.setupSchema.filter((field) => field.type === 'custom');
   const plainFields = game.setupSchema.filter((field) => field.type !== 'custom');
+  const [customValid, setCustomValid] = React.useState(true);
 
-  // Schema-only games are always valid; custom components report their own validity.
+  // Required schema fields must have a value; custom components report their own validity.
+  const requiredFilled = plainFields.every((field) => !field.required || isFilled(draft.setupValues[field.id]));
+  const hasCustomFields = customFields.length > 0;
   React.useEffect(() => {
-    if (customFields.length === 0) onValidityChange(true);
-  }, [customFields.length, onValidityChange]);
+    onValidityChange((!hasCustomFields || customValid) && requiredFilled);
+  }, [customValid, hasCustomFields, onValidityChange, requiredFilled]);
 
   return (
     <div className="space-y-5">
@@ -45,7 +51,7 @@ export const SetupStep: React.FC<SetupStepProps> = ({ game, draft, update, disab
             update={update}
             disabled={disabled}
             javaMajor={javaMajor}
-            onValidityChange={onValidityChange}
+            onValidityChange={setCustomValid}
           />
         );
       })}

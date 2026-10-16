@@ -10,6 +10,8 @@ export type DaemonErrorCode =
   | 'UPSTREAM_ERROR'
   | 'INVALID_FOLDER'
   | 'BRIDGE_ASSET_MISSING'
+  | 'GAME_UNAVAILABLE'
+  | 'SETTINGS_CORRUPT'
   | 'INTERNAL_ERROR';
 
 const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
@@ -24,6 +26,8 @@ const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
   UPSTREAM_ERROR: 502,
   INVALID_FOLDER: 400,
   BRIDGE_ASSET_MISSING: 500,
+  GAME_UNAVAILABLE: 409,
+  SETTINGS_CORRUPT: 500,
   INTERNAL_ERROR: 500
 };
 

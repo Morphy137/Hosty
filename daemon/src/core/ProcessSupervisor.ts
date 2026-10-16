@@ -24,6 +24,8 @@ export interface ServerConfig {
   port?: number;
   maxPlayers?: number;
   gameConfig?: Record<string, string | number | boolean>;
+  /** Installed variant (loader), used to pick the right launch entry. */
+  loader?: string;
   /** Restart automatically (with backoff) when the process exits without being asked to. */
   autoRestart?: boolean;
   /** Restart the server every N hours while it runs; 0 or undefined disables it. */
@@ -72,7 +74,8 @@ export type SupervisorErrorCode =
   | 'JAVA_NOT_FOUND'
   | 'PROCESS_ERROR'
   | 'SERVER_NOT_ONLINE'
-  | 'ALREADY_RUNNING';
+  | 'ALREADY_RUNNING'
+  | 'GAME_UNAVAILABLE';
 
 export interface SupervisorFailure {
   code: SupervisorErrorCode;
@@ -104,6 +107,27 @@ const MAX_RESTART_BACKOFF_MS = 60_000;
 const DEFAULT_RESTART_WARN_MS = 30_000;
 const MS_PER_HOUR = 3_600_000;
 
+const WINDOWS_SCRIPT = /\.(bat|cmd)$/i;
+
+const quoteForCmd = (value: string): string => `"${value.replace(/"/g, '""')}"`;
+
+/**
+ * Node refuses to spawn `.bat`/`.cmd` files without a shell (EINVAL), so on Windows scripts run through
+ * `cmd.exe /d /s /c` with every argument quoted. Everything else is spawned directly.
+ */
+export function resolveSpawnCommand(
+  executable: string,
+  args: string[],
+  platform: NodeJS.Platform = process.platform,
+  comSpec: string = process.env.ComSpec || 'cmd.exe'
+): { executable: string; args: string[]; verbatim: boolean } {
+  if (platform !== 'win32' || !WINDOWS_SCRIPT.test(executable)) {
+    return { executable, args, verbatim: false };
+  }
+  const commandLine = [executable, ...args].map((part) => quoteForCmd(part.replace(/[\r\n]+/g, ' '))).join(' ');
+  return { executable: comSpec, args: ['/d', '/s', '/c', `"${commandLine}"`], verbatim: true };
+}
+
 export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private process: ChildProcessWithoutNullStreams | null = null;
   private metricsTimer: NodeJS.Timeout | null = null;
@@ -114,7 +138,8 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
   private readonly pendingQueries = new Set<string>();
   private readonly consoleBuffer: string[] = [];
   private status: ServerStatus = 'OFFLINE';
-  private driver: IGameDriver;
+  /** Null when the server's game is not loaded: the server is listed but cannot start. */
+  private driver: IGameDriver | null;
   /** True once the user (or a scheduled restart) asked for the process to stop. */
   private stopRequested = false;
   private crashAttempts = 0;
@@ -137,7 +162,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     driver?: IGameDriver
   ) {
     super();
-    this.driver = driver ?? driverRegistry.getDriver(config.gameId);
+    this.driver = driver ?? (config.gameId ? driverRegistry.findDriver(config.gameId) : driverRegistry.getDriver());
     this.consoleBuffer.push(...this.readPersistedConsole());
   }
 
@@ -192,7 +217,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     return this.status;
   }
 
-  public getDriver(): IGameDriver {
+  public getDriver(): IGameDriver | null {
     return this.driver;
   }
 
@@ -244,8 +269,9 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   public updateConfig(patch: Partial<ServerConfig>): void {
     Object.assign(this.config, patch);
-    if (patch.gameId) {
-      this.driver = driverRegistry.getDriver(patch.gameId);
+    // A running process keeps the driver it was launched with.
+    if (patch.gameId && !this.process) {
+      this.driver = driverRegistry.findDriver(patch.gameId);
     }
   }
 
@@ -267,8 +293,14 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       return;
     }
 
+    const driver = this.driver;
+    if (!driver) {
+      this.fail('GAME_UNAVAILABLE', `The game "${this.config.gameId}" is not installed or failed to load.`);
+      return;
+    }
+
     const workingDir = path.resolve(this.config.workingDir);
-    if (!this.driver.validateInstallation(workingDir, this.config.jarFile)) {
+    if (!driver.validateInstallation(workingDir, this.config.jarFile)) {
       this.fail('JAR_MISSING', `Server executable or valid installation not found at ${workingDir}.`);
       return;
     }
@@ -276,11 +308,27 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     this.stopRequested = false;
     this.clearCrashRestart();
     this.setStatus('STARTING');
-    const launchPlan = this.driver.buildLaunchPlan(this.config);
-    const child = this.spawnProcess(launchPlan.executable, launchPlan.args, {
-      cwd: launchPlan.cwd,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
+
+    let child: ChildProcessWithoutNullStreams;
+    try {
+      const launchPlan = driver.buildLaunchPlan(this.config);
+      const command = resolveSpawnCommand(launchPlan.executable, launchPlan.args);
+      child = this.spawnProcess(command.executable, command.args, {
+        cwd: launchPlan.cwd,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        windowsVerbatimArguments: command.verbatim
+      });
+    } catch (err) {
+      // Some failures (e.g. EINVAL for scripts, invalid arguments) are thrown synchronously by spawn.
+      const error = err as NodeJS.ErrnoException;
+      this.setStatus('OFFLINE');
+      if (error.code === 'ENOENT') {
+        this.fail('JAVA_NOT_FOUND', `Executable "${this.config.javaPath}" was not found. Install runtime or set correct path.`);
+      } else {
+        this.fail('PROCESS_ERROR', `The server could not be started: ${error.message}`);
+      }
+      return;
+    }
     this.process = child;
     this.attachProcessListeners(child);
     this.startMetrics();
@@ -304,6 +352,10 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     this.stopRequested = true;
     this.clearCrashRestart();
     if (!this.process || this.status === 'STOPPING') return;
+    if (!this.driver) {
+      this.kill();
+      return;
+    }
 
     if (this.config.forceSaveOnStop !== false) {
       try {
@@ -405,7 +457,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
     this.emitConsole(line);
 
-    const parsed = this.driver.parseLogLine(line);
+    const parsed = this.driver?.parseLogLine(line);
     if (!parsed) return;
 
     if (this.status === 'STARTING' && parsed.isReady) {
@@ -437,7 +489,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   /** Returns true when the line answered one of our own position/dimension queries. */
   private consumeQueryResponse(line: string): boolean {
-    if (this.driver.consumeQueryResponse) {
+    if (this.driver?.consumeQueryResponse) {
       const result = this.driver.consumeQueryResponse(line, this.pendingQueries);
       if (result) {
         this.updatePlayer(result.username, result.patch as Partial<PlayerState>);
@@ -459,7 +511,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
 
   private pollPlayerPositions(): void {
     if (!this.process || this.status !== 'ONLINE' || this.isBridgeConnected) return;
-    if (this.driver.pollPlayerPositions) {
+    if (this.driver?.pollPlayerPositions) {
       this.driver.pollPlayerPositions(
         this.process.stdin,
         Array.from(this.players.keys()),
@@ -585,7 +637,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     if (this.status !== 'ONLINE' || this.restartWarnTimer) return;
     const warnMs = this.config.restartWarnMs ?? DEFAULT_RESTART_WARN_MS;
     const seconds = Math.round(warnMs / 1000);
-    const broadcast = this.driver.buildBroadcastCommand?.(`Server restarting in ${seconds} seconds`);
+    const broadcast = this.driver?.buildBroadcastCommand?.(`Server restarting in ${seconds} seconds`);
     if (broadcast && this.process) this.process.stdin.write(broadcast);
     this.emitConsole(`[Hypervisor] Scheduled restart in ${seconds}s.`);
     this.restartWarnTimer = setTimeout(() => {

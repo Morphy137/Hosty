@@ -48,6 +48,16 @@ export function expandGlob(baseDir: string, pattern: string): string[] {
   return walk(baseDir, 0, []);
 }
 
+/** The most recently modified of `candidates` (paths relative to `baseDir`); later names win ties. */
+function newestFile(baseDir: string, candidates: string[]): string | undefined {
+  let newest: { file: string; mtimeMs: number } | undefined;
+  for (const file of candidates) {
+    const mtimeMs = fs.statSync(path.join(baseDir, file)).mtimeMs;
+    if (!newest || mtimeMs >= newest.mtimeMs) newest = { file, mtimeMs };
+  }
+  return newest?.file;
+}
+
 const toList = (value: string | string[] | undefined): string[] =>
   value === undefined ? [] : typeof value === 'string' ? [value] : value;
 
@@ -126,6 +136,7 @@ export class DeclarativeGameDriver implements IGameDriver {
       name: manifest.name,
       category: manifest.category ?? 'sandbox',
       defaultPort: manifest.defaults.port,
+      portStride: manifest.defaults.portStride,
       defaultMaxPlayers: manifest.defaults.maxPlayers,
       executableName: resolvePlatformValue(manifest.launch.executable),
       launchArgs: manifest.launch.args ?? [],
@@ -172,12 +183,19 @@ export class DeclarativeGameDriver implements IGameDriver {
     return resolved.split('|').map((entry) => entry.trim()).filter(Boolean);
   }
 
-  /** First `launch.discover` entry (for this platform) that matches a file in the instance. */
-  private discoverLaunch(cwd: string): { entry: LaunchDiscovery; match: string } | null {
+  /**
+   * First `launch.discover` entry (for this platform and, when known, the installed variant) that matches a file in
+   * the instance. Among several matches of one entry (e.g. two installed loader versions) the most recently
+   * written file wins: it belongs to the last installation.
+   */
+  private discoverLaunch(cwd: string, variant?: string): { entry: LaunchDiscovery; match: string } | null {
+    const wanted = variant?.toLowerCase();
     for (const entry of this.manifest.launch.discover ?? []) {
       if (entry.platform && entry.platform !== process.platform) continue;
+      if (wanted && entry.variants && !entry.variants.some((candidate) => candidate.toLowerCase() === wanted)) continue;
       const exclude = entry.exclude ? new RegExp(entry.exclude, 'i') : null;
-      const match = expandGlob(cwd, entry.glob).find((candidate) => !exclude || !exclude.test(path.basename(candidate)));
+      const matches = expandGlob(cwd, entry.glob).filter((candidate) => !exclude || !exclude.test(path.basename(candidate)));
+      const match = newestFile(cwd, matches);
       if (match) return { entry, match };
     }
     return null;
@@ -200,17 +218,21 @@ export class DeclarativeGameDriver implements IGameDriver {
 
     const candidates = this.executableCandidates();
     const executable = candidates.find((candidate) => fs.existsSync(path.join(cwd, candidate))) ?? candidates[0] ?? '';
-    const discovered = this.discoverLaunch(cwd);
+    const discovered = this.discoverLaunch(cwd, config.loader);
 
     const variables = {
       ...config.gameConfig,
       id: config.id,
       name: config.name,
       port: config.port ?? this.manifest.defaults.port,
+      /** The port after `port`, for games that listen on a second one. */
+      nextPort: (config.port ?? this.manifest.defaults.port) + 1,
       maxPlayers: config.maxPlayers ?? this.manifest.defaults.maxPlayers,
       minRamMb: minRam,
       maxRamMb: maxRam,
       ramMb: maxRam,
+      /** Absolute server folder, for games that keep data elsewhere unless told (e.g. a cache dir flag). */
+      instanceDir: cwd,
       match: discovered?.match
     };
     const renderArgs = (args: LaunchArg[]): string[] =>

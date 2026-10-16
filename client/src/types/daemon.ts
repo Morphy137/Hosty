@@ -239,6 +239,8 @@ export interface GameDriverSummary {
   name: string;
   category: 'voxel' | 'survival' | 'sandbox';
   defaultPort: number;
+  /** Consecutive ports a server of this game uses, starting at its port (default 1). */
+  portStride?: number;
   defaultMaxPlayers: number;
   executableName: string;
   /** Launch arguments as declared (placeholders unrendered). */
@@ -339,6 +341,8 @@ export interface InstanceInfo {
   bridgeConnected?: boolean;
   bridgeInstalled?: boolean;
   bridgeSupported?: boolean;
+  /** False when the server's game is not loaded or its settings are damaged: it cannot be started. */
+  gameAvailable?: boolean;
 }
 
 export interface InstancesResponse {

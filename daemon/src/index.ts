@@ -5,7 +5,7 @@ import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { finished } from 'stream/promises';
+import { pipeline } from 'stream/promises';
 import { loadConfig } from './config/env';
 import { ProcessSupervisor, PlayerState, ServerMetrics } from './core/ProcessSupervisor';
 import { InstanceManager, type InstanceSettings } from './core/InstanceManager';
@@ -103,6 +103,11 @@ const registry = new SupervisorRegistry({
 // Directory of the active instance. Without one, the instances root must never be treated as a
 // server folder (mods/config routes would create stray folders that then show up as servers).
 const hasActiveInstance = () => instanceManager.getActiveInstanceId() !== '';
+/** Lists stay empty (instead of failing) for a server whose game is not loaded. */
+const activeGameLoaded = (): boolean => {
+  const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
+  return instance !== null && driverRegistry.findDriver(instance.gameId) !== null;
+};
 const getActiveDir = () => {
   if (!hasActiveInstance()) {
     throw new DaemonError('CONFIG_NOT_FOUND', 'No server instance is selected.');
@@ -774,7 +779,13 @@ const inspectRequestFile = async (
   installer: GameInstaller
 ): Promise<{ tempPath: string; inspection: InstallFileInfo }> => {
   const tempPath = path.join(os.tmpdir(), `hosty-upload-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  await finished(req.pipe(fs.createWriteStream(tempPath)));
+  try {
+    // `pipeline` fails (instead of hanging) when the client aborts the upload.
+    await pipeline(req, fs.createWriteStream(tempPath));
+  } catch (err) {
+    fs.rmSync(tempPath, { force: true });
+    throw err;
+  }
   return { tempPath, inspection: installer.inspectFile(tempPath) };
 };
 
@@ -943,7 +954,7 @@ app.post('/api/instances/upload-server-file', async (req, res, next) => {
 
 app.get('/api/mods/files', (_req, res, next) => {
   try {
-    res.json(hasActiveInstance() ? ModFileManager.listModFiles(getActiveDir(), activeModLayout()) : []);
+    res.json(activeGameLoaded() ? ModFileManager.listModFiles(getActiveDir(), activeModLayout()) : []);
   } catch (err) {
     next(err);
   }
@@ -985,7 +996,7 @@ const activeModLayout = (): ModLayout => {
 // Mod Configurations API (/config/*.toml, *.json)
 app.get('/api/mods/configs', (_req, res, next) => {
   try {
-    res.json(hasActiveInstance() ? ModConfigParser.listConfigs(getActiveDir(), activeModLayout().configDir) : []);
+    res.json(activeGameLoaded() ? ModConfigParser.listConfigs(getActiveDir(), activeModLayout().configDir) : []);
   } catch (err) {
     next(err);
   }
@@ -1251,11 +1262,12 @@ const getDeclaredConfigFile = (relativePath: unknown) => {
 app.get('/api/config-files', (_req, res, next) => {
   try {
     const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
-    if (!instance) {
+    const driver = instance ? driverRegistry.findDriver(instance.gameId) : null;
+    if (!instance || !driver) {
       res.json([]);
       return;
     }
-    const files = driverRegistry.getDriver(instance.gameId).summary.configFiles.map((declared) => ({
+    const files = driver.summary.configFiles.map((declared) => ({
       ...declared,
       exists: fs.existsSync(resolveConfigPath(instance.dir, declared.path))
     }));

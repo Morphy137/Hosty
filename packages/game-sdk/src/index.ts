@@ -58,6 +58,8 @@ export interface LaunchDiscovery {
   /** `jar` runs `java -jar <match>`; `args` (default) uses only the listed args (`{{match}}` = matched path). */
   mode?: 'args' | 'jar';
   args?: LaunchArg[];
+  /** Variants (loaders) this entry belongs to; skipped when the server runs another variant. */
+  variants?: string[];
 }
 
 /** A command sent for each online player; named groups of the answer update the player's state. */
@@ -194,14 +196,15 @@ export interface GameManifest {
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';
-  defaults: { port: number; maxPlayers: number; memoryMb?: number };
+  /** `portStride`: consecutive ports one server uses (e.g. 2 when it also listens on `port + 1`). */
+  defaults: { port: number; maxPlayers: number; memoryMb?: number; portStride?: number };
   provision?: ProvisionSpec;
   launch: {
     /** `native` runs the executable directly; `java` runs `java -jar <executable>` with RAM flags. */
     runtime?: 'native' | 'java';
     /** Use `a|b` inside a platform value to list fallbacks (first existing file wins). */
     executable: PlatformValue;
-    /** Placeholders: {{id}} {{name}} {{port}} {{maxPlayers}} {{minRamMb}} {{maxRamMb}} {{ramMb}} */
+    /** Placeholders: {{id}} {{name}} {{port}} {{nextPort}} {{maxPlayers}} {{minRamMb}} {{maxRamMb}} {{ramMb}} {{instanceDir}} */
     args?: string[];
     discover?: LaunchDiscovery[];
   };
@@ -372,7 +375,9 @@ export function steamCmdArgs(options: { appId: number; installDir: string; branc
 
 export interface PackHarness {
   /** Arguments the daemon would pass for the given instance values. */
-  launchArgs(values?: Partial<Record<'id' | 'name' | 'port' | 'maxPlayers' | 'minRamMb' | 'maxRamMb', string | number>>): string[];
+  launchArgs(
+    values?: Partial<Record<'id' | 'name' | 'port' | 'maxPlayers' | 'minRamMb' | 'maxRamMb' | 'instanceDir', string | number>>
+  ): string[];
   parseLog(line: string): LogEvent | null;
   stopCommand(): string;
   saveCommand(): string;
@@ -413,6 +418,8 @@ export function createPackHarness(manifest: GameManifest): PackHarness {
         ...values
       } as Record<string, string | number | undefined>;
       variables.ramMb = variables.maxRamMb;
+      variables.nextPort = Number(variables.port) + 1;
+      variables.instanceDir ??= '/path/to/server';
       return (manifest.launch.args ?? []).map((arg) => renderTemplate(arg, variables));
     },
     parseLog(line) {

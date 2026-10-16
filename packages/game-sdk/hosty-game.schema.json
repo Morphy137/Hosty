@@ -134,6 +134,12 @@
         "memoryMb": {
           "type": "integer",
           "minimum": 256
+        },
+        "portStride": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Consecutive ports one server uses (e.g. 2 when it also listens on port + 1)."
         }
       },
       "additionalProperties": false
@@ -271,6 +277,14 @@
                     }
                   ]
                 }
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Variants (loaders) this entry belongs to; skipped when the server runs another variant."
               }
             }
           }

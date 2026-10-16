@@ -267,6 +267,8 @@
     "INVALID_LOADER": "服务器加载器无效。",
     "INVALID_FOLDER": "此文件夹不是所选游戏的有效服务器。",
     "BRIDGE_ASSET_MISSING": "此 Hosty 安装缺少遥测桥文件。",
+    "GAME_UNAVAILABLE": "此服务器的游戏未安装或加载失败。请启用或重新安装其游戏包。",
+    "SETTINGS_CORRUPT": "服务器设置文件已损坏且无法恢复。请检查服务器文件夹中的 instance.json。",
     "INSTALL_CANCELLED": "安装已取消。",
     "INTERNAL_ERROR": "内部错误。请查看守护进程日志了解详情。",
     "UNAUTHORIZED": "守护进程拒绝了请求（令牌无效）。",

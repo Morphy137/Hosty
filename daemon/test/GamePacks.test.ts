@@ -451,7 +451,8 @@ describe('bundled packs', () => {
     registry.setPackEnabled('project-zomboid', false);
     expect(registry.listDrivers()).toEqual([]);
     expect(registry.getDefaultGameId()).toBe('');
-    expect(() => registry.getDriver('minecraft')).toThrow(/No game drivers/);
+    expect(() => registry.getDriver()).toThrow(/No game drivers/);
+    expect(() => registry.getDriver('minecraft')).toThrow(/not installed/);
 
     // Turning one back on makes it the default again.
     registry.setPackEnabled('hytale', true);
@@ -478,7 +479,7 @@ describe('bundled packs', () => {
 
   it('explains a missing bundled folder instead of failing obscurely', () => {
     const registry = new GameDriverRegistry(path.join(os.tmpdir(), 'hosty-no-such-bundled-dir'));
-    expect(() => registry.getDriver('minecraft')).toThrow(/MC_NEXUS_BUNDLED_GAMES_DIR/);
+    expect(() => registry.getDriver()).toThrow(/MC_NEXUS_BUNDLED_GAMES_DIR/);
   });
 });
 
@@ -512,7 +513,8 @@ describe('declared layout, actions and defaults', () => {
     }
     const registry = new GameDriverRegistry(root);
     expect(registry.getDefaultGameId()).toBe('omega');
-    expect(registry.getDriver('does-not-exist').id).toBe('omega');
+    expect(registry.getDriver().id).toBe('omega');
+    expect(() => registry.getDriver('does-not-exist')).toThrow(/not installed/);
     fs.rmSync(root, { recursive: true, force: true });
   });
 
