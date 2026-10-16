@@ -1,6 +1,6 @@
 [package]
 name = "hosty"
-version = "0.3.0"
+version = "0.3.1"
 description = "Hosty Desktop Game Server Manager"
 authors = ["you"]
 license = ""
