@@ -129,12 +129,21 @@ export default function App() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
-  const modFiles = useModFiles(connectionState, instances.activeId, handleError);
+  const modFiles = useModFiles(
+    connectionState,
+    instances.activeId,
+    handleError,
+    `${instances.activeInstance?.bridgeInstalled ?? false}:${instances.activeInstance?.loader ?? ''}`
+  );
   // Bridge-only features appear only when the connected bridge advertised them (or in mock mode).
   const canInspectInventory =
     (metrics.bridgeCapabilities?.includes('inventory.view') ?? false) || (health?.mockEnabled ?? false);
   const configFiles = useConfigFiles(connectionState, instances.activeId, handleError);
-  const modConfigs = useModConfigs(connectionState, handleError);
+  const modConfigs = useModConfigs(
+    connectionState,
+    handleError,
+    `${instances.activeId}:${instances.activeInstance?.bridgeInstalled ?? false}:${instances.activeInstance?.loader ?? ''}`
+  );
 
   const activeError = lastError || localError;
 

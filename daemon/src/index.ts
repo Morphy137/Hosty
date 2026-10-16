@@ -974,8 +974,12 @@ app.delete('/api/mods/files/:filename', (req, res, next) => {
 // Mods/config folders of the active instance, as declared by its game.
 const activeModLayout = (): ModLayout => {
   const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
-  const declared = instance ? driverRegistry.getDriver(instance.gameId).summary.modLayout : undefined;
-  return { ...DEFAULT_MOD_LAYOUT, ...declared };
+  const summary = instance ? driverRegistry.getDriver(instance.gameId).summary : undefined;
+  const layout: ModLayout = { ...DEFAULT_MOD_LAYOUT, ...summary?.modLayout };
+  // Loaders with their own add-on folder (e.g. plugins/) list that folder instead of mods/.
+  const loaderTarget = instance?.loader ? summary?.bridgeTargets?.[instance.loader] : undefined;
+  if (loaderTarget && instance?.loader !== 'default') layout.modsDir = loaderTarget.dir;
+  return layout;
 };
 
 // Mod Configurations API (/config/*.toml, *.json)

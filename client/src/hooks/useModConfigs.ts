@@ -16,7 +16,9 @@ export interface ModConfigsState {
 
 export function useModConfigs(
   connectionState: SocketConnectionState,
-  onError: (error: unknown) => void
+  onError: (error: unknown) => void,
+  /** Changes when the viewed server or its installed add-ons change, so the list refetches. */
+  refreshKey: string | number = ''
 ): ModConfigsState {
   const [files, setFiles] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState('');
@@ -55,7 +57,7 @@ export function useModConfigs(
     return () => {
       ignore = true;
     };
-  }, [connectionState, onError, selectFile]);
+  }, [connectionState, onError, selectFile, refreshKey]);
 
   const updateEntry = useCallback((key: string, value: ConfigValue) => {
     setEntries((previous) => updateEntryValue(previous, key, value));
