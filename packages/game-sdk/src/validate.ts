@@ -6,6 +6,11 @@
 
 export const GAME_PACK_API_VERSION = 1;
 
+export interface PackAuthor {
+  name: string;
+  url?: string;
+}
+
 export type LocalizedText = string | Record<string, string>;
 
 export type PlatformValue = string | { win32?: string; linux?: string; darwin?: string; default?: string };
@@ -247,6 +252,8 @@ export interface GameManifest {
   version: string;
   logo?: string;
   description?: LocalizedText;
+  /** Who made the pack; `url` (https) is shown as a link, usually to their GitHub profile or repository. */
+  author?: PackAuthor;
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';
@@ -394,6 +401,20 @@ export function validateManifest(raw: unknown): ManifestValidation {
   if (typeof raw.version !== 'string' || !raw.version.trim()) errors.push('version is required');
   if (raw.logo !== undefined && !isSafeRelativePath(raw.logo)) errors.push('logo must be a relative path inside the pack');
   if (raw.description !== undefined && !isLocalized(raw.description)) errors.push('description must be text or a language map');
+  if (raw.author !== undefined) {
+    const author = raw.author;
+    const validUrl = (value: unknown): boolean => {
+      if (typeof value !== 'string') return false;
+      try {
+        return new URL(value).protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+    if (!isObject(author) || typeof author.name !== 'string' || !author.name.trim() || (author.url !== undefined && !validUrl(author.url))) {
+      errors.push('author must be { name, url? } with an https url');
+    }
+  }
   if (raw.status !== undefined && !['available', 'beta', 'coming_soon'].includes(String(raw.status))) {
     errors.push('status must be available, beta or coming_soon');
   }

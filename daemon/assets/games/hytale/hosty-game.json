@@ -3,6 +3,7 @@
   "id": "hytale",
   "name": "Hytale",
   "version": "1.0.0",
+  "author": { "name": "Hosty", "url": "https://github.com/Morphy137/Hosty" },
   "badge": "HY",
   "category": "voxel",
   "status": "coming_soon",

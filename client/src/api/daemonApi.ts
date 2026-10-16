@@ -19,6 +19,7 @@ import type {
   InstallFileInfo,
   FolderInspection,
   ConfigFileInfo,
+  CatalogPack,
   GamePackInfo,
   ProvisionJobState
 } from '../types/daemon';
@@ -319,6 +320,14 @@ export function installCatalogMod(
     `/api/instances/${encodeURIComponent(instanceId)}/mods/install`,
     { source: sourceId, projectId, versionId }
   );
+}
+
+export function fetchCatalog(): Promise<{ url: string; packs: CatalogPack[] }> {
+  return request<{ url: string; packs: CatalogPack[] }>('/api/catalog');
+}
+
+export function installCatalogPack(id: string): Promise<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }> {
+  return postJson<{ ok: boolean; gamesDir: string; packs: GamePackInfo[] }>('/api/catalog/install', { id });
 }
 
 export function fetchGamePackManifest(packId: string): Promise<Record<string, unknown>> {

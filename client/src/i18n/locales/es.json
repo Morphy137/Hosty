@@ -464,7 +464,7 @@
   },
   "packs": {
     "title": "Paquetes de juegos",
-    "description": "Los juegos son complementos. Los juegos integrados se listan como referencia; instala más eligiendo una carpeta de pack.",
+    "description": "Los juegos son complementos. Explora el catálogo firmado o instala un pack desde una carpeta; desactiva o quita los que no uses.",
     "folder_hint": "Carpeta de juegos:",
     "empty": "Todavía no hay paquetes de juegos instalados.",
     "reload": "Recargar paquetes",
@@ -483,7 +483,33 @@
     "uninstall": "Desinstalar pack",
     "template_placeholder": "Id del nuevo pack (p. ej. mi-juego)",
     "template_button": "Nuevo pack desde plantilla",
-    "open_folder": "Abrir carpeta de juegos"
+    "open_folder": "Abrir carpeta de juegos",
+    "tab_installed": "Instalados",
+    "tab_catalog": "Catálogo",
+    "by": "por",
+    "show_details": "Ver detalles",
+    "hide_details": "Ocultar detalles",
+    "detail_id": "ID",
+    "detail_version": "Versión",
+    "detail_installed": "Instalada",
+    "detail_category": "Categoría",
+    "detail_size": "Tamaño de descarga",
+    "detail_folder": "Carpeta",
+    "detail_description": "Descripción",
+    "category": {
+      "voxel": "Vóxel",
+      "survival": "Supervivencia",
+      "sandbox": "Sandbox"
+    },
+    "verified": "Verificado",
+    "verified_hint": "Publicado en el catálogo firmado de Hosty. Cada archivo se comprueba contra su firma antes de instalarlo.",
+    "has_code": "Incluye código",
+    "catalog_hint": "Packs del catálogo firmado de Hosty. Cada archivo se verifica antes de instalarse.",
+    "catalog_retry": "Reintentar",
+    "catalog_empty": "El catálogo aún no tiene packs.",
+    "install_catalog": "Instalar",
+    "update": "Actualizar",
+    "up_to_date": "Instalado"
   },
   "mod_catalog": {
     "title": "Buscar mods",

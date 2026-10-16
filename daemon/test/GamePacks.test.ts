@@ -436,6 +436,23 @@ describe('bundled packs', () => {
     expect(installedName()).toBe('Upgraded');
   });
 
+  it('keeps a newer version installed from the catalog when the app bundles an older one', () => {
+    const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
+    const games = freshGamesDir();
+    const writePack = (dir: string, version: string) => {
+      fs.mkdirSync(path.join(dir, 'valheim'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'valheim', 'hosty-game.json'), JSON.stringify({ ...validManifest, version }));
+    };
+    const installedVersion = () => JSON.parse(fs.readFileSync(path.join(games, 'valheim', 'hosty-game.json'), 'utf-8')).version;
+
+    writePack(bundled, '1.0.0');
+    new GameDriverRegistry().loadPacks(games, bundled);
+    writePack(games, '1.5.0'); // updated from the catalog
+    writePack(bundled, '1.1.0'); // the app update bundles something older than that
+    new GameDriverRegistry().loadPacks(games, bundled);
+    expect(installedVersion()).toBe('1.5.0');
+  });
+
   it('never overwrites a pack of the same id that the user installed first', () => {
     const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
     const games = freshGamesDir();
@@ -531,6 +548,14 @@ describe('declared layout, actions and defaults', () => {
     expect(registry.getDriver().id).toBe('omega');
     expect(() => registry.getDriver('does-not-exist')).toThrow(/not installed/);
     fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('accepts an author with an https link and rejects anything else', () => {
+    expect(validateManifest({ ...validManifest, author: { name: 'Ana', url: 'https://github.com/ana' } }).ok).toBe(true);
+    expect(validateManifest({ ...validManifest, author: { name: 'Ana' } }).ok).toBe(true);
+    for (const author of [{ name: '' }, { name: 'Ana', url: 'http://github.com/ana' }, { name: 'Ana', url: 'javascript:alert(1)' }, 'Ana']) {
+      expect(validateManifest({ ...validManifest, author }).ok, JSON.stringify(author)).toBe(false);
+    }
   });
 
   it('rejects malformed player actions, folders and bridge targets', () => {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, FolderInput, FolderOpen, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { FolderInput, FolderOpen, Plus, RefreshCw } from 'lucide-react';
 import {
   createGamePackFromTemplate,
   fetchGamePacks,
@@ -14,10 +14,13 @@ import {
 import { isTauriRuntime } from '../../config/daemon';
 import { Input } from '../ui/Input';
 import type { GamePackInfo } from '../../types/daemon';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
-import { Switch } from '../ui/Switch';
+import { Tabs, type TabItem } from '../ui/Tabs';
+import { CatalogPacks } from '../packs/CatalogPacks';
+import { InstalledPackCard } from '../packs/InstalledPackCard';
+
+type PacksTab = 'installed' | 'catalog';
 
 const PACK_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
 
@@ -37,6 +40,9 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
   const [hasLoaded, setHasLoaded] = useState(false);
   const [installPath, setInstallPath] = useState('');
   const [templateId, setTemplateId] = useState('');
+  const [tab, setTab] = useState<PacksTab>('installed');
+  // Bumped when packs change outside the catalog tab so it shows the right installed state next time.
+  const [catalogRefresh, setCatalogRefresh] = useState(0);
   // Toggles are optimistic and only lock their own switch, so the rest of the dialog never flashes.
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -54,7 +60,10 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
         const result = await operation();
         setPacks(result.packs);
         if (result.gamesDir) setGamesDir(result.gamesDir);
-        if (notify) onChangedRef.current();
+        if (notify) {
+          onChangedRef.current();
+          setCatalogRefresh((value) => value + 1);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -91,6 +100,11 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
     void Promise.resolve().then(() => run(fetchGamePacks, false));
   }, [open, run]);
 
+  const tabItems: TabItem<PacksTab>[] = [
+    { id: 'installed', label: t('packs.tab_installed') },
+    { id: 'catalog', label: t('packs.tab_catalog') }
+  ];
+
   return (
     <Dialog
       open={open}
@@ -111,151 +125,101 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
       }
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Input
-            value={installPath}
-            placeholder={t('packs.install_placeholder')}
-            className="font-mono text-[12px]"
-            onChange={(event) => setInstallPath(event.target.value)}
-          />
-          {isTauriRuntime() && (
+        <Tabs items={tabItems} value={tab} onValueChange={setTab} />
+        {tab === 'installed' ? (
+          <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Input
+              value={installPath}
+              placeholder={t('packs.install_placeholder')}
+              className="font-mono text-[12px]"
+              onChange={(event) => setInstallPath(event.target.value)}
+            />
+            {isTauriRuntime() && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  const { open: openDialog } = await import('@tauri-apps/plugin-dialog');
+                  const selected = await openDialog({ directory: true, multiple: false, title: t('packs.install_title') });
+                  if (typeof selected === 'string') setInstallPath(selected);
+                }}
+              >
+                {t('import_server.browse')}
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              disabled={!installPath.trim()}
+              loading={isBusy}
+              leadingIcon={<FolderInput className="h-3.5 w-3.5" />}
+              onClick={() =>
+                void run(() => installGamePack(installPath.trim()), true).then(() => setInstallPath(''))
+              }
+            >
+              {t('packs.install_button')}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input
+              value={templateId}
+              placeholder={t('packs.template_placeholder')}
+              className="font-mono text-[12px]"
+              onChange={(event) => setTemplateId(event.target.value.toLowerCase())}
+            />
             <Button
               variant="secondary"
-              onClick={async () => {
-                const { open: openDialog } = await import('@tauri-apps/plugin-dialog');
-                const selected = await openDialog({ directory: true, multiple: false, title: t('packs.install_title') });
-                if (typeof selected === 'string') setInstallPath(selected);
-              }}
+              disabled={!PACK_ID_PATTERN.test(templateId.trim())}
+              loading={isBusy}
+              leadingIcon={<Plus className="h-3.5 w-3.5" />}
+              onClick={() =>
+                void run(() => createGamePackFromTemplate(templateId.trim()), true).then(() => setTemplateId(''))
+              }
             >
-              {t('import_server.browse')}
+              {t('packs.template_button')}
             </Button>
-          )}
-          <Button
-            variant="primary"
-            disabled={!installPath.trim()}
-            loading={isBusy}
-            leadingIcon={<FolderInput className="h-3.5 w-3.5" />}
-            onClick={() =>
-              void run(() => installGamePack(installPath.trim()), true).then(() => setInstallPath(''))
-            }
-          >
-            {t('packs.install_button')}
-          </Button>
-        </div>
+            <Button
+              variant="secondary"
+              leadingIcon={<FolderOpen className="h-3.5 w-3.5" />}
+              onClick={() => void openGamePacksFolder().catch((err) => setError(err instanceof Error ? err.message : String(err)))}
+            >
+              {t('packs.open_folder')}
+            </Button>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Input
-            value={templateId}
-            placeholder={t('packs.template_placeholder')}
-            className="font-mono text-[12px]"
-            onChange={(event) => setTemplateId(event.target.value.toLowerCase())}
+          <p className="flex items-start gap-2 text-[12px] text-soft">
+            <FolderOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />
+            <span>
+              {t('packs.folder_hint')} <code className="font-mono text-ink">{gamesDir}</code>
+            </span>
+          </p>
+
+          {error && <p className="text-[12px] text-danger-fg">{error}</p>}
+          {packs.length === 0 && hasLoaded && !isBusy && <p className="text-[13px] text-mute">{t('packs.empty')}</p>}
+
+          <ul className="space-y-2">
+            {packs.map((pack) => (
+              <InstalledPackCard
+                key={pack.id ?? pack.dir}
+                pack={pack}
+                isBusy={isBusy}
+                isToggling={togglingId === pack.id}
+                onToggle={(packId, enabled) => void togglePack(packId, enabled)}
+                onUninstall={(packId) => void run(() => uninstallGamePack(packId), true)}
+                onTrust={(packId) => void run(() => trustGamePack(packId), true)}
+              />
+            ))}
+          </ul>
+          </div>
+        ) : (
+          <CatalogPacks
+            refreshKey={catalogRefresh}
+            onInstalled={(installed) => {
+              setPacks(installed);
+              onChangedRef.current();
+            }}
           />
-          <Button
-            variant="secondary"
-            disabled={!PACK_ID_PATTERN.test(templateId.trim())}
-            loading={isBusy}
-            leadingIcon={<Plus className="h-3.5 w-3.5" />}
-            onClick={() =>
-              void run(() => createGamePackFromTemplate(templateId.trim()), true).then(() => setTemplateId(''))
-            }
-          >
-            {t('packs.template_button')}
-          </Button>
-          <Button
-            variant="secondary"
-            leadingIcon={<FolderOpen className="h-3.5 w-3.5" />}
-            onClick={() => void openGamePacksFolder().catch((err) => setError(err instanceof Error ? err.message : String(err)))}
-          >
-            {t('packs.open_folder')}
-          </Button>
-        </div>
-
-        <p className="flex items-start gap-2 text-[12px] text-soft">
-          <FolderOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mute" />
-          <span>
-            {t('packs.folder_hint')} <code className="font-mono text-ink">{gamesDir}</code>
-          </span>
-        </p>
-
-        {error && <p className="text-[12px] text-danger-fg">{error}</p>}
-        {packs.length === 0 && hasLoaded && !isBusy && <p className="text-[13px] text-mute">{t('packs.empty')}</p>}
-
-        <ul className="space-y-2">
-          {packs.map((pack) => (
-            <li key={pack.id ?? pack.dir} className="rounded-[8px] border border-hairline bg-surface-2 p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[13px] font-semibold text-ink">{pack.name ?? pack.dir}</span>
-                    {pack.version && <span className="font-mono text-[11px] text-mute">v{pack.version}</span>}
-                  </div>
-                  <div className="truncate font-mono text-[11px] text-mute">{pack.id ?? pack.dir}</div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {pack.loaded ? (
-                    <Badge variant="success">{t('packs.loaded')}</Badge>
-                  ) : pack.enabled === false ? (
-                    <Badge variant="neutral">{t('packs.disabled')}</Badge>
-                  ) : (
-                    <Badge variant="danger">{t('packs.invalid')}</Badge>
-                  )}
-                  {pack.id && (
-                    <button
-                      type="button"
-                      aria-label={t('packs.uninstall')}
-                      title={t('packs.uninstall')}
-                      className="cursor-pointer rounded-[4px] p-1 text-mute hover:bg-surface-3 hover:text-danger-fg"
-                      onClick={() => void run(() => uninstallGamePack(pack.id as string), true)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  {pack.hasCode && (
-                    <Badge variant={pack.trusted ? 'accent' : 'warning'}>
-                      {pack.trusted ? t('packs.code_trusted') : t('packs.code_untrusted')}
-                    </Badge>
-                  )}
-                  {pack.id && (pack.loaded || pack.enabled === false) && (
-                    <Switch
-                      checked={pack.enabled !== false}
-                      busy={togglingId === pack.id}
-                      disabled={isBusy}
-                      ariaLabel={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
-                      title={pack.enabled === false ? t('packs.enable') : t('packs.disable')}
-                      onCheckedChange={(next) => void togglePack(pack.id as string, next)}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {pack.errors.length > 0 && (
-                <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[12px] text-danger-fg">
-                  {pack.errors.map((message) => (
-                    <li key={message}>{message}</li>
-                  ))}
-                </ul>
-              )}
-
-              {pack.hasCode && !pack.trusted && pack.id && (
-                <div className="mt-3 flex items-start gap-3 rounded-[6px] border border-warning bg-warning-soft p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                  <div className="space-y-2 text-[12px]">
-                    <p className="leading-relaxed text-soft">{t('packs.trust_warning')}</p>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={isBusy}
-                      leadingIcon={<ShieldCheck className="h-3.5 w-3.5" />}
-                      onClick={() => void run(() => trustGamePack(pack.id as string), true)}
-                    >
-                      {t('packs.trust_button')}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        )}
       </div>
     </Dialog>
   );

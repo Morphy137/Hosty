@@ -34,3 +34,13 @@ export function formatUptime(totalSeconds: number): string {
   parts.push(`${seconds}s`);
   return parts.join(' ');
 }
+
+const BYTES_PER_KB = 1024;
+
+/** File size for the UI: `820 B`, `11 KB`, `1.4 MB`. */
+export function formatBytes(bytes: number): string {
+  if (bytes < BYTES_PER_KB) return `${bytes} B`;
+  const kilobytes = bytes / BYTES_PER_KB;
+  if (kilobytes < BYTES_PER_KB) return `${Math.round(kilobytes)} KB`;
+  return `${(kilobytes / BYTES_PER_KB).toFixed(1)} MB`;
+}

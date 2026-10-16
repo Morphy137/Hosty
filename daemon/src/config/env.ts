@@ -1,6 +1,7 @@
 import os from 'os';
 import path from 'path';
 import dotenv from 'dotenv';
+import { DEFAULT_CATALOG_URL } from '../core/catalog/catalogKey';
 
 dotenv.config({ quiet: true });
 
@@ -69,6 +70,8 @@ export interface DaemonConfig {
   bundledGamesDir: string;
   /** Starter pack copied by "New pack from template". */
   packTemplateDir: string;
+  /** Base URL of the signed game catalog (`MC_NEXUS_CATALOG_URL`). */
+  catalogUrl: string;
   /** Translation packs shipped with Hosty (read-only); the user's `localesDir` overrides them. */
   bundledLocalesDir: string;
   /** When set, REST and WebSocket clients must present it (the desktop shell generates one per run). */
@@ -129,6 +132,7 @@ export const loadConfig = (env: Env = process.env): DaemonConfig => {
       env.MC_NEXUS_BUNDLED_GAMES_DIR?.trim() ||
         path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'games')
     ),
+    catalogUrl: env.MC_NEXUS_CATALOG_URL?.trim() || DEFAULT_CATALOG_URL,
     packTemplateDir: path.resolve(
       path.join(path.dirname(env.MC_NEXUS_ASSETS_DIR?.trim() || resolveDefaultAssetsDir()), 'pack-template')
     ),

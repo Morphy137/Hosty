@@ -105,10 +105,14 @@ export class GameDriverRegistry {
     return this.getPackInfos();
   }
 
-  /** Installs a pack folder into the games folder and reloads. Throws a readable message on failure. */
-  public installPack(sourceDir: string): PackInfo[] {
+  /**
+   * Installs a pack folder into the games folder and reloads. Throws a readable message on failure. `trustCode`
+   * approves the pack's `driver.js` right away; only for packs whose files were verified against the signed catalog.
+   */
+  public installPack(sourceDir: string, options: { trustCode?: boolean } = {}): PackInfo[] {
     if (!this.loader) throw new Error('Game packs are not enabled.');
-    this.loader.install(sourceDir);
+    const { id } = this.loader.install(sourceDir);
+    if (options.trustCode) this.loader.trust(id);
     return this.reloadAll();
   }
 

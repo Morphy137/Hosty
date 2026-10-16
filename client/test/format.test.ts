@@ -34,3 +34,13 @@ describe('Format utilities', () => {
     expect(formatUptime(90061)).toBe('1d 1h 1m 1s');
   });
 });
+
+describe('formatBytes', () => {
+  it('uses bytes, kilobytes and megabytes', async () => {
+    const { formatBytes } = await import('../src/utils/format');
+    expect(formatBytes(820)).toBe('820 B');
+    expect(formatBytes(11167)).toBe('11 KB');
+    expect(formatBytes(544372)).toBe('532 KB');
+    expect(formatBytes(1_468_006)).toBe('1.4 MB');
+  });
+});

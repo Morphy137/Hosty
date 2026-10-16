@@ -22,6 +22,15 @@ export function isNewerVersion(candidate: string, current: string): boolean {
   return false;
 }
 
+const readInstalledVersion = (packDir: string): string | null => {
+  try {
+    const manifest = JSON.parse(fs.readFileSync(path.join(packDir, MANIFEST_FILE), 'utf-8')) as { version?: unknown };
+    return typeof manifest.version === 'string' ? manifest.version : null;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Copies the game packs that ship with Hosty into the games folder, where they load like any other pack. A pack is
  * copied the first time it is seen and replaced when the bundled one has a higher version; one the user removed or
@@ -54,7 +63,9 @@ export function seedBundledPacks(bundledDir: string, gamesDir: string, loader: P
     const installedDir = path.join(gamesDir, manifest.id);
     const previousVersion = seeded[manifest.id];
     const isFirstSeed = previousVersion === undefined && !fs.existsSync(installedDir);
-    const isUpgrade = previousVersion !== undefined && fs.existsSync(installedDir) && isNewerVersion(manifest.version, previousVersion);
+    // Only replace what is older than the bundled pack: a newer version installed from the catalog is kept.
+    const installedVersion = readInstalledVersion(installedDir);
+    const isUpgrade = previousVersion !== undefined && installedVersion !== null && isNewerVersion(manifest.version, installedVersion);
     if (!isFirstSeed && !isUpgrade) continue;
 
     loader.install(source);

@@ -97,6 +97,16 @@
     "description": {
       "$ref": "#/$defs/localized"
     },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://" }
+      },
+      "additionalProperties": false,
+      "description": "Who made the pack; url is shown as a link."
+    },
     "badge": {
       "type": "string",
       "maxLength": 4

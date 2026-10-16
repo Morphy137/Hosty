@@ -4,7 +4,7 @@ import { createRequire } from 'module';
 import path from 'path';
 import type { IGameDriver } from '../drivers/IGameDriver';
 import { DeclarativeGameDriver } from './DeclarativeDriver';
-import { validateManifest, type GameManifest } from './manifest';
+import { validateManifest, type GameManifest, type LocalizedText, type PackAuthor } from './manifest';
 import { readJsonFile, writeJsonAtomic } from '../JsonStore';
 
 export const MANIFEST_FILE = 'hosty-game.json';
@@ -15,6 +15,10 @@ export interface PackInfo {
   id: string | null;
   name: string | null;
   version: string | null;
+  /** Shown on the pack's card: who made it (with an optional https link), what it is and its category. */
+  author: PackAuthor | null;
+  description: LocalizedText | null;
+  category: string | null;
   dir: string;
   /** The pack ships a `driver.js` that runs with full permissions. */
   hasCode: boolean;
@@ -148,6 +152,9 @@ export class PackLoader {
         id: null,
         name: null,
         version: null,
+        author: null,
+        description: null,
+        category: null,
         dir,
         hasCode: fs.existsSync(path.join(dir, DRIVER_FILE)),
         trusted: false,
@@ -176,6 +183,9 @@ export class PackLoader {
       info.id = manifest.id;
       info.name = manifest.name;
       info.version = manifest.version;
+      info.author = manifest.author ?? null;
+      info.description = manifest.description ?? null;
+      info.category = manifest.category ?? null;
 
       const base = new DeclarativeGameDriver(manifest, dir);
       let driver: IGameDriver = base;

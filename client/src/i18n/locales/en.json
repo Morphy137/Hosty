@@ -464,7 +464,7 @@
   },
   "packs": {
     "title": "Game packs",
-    "description": "Games are add-ons. Built-in games are listed for reference; install more by choosing a pack folder.",
+    "description": "Games are add-ons. Browse the signed catalog or install a pack from a folder; disable or remove the ones you do not use.",
     "folder_hint": "Games folder:",
     "empty": "No game packs installed yet.",
     "reload": "Reload packs",
@@ -483,7 +483,33 @@
     "uninstall": "Uninstall pack",
     "template_placeholder": "New pack id (e.g. my-game)",
     "template_button": "New pack from template",
-    "open_folder": "Open games folder"
+    "open_folder": "Open games folder",
+    "tab_installed": "Installed",
+    "tab_catalog": "Catalog",
+    "by": "by",
+    "show_details": "Show details",
+    "hide_details": "Hide details",
+    "detail_id": "ID",
+    "detail_version": "Version",
+    "detail_installed": "Installed",
+    "detail_category": "Category",
+    "detail_size": "Download size",
+    "detail_folder": "Folder",
+    "detail_description": "Description",
+    "category": {
+      "voxel": "Voxel",
+      "survival": "Survival",
+      "sandbox": "Sandbox"
+    },
+    "verified": "Verified",
+    "verified_hint": "Published in the signed Hosty catalog. Every file was checked against its signature before installing.",
+    "has_code": "Includes code",
+    "catalog_hint": "Packs from the signed Hosty catalog. Each file is verified before it is installed.",
+    "catalog_retry": "Retry",
+    "catalog_empty": "The catalog has no packs yet.",
+    "install_catalog": "Install",
+    "update": "Update",
+    "up_to_date": "Installed"
   },
   "mod_catalog": {
     "title": "Find mods",

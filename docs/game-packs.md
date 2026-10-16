@@ -127,6 +127,16 @@ Overridable methods: `validateInstallation`, `buildLaunchPlan`, `buildStopComman
 A curated community index (a `hosty-games` repository with reviewed packs, hashes and signatures) is the
 intended next step; it is not part of this version.
 
+## Catalog
+
+The **Catalog** tab of *Game packs* lists the packs published in the signed `Hosty-Games` catalog and installs or
+updates them in one click. A pack is installed only if the catalog index verifies against the public key built into
+the app and every file matches the SHA-256 and size the index declares; a pack's `driver.js` from the catalog is
+approved automatically because that signature covers its hash. Point the app to another catalog with
+`MC_NEXUS_CATALOG_URL`. To publish packs, see [catalog/README.md](../catalog/README.md).
+
+Set `author: { "name": "...", "url": "https://github.com/you" }` in your manifest so the cards show who made the pack.
+
 ## Testing a pack
 
 ```ts
@@ -148,6 +158,7 @@ test('detects joins', () => {
 | `GET /api/games/:id/logo` | Pack logo image. |
 | `GET /api/games/:id/setup-schema` | Setup fields of a game. |
 | `GET /api/game-packs`, `POST /api/game-packs/reload` | List / rescan packs. |
+| `GET /api/catalog`, `POST /api/catalog/install` | Signed catalog (with installed and update state) / install or update a pack from it (`{ id }`). |
 | `POST /api/game-packs/install` `{ path }` | Validate and copy a pack folder into the games folder (code is never auto-trusted). |
 | `DELETE /api/game-packs/:id` | Uninstall an installed pack (refused while servers use it). |
 | `GET /api/locales`, `GET /api/locales/:code` | UI translation packs: `<localesDir>/<code>.json` with optional `_meta.name`; partial packs fall back to English. |
