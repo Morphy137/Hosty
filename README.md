@@ -8,7 +8,7 @@
 
 Create, run and manage dedicated servers on your own PC — no terminals, no config-file hunting, no headaches.
 
-![Version](https://img.shields.io/badge/version-0.5.1--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.3.0--alpha-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
@@ -85,7 +85,7 @@ npm run tauri:dev
 
 ## Project status
 
-Hosty is in **alpha** (`0.5.x`) and evolving quickly. Feedback and ideas are very welcome. See [docs/releasing.md](docs/releasing.md) for platform status and code signing.
+Hosty is in **alpha** (`0.3.x`) and evolving quickly. Feedback and ideas are very welcome. See [docs/releasing.md](docs/releasing.md) for platform status and code signing.
 
 ## License
 
