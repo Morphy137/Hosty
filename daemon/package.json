@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "predev": "npm run build:games",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "build:games": "node scripts/build-games.mjs",

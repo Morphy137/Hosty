@@ -14,7 +14,7 @@ import {
 } from '../src/extensions/minecraft/ModLoaderCatalog';
 import { ProvisionJobManager } from '../src/provisioning/ProvisionJobs';
 import { resolveMinecraftLaunchTarget } from '../src/extensions/minecraft/MinecraftDriver';
-import { GameDriverRegistry } from '../src/core/drivers/GameDriverRegistry';
+import { createSeededRegistry } from './helpers/packs';
 import { InstanceManager } from '../src/core/InstanceManager';
 
 const entries = (files: Record<string, string>) => ({
@@ -141,7 +141,7 @@ describe('MinecraftDriver launch targets', () => {
   });
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  const driver = new GameDriverRegistry().getDriver('minecraft');
+  const driver = createSeededRegistry().getDriver('minecraft');
 
   it('launches server.jar with -jar', () => {
     fs.writeFileSync(path.join(dir, 'server.jar'), '');

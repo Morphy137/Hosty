@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { validateManifest } from '../src/core/gamepacks/manifest';
 import { DeclarativeGameDriver, expandGlob, renderTemplate, resolvePlatformValue } from '../src/core/gamepacks/DeclarativeDriver';
 import { GameDriverRegistry } from '../src/core/drivers/GameDriverRegistry';
+import { BUNDLED_GAMES_DIR, createSeededRegistry } from './helpers/packs';
 import { readConfigFile, resolveConfigPath, writeConfigFile } from '../src/core/ConfigFileEditor';
 import { buildSteamCmdArgs } from '../src/provisioning/SteamCmd';
 
@@ -88,7 +89,6 @@ describe('DeclarativeGameDriver', () => {
     const summary = driver().summary;
     expect(summary.capabilities).toEqual({ players: true, mods: false, configEditor: false, bridge: false });
     expect(summary.defaultPort).toBe(2456);
-    expect(summary.source).toBe('pack');
   });
 
   it('runs java packs as java -jar with RAM flags', () => {
@@ -129,18 +129,15 @@ describe('pack loading and trust', () => {
     if (driverCode) fs.writeFileSync(path.join(dir, 'driver.js'), driverCode);
   };
 
-  it('registers valid packs, reports invalid ones and protects built-ins', () => {
+  it('registers valid packs and reports invalid ones', () => {
     writePack('valheim', validManifest);
     writePack('broken', { apiVersion: 1, id: 'x' });
-    writePack('minecraft', { ...validManifest, id: 'minecraft' });
 
     const registry = new GameDriverRegistry();
     const infos = registry.loadPacks(gamesDir);
 
     expect(registry.hasDriver('valheim')).toBe(true);
-    expect(registry.getDriver('minecraft').summary.source).toBe('builtin');
     expect(infos.find((i) => i.dir.endsWith('broken'))?.errors.length).toBeGreaterThan(0);
-    expect(infos.find((i) => i.id === 'minecraft')?.errors.join(' ')).toContain('built-in');
   });
 
   it('never runs driver.js until the user trusts that exact file', () => {
@@ -152,17 +149,17 @@ describe('pack loading and trust', () => {
     const registry = new GameDriverRegistry();
     registry.loadPacks(gamesDir);
     expect(fs.existsSync(marker)).toBe(false);
-    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0]).toMatchObject({ hasCode: true, trusted: false, loaded: true });
+    expect(registry.getPackInfos()[0]).toMatchObject({ hasCode: true, trusted: false, loaded: true });
     expect(registry.getDriver('valheim').buildStopCommand()).toBe('\u0003');
 
     expect(registry.trustPack('valheim')).toBe(true);
-    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0].trusted).toBe(true);
+    expect(registry.getPackInfos()[0].trusted).toBe(true);
     expect(registry.getDriver('valheim').buildStopCommand()).toBe('custom-stop\n');
 
     // Editing the code invalidates the approval.
     fs.appendFileSync(path.join(gamesDir, 'valheim', 'driver.js'), '\n// changed');
     registry.reloadPacks();
-    expect(registry.getPackInfos().filter((pack) => pack.source === 'external')[0].trusted).toBe(false);
+    expect(registry.getPackInfos()[0].trusted).toBe(false);
   });
 });
 
@@ -216,10 +213,10 @@ describe('SteamCMD', () => {
   });
 });
 
-describe('pack install, uninstall and built-in listing', () => {
-  it('lists built-in games as read-only entries', () => {
-    const registry = new GameDriverRegistry();
-    const ids = registry.getPackInfos().filter((pack) => pack.source === 'builtin').map((pack) => pack.id);
+describe('pack install, uninstall and seeding', () => {
+  it('copies the bundled games into the games folder as packs', () => {
+    const registry = createSeededRegistry();
+    const ids = registry.getPackInfos().map((pack) => pack.id);
     expect(ids).toEqual(expect.arrayContaining(['minecraft', 'project-zomboid', 'hytale']));
   });
 
@@ -241,7 +238,7 @@ describe('pack install, uninstall and built-in listing', () => {
 
     expect(registry.uninstallPack('demo-game')).toBe(true);
     expect(registry.hasDriver('demo-game')).toBe(false);
-    expect(registry.uninstallPack('minecraft')).toBe(false);
+    expect(registry.uninstallPack('demo-game')).toBe(false);
     fs.rmSync(root, { recursive: true, force: true });
   });
 });
@@ -381,7 +378,7 @@ describe('extensible manifest surface', () => {
   });
 
   it('describes Minecraft entirely through the manifest surface', () => {
-    const registry = new GameDriverRegistry();
+    const registry = createSeededRegistry();
     expect(registry.getDefaultGameId()).toBe('minecraft');
     const summary = registry.getDriver('minecraft').summary;
     expect(summary.configSync?.map.port).toBe('server-port');
@@ -394,34 +391,70 @@ describe('extensible manifest surface', () => {
 });
 
 describe('bundled packs', () => {
-  it('loads Minecraft, Project Zomboid and Hytale from pack folders with logos', () => {
-    const registry = new GameDriverRegistry();
+  const freshGamesDir = (): string => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-seed-')), 'games');
+
+  it('loads Minecraft, Project Zomboid and Hytale from the games folder with logos', () => {
+    const registry = createSeededRegistry();
     for (const id of ['minecraft', 'project-zomboid', 'hytale']) {
       const info = registry.getPackInfos().find((pack) => pack.id === id);
-      expect(info, id).toMatchObject({ source: 'builtin', loaded: true, trusted: true });
+      expect(info, id).toMatchObject({ loaded: true, enabled: true });
       expect(registry.getDriver(id).summary.hasLogo).toBe(true);
-      expect(registry.resolvePackFile(id, 'hosty-game.json')).toContain(path.join('assets', 'games', id));
+      expect(registry.resolvePackFile(id, 'hosty-game.json')).toContain('hosty-games-');
     }
-    expect(registry.getPackInfos().find((pack) => pack.id === 'minecraft')?.hasCode).toBe(true);
+    expect(registry.getPackInfos().find((pack) => pack.id === 'minecraft')).toMatchObject({ hasCode: true, trusted: true });
   });
 
-  it('keeps bundled games in the list after reloading user packs', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-reload-'));
+  it('does not bring back a bundled game the user uninstalled', () => {
+    const games = freshGamesDir();
     const registry = new GameDriverRegistry();
-    registry.loadPacks(path.join(root, 'games'));
-    const ids = registry.reloadAll().map((pack) => pack.id);
-    expect(ids).toEqual(expect.arrayContaining(['minecraft', 'project-zomboid', 'hytale']));
-    fs.rmSync(root, { recursive: true, force: true });
+    registry.loadPacks(games, BUNDLED_GAMES_DIR);
+    expect(registry.uninstallPack('hytale')).toBe(true);
+
+    const restarted = new GameDriverRegistry();
+    restarted.loadPacks(games, BUNDLED_GAMES_DIR);
+    expect(restarted.hasDriver('hytale')).toBe(false);
+    expect(restarted.hasDriver('minecraft')).toBe(true);
   });
 
-  it('switches bundled and user games off and on, remembering the choice', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-toggle-'));
-    const games = path.join(root, 'games');
+  it('replaces a seeded game when the bundled one has a higher version, and only then', () => {
+    const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
+    const games = freshGamesDir();
+    const writeBundled = (version: string, name: string) => {
+      fs.mkdirSync(path.join(bundled, 'valheim'), { recursive: true });
+      fs.writeFileSync(path.join(bundled, 'valheim', 'hosty-game.json'), JSON.stringify({ ...validManifest, version, name }));
+    };
+    const installedName = () => JSON.parse(fs.readFileSync(path.join(games, 'valheim', 'hosty-game.json'), 'utf-8')).name;
+
+    writeBundled('1.0.0', 'First');
+    new GameDriverRegistry().loadPacks(games, bundled);
+    writeBundled('1.0.0', 'Same version');
+    new GameDriverRegistry().loadPacks(games, bundled);
+    expect(installedName()).toBe('First');
+
+    writeBundled('1.1.0', 'Upgraded');
+    new GameDriverRegistry().loadPacks(games, bundled);
+    expect(installedName()).toBe('Upgraded');
+  });
+
+  it('never overwrites a pack of the same id that the user installed first', () => {
+    const bundled = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-bundle-')), 'games');
+    const games = freshGamesDir();
+    fs.mkdirSync(path.join(bundled, 'valheim'), { recursive: true });
+    fs.writeFileSync(path.join(bundled, 'valheim', 'hosty-game.json'), JSON.stringify({ ...validManifest, name: 'Bundled' }));
+    fs.mkdirSync(path.join(games, 'valheim'), { recursive: true });
+    fs.writeFileSync(path.join(games, 'valheim', 'hosty-game.json'), JSON.stringify({ ...validManifest, name: 'Mine' }));
+
+    new GameDriverRegistry().loadPacks(games, bundled);
+    expect(JSON.parse(fs.readFileSync(path.join(games, 'valheim', 'hosty-game.json'), 'utf-8')).name).toBe('Mine');
+  });
+
+  it('switches games off and on, remembering the choice', () => {
+    const games = freshGamesDir();
     fs.mkdirSync(path.join(games, 'valheim'), { recursive: true });
     fs.writeFileSync(path.join(games, 'valheim', 'hosty-game.json'), JSON.stringify(validManifest));
 
     const registry = new GameDriverRegistry();
-    registry.loadPacks(games);
+    registry.loadPacks(games, BUNDLED_GAMES_DIR);
     registry.setPackEnabled('hytale', false);
     const infos = registry.setPackEnabled('valheim', false);
     expect(registry.hasDriver('hytale')).toBe(false);
@@ -431,61 +464,42 @@ describe('bundled packs', () => {
 
     // Persisted in the games folder and applied on the next start.
     const restarted = new GameDriverRegistry();
-    restarted.loadPacks(games);
+    restarted.loadPacks(games, BUNDLED_GAMES_DIR);
     expect(restarted.hasDriver('hytale')).toBe(false);
     expect(restarted.hasDriver('valheim')).toBe(false);
 
     restarted.setPackEnabled('hytale', true);
     expect(restarted.hasDriver('hytale')).toBe(true);
     expect(() => restarted.setPackEnabled('unknown-game', false)).toThrow(/not installed/);
-    fs.rmSync(root, { recursive: true, force: true });
   });
 
   it('lets every game be switched off and moves the default away from a disabled one', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-toggle-last-'));
     const registry = new GameDriverRegistry();
-    registry.loadPacks(path.join(root, 'games'));
+    registry.loadPacks(freshGamesDir(), BUNDLED_GAMES_DIR);
     registry.setPackEnabled('minecraft', false);
     expect(registry.getDefaultGameId()).not.toBe('minecraft');
     registry.setPackEnabled('hytale', false);
     registry.setPackEnabled('project-zomboid', false);
     expect(registry.listDrivers()).toEqual([]);
     expect(registry.getDefaultGameId()).toBe('');
-    expect(() => registry.getDriver()).toThrow(/No game drivers/);
+    expect(() => registry.getDriver()).toThrow(/No game is installed/);
     expect(() => registry.getDriver('minecraft')).toThrow(/not installed/);
 
     // Turning one back on makes it the default again.
     registry.setPackEnabled('hytale', true);
     expect(registry.getDefaultGameId()).toBe('hytale');
-    fs.rmSync(root, { recursive: true, force: true });
   });
 
-  it('rejects the bundled-only `extension` field in user packs', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-ext-'));
-    const pack = path.join(root, 'games', 'sneaky');
-    fs.mkdirSync(pack, { recursive: true });
-    fs.writeFileSync(
-      path.join(pack, 'hosty-game.json'),
-      JSON.stringify({ ...validManifest, id: 'sneaky', name: 'Sneaky', extension: 'minecraft' })
-    );
+  it('explains an empty games folder instead of failing obscurely', () => {
     const registry = new GameDriverRegistry();
-    registry.loadPacks(path.join(root, 'games'));
-    const info = registry.getPackInfos().find((entry) => entry.id === 'sneaky');
-    expect(info?.loaded).toBe(false);
-    expect(info?.errors.join(' ')).toMatch(/reserved for packs bundled/);
-    expect(registry.hasDriver('sneaky')).toBe(false);
-    fs.rmSync(root, { recursive: true, force: true });
-  });
-
-  it('explains a missing bundled folder instead of failing obscurely', () => {
-    const registry = new GameDriverRegistry(path.join(os.tmpdir(), 'hosty-no-such-bundled-dir'));
-    expect(() => registry.getDriver()).toThrow(/MC_NEXUS_BUNDLED_GAMES_DIR/);
+    registry.loadPacks(freshGamesDir());
+    expect(() => registry.getDriver()).toThrow(/No game is installed/);
   });
 });
 
 describe('declared layout, actions and defaults', () => {
   it('lets the bundled Minecraft pack declare folders, mods layout, bridge targets and actions', () => {
-    const summary = new GameDriverRegistry().getDriver('minecraft').summary;
+    const summary = createSeededRegistry().getDriver('minecraft').summary;
     expect(summary.instanceFolders).toEqual(['mods', 'config']);
     expect(summary.modLayout).toEqual({ modsDir: 'mods', configDir: 'config', fileTypes: ['.jar'] });
     expect(summary.installer?.variants.map((variant) => variant.id)).toContain('paper');
@@ -501,7 +515,7 @@ describe('declared layout, actions and defaults', () => {
     expect(summary.creationSettings?.map((setting) => setting.key)).toEqual(['gamemode', 'difficulty']);
   });
 
-  it('picks the default game from the bundled `default` flag, not from a literal', () => {
+  it('picks the default game from the `default` flag, not from a literal', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty-default-'));
     for (const [id, isDefault] of [['alpha', false], ['omega', true]] as const) {
       const dir = path.join(root, id);
@@ -511,7 +525,8 @@ describe('declared layout, actions and defaults', () => {
         JSON.stringify({ ...validManifest, id, name: id, ...(isDefault ? { default: true } : {}) })
       );
     }
-    const registry = new GameDriverRegistry(root);
+    const registry = new GameDriverRegistry();
+    registry.loadPacks(root);
     expect(registry.getDefaultGameId()).toBe('omega');
     expect(registry.getDriver().id).toBe('omega');
     expect(() => registry.getDriver('does-not-exist')).toThrow(/not installed/);

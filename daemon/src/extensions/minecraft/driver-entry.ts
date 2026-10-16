@@ -6,5 +6,5 @@ import { MinecraftDriver } from './MinecraftDriver';
  * manifest and the pack folder over and uses the returned driver as is.
  */
 export function createDriver(context: { manifest: GameManifest; packDir: string }): MinecraftDriver {
-  return new MinecraftDriver(context.manifest, context.packDir, 'pack');
+  return new MinecraftDriver(context.manifest, context.packDir);
 }

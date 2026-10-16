@@ -124,8 +124,6 @@ export interface GameDriverSummary {
   /** Icon the game itself shows (square PNG of `size` px at `file`); absent = only shown inside Hosty. */
   serverIcon?: { file: string; size: number };
   jvmFlagPresets?: JvmFlagPreset[];
-  /** Where the driver comes from: shipped with Hosty or loaded from a user pack folder. */
-  source: 'builtin' | 'pack';
   hasLogo: boolean;
   /** Extra UI translations contributed by the pack, keyed by language. */
   i18n?: Record<string, Record<string, string>>;

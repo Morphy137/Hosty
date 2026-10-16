@@ -442,6 +442,8 @@ export class InstanceManager {
   }
 
   private ensureDefaultInstance(id: string): void {
+    // No game installed yet: there is nothing to scaffold the default instance from.
+    if (!defaultGameId()) return;
     const dir = path.join(this.instancesBaseDir, id);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

@@ -97,8 +97,7 @@ export class DeclarativeGameDriver implements IGameDriver {
 
   constructor(
     public readonly manifest: GameManifest,
-    public readonly packDir: string | null,
-    source: 'builtin' | 'pack' = 'pack'
+    public readonly packDir: string | null
   ) {
     this.id = manifest.id;
     this.name = manifest.name;
@@ -170,7 +169,6 @@ export class DeclarativeGameDriver implements IGameDriver {
       jvmFlagPresets: manifest.jvmFlagPresets,
       modSources: manifest.modSources,
       serverIcon: manifest.serverIcon ? { ...manifest.serverIcon } : undefined,
-      source,
       hasLogo: Boolean(manifest.logo && packDir && fs.existsSync(path.join(packDir, manifest.logo))),
       i18n: manifest.i18n,
       provision: manifest.provision

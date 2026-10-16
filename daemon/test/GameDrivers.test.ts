@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { GameDriverRegistry, driverRegistry } from '../src/core/drivers/GameDriverRegistry';
+import { driverRegistry } from '../src/core/drivers/GameDriverRegistry';
+import { createSeededRegistry } from './helpers/packs';
 
 describe('Game Drivers Architecture', () => {
   let tmpDir: string;
@@ -17,7 +18,7 @@ describe('Game Drivers Architecture', () => {
 
   describe('GameDriverRegistry', () => {
     it('registers and resolves default supported game drivers', () => {
-      const registry = new GameDriverRegistry();
+      const registry = createSeededRegistry();
       expect(registry.hasDriver('minecraft')).toBe(true);
       expect(registry.hasDriver('project-zomboid')).toBe(true);
       expect(registry.hasDriver('hytale')).toBe(true);
@@ -33,7 +34,7 @@ describe('Game Drivers Architecture', () => {
     });
 
     it('uses the default game only when no game ID is given', () => {
-      const registry = new GameDriverRegistry();
+      const registry = createSeededRegistry();
       expect(registry.getDriver(undefined).id).toBe('minecraft');
 
       // Another game's driver must never run an unknown game's server.
@@ -63,7 +64,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('MinecraftDriver', () => {
-    const driver = new GameDriverRegistry().getDriver('minecraft');
+    const driver = createSeededRegistry().getDriver('minecraft');
 
     it('does not add G1 when the user picked another collector, and deduplicates flags', () => {
       fs.writeFileSync(path.join(tmpDir, 'server.jar'), '');
@@ -171,7 +172,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('ProjectZomboidDriver', () => {
-    const driver = new GameDriverRegistry().getDriver('project-zomboid');
+    const driver = createSeededRegistry().getDriver('project-zomboid');
 
     it('validates server installation based on Zomboid executables or ini', () => {
       expect(driver.validateInstallation(tmpDir)).toBe(false);
@@ -231,7 +232,7 @@ describe('Game Drivers Architecture', () => {
   });
 
   describe('HytaleDriver', () => {
-    const driver = new GameDriverRegistry().getDriver('hytale');
+    const driver = createSeededRegistry().getDriver('hytale');
 
     it('validates server installation based on HytaleServer.jar or config.json', () => {
       expect(driver.validateInstallation(tmpDir)).toBe(false);

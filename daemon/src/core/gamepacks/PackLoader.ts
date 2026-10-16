@@ -5,7 +5,6 @@ import path from 'path';
 import type { IGameDriver } from '../drivers/IGameDriver';
 import { DeclarativeGameDriver } from './DeclarativeDriver';
 import { validateManifest, type GameManifest } from './manifest';
-import { BUNDLED_EXTENSIONS } from './extensions';
 import { readJsonFile, writeJsonAtomic } from '../JsonStore';
 
 export const MANIFEST_FILE = 'hosty-game.json';
@@ -17,7 +16,6 @@ export interface PackInfo {
   name: string | null;
   version: string | null;
   dir: string;
-  source: 'builtin' | 'external';
   /** The pack ships a `driver.js` that runs with full permissions. */
   hasCode: boolean;
   /** Code packs only run after the user approved this exact `driver.js` (by hash). */
@@ -151,7 +149,6 @@ export class PackLoader {
         name: null,
         version: null,
         dir,
-        source: 'external',
         hasCode: fs.existsSync(path.join(dir, DRIVER_FILE)),
         trusted: false,
         loaded: false,
@@ -176,19 +173,11 @@ export class PackLoader {
       }
 
       const manifest = validation.manifest;
-      if (manifest.extension) {
-        info.id = manifest.id;
-        info.name = manifest.name;
-        info.version = manifest.version;
-        info.errors.push('"extension" is reserved for packs bundled with Hosty');
-        results.push({ info, driver: null });
-        continue;
-      }
       info.id = manifest.id;
       info.name = manifest.name;
       info.version = manifest.version;
 
-      const base = new DeclarativeGameDriver(manifest, dir, 'pack');
+      const base = new DeclarativeGameDriver(manifest, dir);
       let driver: IGameDriver = base;
 
       if (info.hasCode) {
@@ -230,73 +219,4 @@ function mergeDriver(base: DeclarativeGameDriver, overrides: Partial<IGameDriver
       typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(merged) : value;
   }
   return merged;
-}
-
-/**
- * Loads the packs that ship with the app (read-only, always trusted). They use the same manifest format as
- * user packs; `extension` may attach code that is part of Hosty itself.
- */
-export function loadBundledPacks(bundledDir: string): Array<{ info: PackInfo; driver: IGameDriver | null }> {
-  if (!fs.existsSync(bundledDir)) return [];
-  const results: Array<{ info: PackInfo; driver: IGameDriver | null }> = [];
-
-  for (const entry of fs.readdirSync(bundledDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
-    const dir = path.join(bundledDir, entry.name);
-    const manifestPath = path.join(dir, MANIFEST_FILE);
-    if (!fs.existsSync(manifestPath)) continue;
-
-    const info: PackInfo = {
-      id: null,
-      name: null,
-      version: null,
-      dir,
-      source: 'builtin',
-      hasCode: false,
-      trusted: true,
-      loaded: false,
-      enabled: true,
-      errors: []
-    };
-
-    let raw: unknown;
-    try {
-      raw = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-    } catch (error) {
-      info.errors.push(`${MANIFEST_FILE} is not valid JSON: ${(error as Error).message}`);
-      results.push({ info, driver: null });
-      continue;
-    }
-
-    const validation = validateManifest(raw);
-    if (!validation.ok || !validation.manifest) {
-      info.errors.push(...validation.errors);
-      results.push({ info, driver: null });
-      continue;
-    }
-
-    const manifest = validation.manifest;
-    info.id = manifest.id;
-    info.name = manifest.name;
-    info.version = manifest.version;
-
-    let driver: IGameDriver;
-    if (manifest.extension) {
-      const factory = BUNDLED_EXTENSIONS[manifest.extension];
-      if (!factory) {
-        info.errors.push(`Unknown bundled extension "${manifest.extension}"`);
-        results.push({ info, driver: null });
-        continue;
-      }
-      info.hasCode = true;
-      driver = factory(manifest, dir);
-    } else {
-      driver = new DeclarativeGameDriver(manifest, dir, 'builtin');
-    }
-
-    info.loaded = true;
-    results.push({ info, driver });
-  }
-
-  return results;
 }

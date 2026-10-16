@@ -3,79 +3,40 @@ import { DaemonError } from '../../errors';
 import { readJsonFile, writeJsonAtomic } from '../JsonStore';
 import type { IGameDriver, GameDriverSummary } from './IGameDriver';
 import type { GameManifest } from '../gamepacks/manifest';
-import { PackLoader, loadBundledPacks, type PackInfo } from '../gamepacks/PackLoader';
+import { PackLoader, type PackInfo } from '../gamepacks/PackLoader';
+import { seedBundledPacks } from '../gamepacks/PackSeeder';
 
-// Bundled single-file builds (Node SEA) have no meaningful __dirname; they pass the folder explicitly.
-const moduleDir = typeof __dirname === 'string' ? __dirname : process.cwd();
-const DEFAULT_BUNDLED_GAMES_DIR = path.resolve(moduleDir, '../../../assets/games');
-/** Ids of the games the user switched off (bundled or installed), kept next to the user packs. */
+/** Ids of the games the user switched off, kept next to the packs in the games folder. */
 export const DISABLED_FILE = '.disabled.json';
 
+/** Every game is a pack in the games folder; the ones that ship with Hosty are copied there on first run. */
 export class GameDriverRegistry {
   private readonly drivers = new Map<string, IGameDriver>();
-  private readonly builtinIds = new Set<string>();
-  private bundledInfos: PackInfo[] = [];
-  private bundledDir = '';
   private packInfos: PackInfo[] = [];
   private loader: PackLoader | null = null;
   private gamesDir = '';
   private disabledIds = new Set<string>();
-  /** The bundled pack flagged `default` (else the first bundled one). */
+  /** The pack flagged `default` (else the first one loaded). */
   private defaultDriverId = '';
-
-  constructor(bundledDir: string = DEFAULT_BUNDLED_GAMES_DIR) {
-    this.loadBundled(bundledDir);
-  }
-
-  /** (Re)loads the games that ship with Hosty from their pack folders. */
-  public loadBundled(bundledDir: string): void {
-    const resolved = path.resolve(bundledDir);
-    for (const id of this.builtinIds) this.drivers.delete(id);
-    this.builtinIds.clear();
-    this.bundledInfos = [];
-    this.bundledDir = resolved;
-
-    let firstId = '';
-    this.defaultDriverId = '';
-    for (const { info, driver } of loadBundledPacks(resolved)) {
-      if (driver && info.id) {
-        const id = info.id.toLowerCase();
-        // Disabled built-ins still reserve their id so no pack can take it over.
-        this.builtinIds.add(id);
-        if (this.disabledIds.has(id)) {
-          info.enabled = false;
-          info.loaded = false;
-          this.bundledInfos.push(info);
-          continue;
-        }
-        this.register(driver, true);
-        firstId = firstId || id;
-        const manifest = this.getManifest(info.id);
-        if (manifest?.default && !this.defaultDriverId) this.defaultDriverId = info.id.toLowerCase();
-      }
-      this.bundledInfos.push(info);
-    }
-    this.defaultDriverId = this.defaultDriverId || firstId;
-  }
 
   /** Game used when an instance does not declare one (legacy instances, fallback lookups). */
   public getDefaultGameId(): string {
     return this.defaultDriverId;
   }
 
-  public register(driver: IGameDriver, builtin = false): void {
-    const id = driver.id.toLowerCase();
-    this.drivers.set(id, driver);
-    if (builtin) this.builtinIds.add(id);
+  public register(driver: IGameDriver): void {
+    this.drivers.set(driver.id.toLowerCase(), driver);
   }
 
-  /** Loads user game packs from `gamesDir`; built-in drivers can never be replaced by a pack. */
+  /**
+   * Loads the games from `gamesDir`. When `bundledDir` is given, the packs that ship with Hosty are copied into
+   * `gamesDir` first (see `seedBundledPacks`).
+   */
   public loadPacks(gamesDir: string, bundledDir?: string): PackInfo[] {
     this.gamesDir = path.resolve(gamesDir);
     this.disabledIds = this.readDisabled();
-    // Always reloaded: the disabled list lives in the games folder, unknown until now.
-    this.loadBundled(bundledDir ?? this.bundledDir);
-    this.loader = new PackLoader(gamesDir);
+    this.loader = new PackLoader(this.gamesDir);
+    if (bundledDir) seedBundledPacks(path.resolve(bundledDir), this.gamesDir, this.loader);
     return this.reloadPacks();
   }
 
@@ -90,8 +51,8 @@ export class GameDriverRegistry {
   }
 
   /**
-   * Switches a game (bundled or installed) on or off. A disabled game is not registered, so it disappears from
-   * the game list; every game may be off. Throws a readable message for unknown games.
+   * Switches a game on or off. A disabled game is not registered, so it disappears from the game list; every
+   * game may be off. Throws a readable message for unknown games.
    */
   public setPackEnabled(packId: string, enabled: boolean): PackInfo[] {
     if (!this.gamesDir) throw new Error('Game packs are not enabled.');
@@ -101,7 +62,6 @@ export class GameDriverRegistry {
     if (enabled) this.disabledIds.delete(id);
     else this.disabledIds.add(id);
     this.writeDisabled();
-    this.loadBundled(this.bundledDir);
     return this.reloadAll();
   }
 
@@ -112,35 +72,34 @@ export class GameDriverRegistry {
   public reloadPacks(): PackInfo[] {
     if (!this.loader) return [];
 
-    for (const id of this.drivers.keys()) {
-      if (!this.builtinIds.has(id)) this.drivers.delete(id);
-    }
-
+    this.drivers.clear();
     const infos: PackInfo[] = [];
+    let firstId = '';
+    this.defaultDriverId = '';
     for (const { info, driver } of this.loader.load()) {
       if (driver && info.id) {
-        if (this.builtinIds.has(info.id.toLowerCase())) {
-          info.loaded = false;
-          info.errors.push(`"${info.id}" is a built-in game and cannot be replaced by a pack`);
-        } else if (this.disabledIds.has(info.id.toLowerCase())) {
+        const id = info.id.toLowerCase();
+        if (this.disabledIds.has(id)) {
           info.enabled = false;
           info.loaded = false;
         } else {
           this.register(driver);
+          firstId = firstId || id;
+          if (this.getManifest(id)?.default && !this.defaultDriverId) this.defaultDriverId = id;
         }
       }
       infos.push(info);
     }
+    this.defaultDriverId = this.defaultDriverId || firstId;
     this.packInfos = infos;
     return infos;
   }
 
-  /** Bundled games first (read-only, shown as reference), then the packs found on disk. */
   public getPackInfos(): PackInfo[] {
-    return [...this.bundledInfos, ...this.packInfos];
+    return this.packInfos;
   }
 
-  /** Rescans the user packs folder and returns the complete list (bundled games included). */
+  /** Rescans the games folder and returns the complete list. */
   public reloadAll(): PackInfo[] {
     this.reloadPacks();
     return this.getPackInfos();
@@ -149,16 +108,12 @@ export class GameDriverRegistry {
   /** Installs a pack folder into the games folder and reloads. Throws a readable message on failure. */
   public installPack(sourceDir: string): PackInfo[] {
     if (!this.loader) throw new Error('Game packs are not enabled.');
-    const { id } = this.loader.install(sourceDir);
-    if (this.builtinIds.has(id.toLowerCase())) {
-      this.loader.uninstall(id);
-      throw new Error(`"${id}" is a built-in game and cannot be replaced by a pack.`);
-    }
+    this.loader.install(sourceDir);
     return this.reloadAll();
   }
 
   public uninstallPack(packId: string): boolean {
-    if (!this.loader || this.builtinIds.has(packId.toLowerCase())) return false;
+    if (!this.loader) return false;
     const ok = this.loader.uninstall(packId);
     if (ok) {
       if (this.disabledIds.delete(packId.toLowerCase())) this.writeDisabled();
@@ -194,7 +149,7 @@ export class GameDriverRegistry {
     const driver = this.drivers.get(this.defaultDriverId);
     if (!driver) {
       throw new Error(
-        `No game drivers are loaded (bundled games folder: ${this.bundledDir || 'unset'}). Check MC_NEXUS_BUNDLED_GAMES_DIR.`
+        `No game is installed (games folder: ${this.gamesDir || 'unset'}). Install a game pack or check MC_NEXUS_BUNDLED_GAMES_DIR.`
       );
     }
     return driver;
@@ -204,7 +159,7 @@ export class GameDriverRegistry {
     return this.drivers.has(gameId.toLowerCase());
   }
 
-  /** Absolute path of a pack file (e.g. its logo), or null for built-in or unknown games. */
+  /** Absolute path of a pack file (e.g. its logo), or null for unknown games. */
   public resolvePackFile(gameId: string, relative: string): string | null {
     const driver = this.drivers.get(gameId.toLowerCase()) as unknown as { packDir?: string | null } | undefined;
     return driver?.packDir ? path.join(driver.packDir, relative) : null;
