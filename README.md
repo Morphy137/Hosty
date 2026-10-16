@@ -10,6 +10,8 @@ Create, run and manage dedicated servers on your own PC — no terminals, no con
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
+**English** · [Español](README.es.md)
+
 </div>
 
 ---
@@ -24,6 +26,8 @@ It is **not tied to a single game**. Hosty is built as a multi-game platform, an
 
 ## Supported games
 
+Every game is a **pack** (an add-on) that Hosty copies into its games folder the first time it runs. You can disable or uninstall them, or install more from the app's **signed catalog**.
+
 | Game | Status |
 | --- | --- |
 | **Minecraft** (Vanilla, Paper, Purpur, Fabric, Forge, NeoForge) | Available |
@@ -33,7 +37,7 @@ It is **not tied to a single game**. Hosty is built as a multi-game platform, an
 
 ## Highlights
 
-- **Guided server creation** — a step-by-step wizard picks the game, installs the server for you (including Forge and NeoForge), detects the loader of a jar you bring and sets sensible defaults.
+- **Guided server creation** — a step-by-step wizard picks the game, installs the server for you (including Forge and NeoForge), lets you pick the game version and the loader build, detects the loader of a jar you bring and sets sensible defaults.
 - **One-click control** — a single Start/Stop button per server, with restart and a confirmed force-close in the menu, and safe saving on shutdown.
 - **Live dashboard** — watch CPU, memory, server performance and who is online, in real time.
 - **Live console** — read the server output and send commands, with handy shortcuts.
@@ -42,8 +46,9 @@ It is **not tied to a single game**. Hosty is built as a multi-game platform, an
 - **Easy settings** — tweak server properties with a clean editor instead of raw text files.
 - **Import existing servers** — pick a folder and Hosty detects the game, loader and version.
 - **Multiple servers** — keep several servers in the sidebar and switch between them instantly.
+- **Signed game catalog** — install and update game packs from inside the app; every file is verified against a signature before it is installed.
 - **Extensible** — add games with a small [game pack](docs/game-packs.md) and connect in-game bridges through an open [protocol](docs/bridge-protocol.md).
-- **Light & dark themes**, available in **English** and **Spanish**.
+- **Light & dark themes**, available in **English** and **Spanish** (more languages can be added as community translations).
 
 <table>
   <tr>
