@@ -4,7 +4,11 @@ import {
   Cpu,
   HardDrive,
   Users,
-  Terminal,
+  Terminal,
+
+
+
+
   ChevronRight,
   Server,
   Settings,
@@ -13,7 +17,10 @@ import {
   Check,
   Layers,
   Search,
-  Activity,
+  Activity,
+
+
+
 } from 'lucide-react';
 import type { GameDriverSummary, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { PlayerCard } from '../players/PlayerCard';
@@ -21,6 +28,9 @@ import type { RunPlayerAction } from '../players/PlayerActionDialog';
 import { calculateRamPercent, formatUptime } from '../../utils/format';
 import { processLabel } from '../../utils/gameRuntime';
 import { GameLogo } from '../common/GameIcons';
+import { MotdText } from '../common/MotdText';
+import { useShareableHost } from '../../hooks/useShareableHost';
+import { flattenMotdLines } from '../../utils/motd';
 import { ServerAvatar } from '../common/ServerAvatar';
 import { BridgeBadge, ServerStatusBadge } from '../common/ServerStatusBadge';
 import { Badge } from '../ui/Badge';
@@ -70,7 +80,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const gameName = game?.name;
   const quickCommands = game?.quickCommands ?? [];
   const serverPort = instance?.port || game?.defaultPort || 0;
-  const serverAddress = `127.0.0.1:${serverPort}`;
+  const shareableHost = useShareableHost();
+  const serverAddress = `${shareableHost}:${serverPort}`;
+  const motdColorCodes = Boolean(game?.motd?.colorCodes);
   const maxPlayersCount = instance?.maxPlayers || game?.defaultMaxPlayers || 0;
   // Tick rate the game runs at (manifest `performance.tickRate`); only then is a TPS reading meaningful.
   const tickRate = game?.performance?.tickRate;
@@ -180,9 +192,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <span className="text-hairline-strong">|</span>
 
               {/* MOTD */}
-              <span className="italic text-mute truncate max-w-sm">
-                &ldquo;{instance?.motd || t('overview.no_motd')}&rdquo;
-              </span>
+              {instance?.motd ? (
+                <span
+                  className="max-w-sm truncate rounded-[4px] bg-console px-2 py-0.5 font-mono text-[11px] text-white/70"
+                  title={flattenMotdLines(instance.motd)}
+                >
+                  <MotdText motd={flattenMotdLines(instance.motd)} colorCodes={motdColorCodes} />
+                </span>
+              ) : (
+                <span className="italic text-mute truncate max-w-sm">{t('overview.no_motd')}</span>
+              )}
             </div>
           </div>
         </div>
