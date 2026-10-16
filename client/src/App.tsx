@@ -18,7 +18,7 @@ import {
   cancelProvisionJob,
   fetchConsoleBuffer
 } from './api/daemonApi';
-import type { DaemonErrorPayload, InstanceSettings, PlayerState } from './types/daemon';
+import type { DaemonErrorPayload, InstanceSettings, PlayerState, ServerStatus } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
 import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -97,13 +97,26 @@ export default function App() {
     instanceStatusesRef.current = instanceStatuses;
   }, [instanceStatuses]);
   const viewedInstanceId = instances.activeId;
+  // Status reported by the instance list: socket status events only arrive on changes, so after (re)connecting
+  // a server that is already running would otherwise show as offline.
+  const listedStatusRef = useRef<Record<string, ServerStatus | undefined>>({});
+  useEffect(() => {
+    listedStatusRef.current = Object.fromEntries(instances.instances.map((instance) => [instance.id, instance.status]));
+  }, [instances.instances]);
+  const lastViewedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!viewedInstanceId || connectionState !== 'open') return;
     let ignore = false;
+    // Same server (first load or a reconnect): the socket just sent its live data, so keep it.
+    const keepLive = lastViewedRef.current === null || lastViewedRef.current === viewedInstanceId;
+    lastViewedRef.current = viewedInstanceId;
     void fetchConsoleBuffer(viewedInstanceId)
       .catch(() => [] as string[])
       .then((lines) => {
-        if (!ignore) resetInstanceView(lines, instanceStatusesRef.current[viewedInstanceId] ?? 'OFFLINE');
+        if (ignore) return;
+        const status =
+          instanceStatusesRef.current[viewedInstanceId] ?? listedStatusRef.current[viewedInstanceId] ?? 'OFFLINE';
+        resetInstanceView(lines, status, keepLive);
       });
     return () => {
       ignore = true;
@@ -411,8 +424,10 @@ export default function App() {
                   />
                 )}
 
-                {currentTab === 'players' && (
+                {currentTab === 'players' && instances.activeInstance && (
                   <PlayersTab
+                    instanceId={instances.activeInstance.id}
+                    status={status}
                     players={players}
                     game={activeGame}
                     onSendCommand={handleSendCommand}

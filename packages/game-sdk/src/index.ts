@@ -170,6 +170,31 @@ export interface QuickCommand {
   command: string;
 }
 
+/**
+ * A list the server keeps in a JSON file (whitelist, operators, bans...). Entries are read from `file`; while the
+ * server runs, changes go through `add`/`remove` (with `{{value}}` and optional `{{reason}}`); while it is stopped,
+ * removals edit the file directly.
+ */
+export interface PlayerListSpec {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  icon?: string;
+  /** JSON array file, relative to the server folder. */
+  file: string;
+  /** Field that identifies an entry (e.g. `name`, `ip`). */
+  key: string;
+  /** Extra fields shown per entry (e.g. `reason`, `created`, `level`). */
+  details?: string[];
+  valueType?: 'player' | 'ip';
+  add: string;
+  remove: string;
+  /** The add form asks for an optional `{{reason}}`. */
+  reason?: boolean;
+  /** Enforcement switch: a key in a declared config file and the commands that change it. */
+  toggle?: { configFile: string; key: string; on: string; off: string };
+}
+
 export interface PlayerView {
   dimensions?: boolean;
   coordinates?: boolean;
@@ -211,6 +236,8 @@ export interface GameManifest {
   playerActions?: PlayerActionSpec[];
   creationSettings?: CreationSetting[];
   quickCommands?: QuickCommand[];
+  /** Whitelist, operators, bans... the server keeps in JSON files (see `PlayerListSpec`). */
+  playerLists?: PlayerListSpec[];
   playerView?: PlayerView;
   dimensions?: DimensionSpec[];
   /** Ticks per second the server targets; enables the TPS card when the bridge reports TPS. */

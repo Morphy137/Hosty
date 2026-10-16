@@ -4,7 +4,7 @@ import {
   Cpu,
   HardDrive,
   Users,
-  Terminal,
+  Terminal,
   ChevronRight,
   Server,
   Settings,
@@ -13,15 +13,17 @@ import {
   Check,
   Layers,
   Search,
-  Activity,
+  Activity,
 } from 'lucide-react';
 import type { GameDriverSummary, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { PlayerCard } from '../players/PlayerCard';
 import type { RunPlayerAction } from '../players/PlayerActionDialog';
 import { calculateRamPercent, formatUptime } from '../../utils/format';
 import { processLabel } from '../../utils/gameRuntime';
-import { getInstanceIconUrl } from '../../api/daemonApi';
 import { GameLogo } from '../common/GameIcons';
+import { ServerAvatar } from '../common/ServerAvatar';
+import { BridgeBadge, ServerStatusBadge } from '../common/ServerStatusBadge';
+import { Badge } from '../ui/Badge';
 import { AnimatedNumber } from '../motion/AnimatedNumber';
 import { Sparkline } from '../common/Sparkline';
 import type { MetricsHistory } from '../../hooks/useMetricsHistory';
@@ -121,45 +123,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         <div className="flex items-center gap-4 min-w-0">
           {/* Server Icon with fallback */}
           <div className="w-14 h-14 rounded-[8px] border border-hairline bg-surface-2 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
-            {instance?.hasIcon ? (
-              <img
-                src={getInstanceIconUrl(instance.id)}
-                alt={instance.name}
-                className="w-full h-full object-contain image-rendering-pixelated"
-              />
-            ) : (
-              <Server className="w-7 h-7 text-mute" />
-            )}
+            {instance ? <ServerAvatar instance={instance} size={44} /> : <Server className="w-7 h-7 text-mute" />}
           </div>
 
-          {/* Server Meta & Live Status */}
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2.5">
+          {/* Server Meta & Live Status: same pills as the header */}
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2">
               <h1 className="text-[17px] font-semibold tracking-[-0.34px] text-ink truncate">
                 {instance?.name || t('header.instance')}
               </h1>
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-surface-2 border border-hairline font-mono text-[11px] font-medium uppercase tracking-wider text-ink">
-                <span
-                  className={`w-2 h-2 rounded-[2px] shrink-0 ${
-                    status === 'ONLINE'
-                      ? 'bg-success shadow-[0_0_6px_rgba(80,227,194,0.35)]'
-                      : status === 'STARTING'
-                      ? 'bg-warning animate-pulse'
-                      : 'bg-mute'
-                  }`}
-                />
-                {status}
-              </span>
-              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-surface-2 border border-hairline text-soft uppercase flex items-center gap-1.5">
-                <GameLogo gameId={instance?.gameId ?? ''} size={14} />
-                <span>{gameName ?? instance?.gameId ?? ''}</span>
-              </span>
-              {metrics.bridgeConnected && (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-success/10 dark:bg-success/15 border border-success/30 text-success-fg font-mono text-[10px] font-bold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  {t('overview.metrics.bridge_connected')}
-                </span>
-              )}
+              <ServerStatusBadge status={status} />
+              <Badge>
+                <GameLogo gameId={instance?.gameId ?? ''} size={12} />
+                {gameName ?? instance?.gameId ?? ''}
+              </Badge>
+              {metrics.bridgeConnected && <BridgeBadge />}
             </div>
 
             {/* Sub-meta Strip: IP, Loader, Player Count, MOTD */}
@@ -179,15 +157,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 )}
               </button>
 
-              <span className="text-hairline-strong">|</span>
-
-              {/* Loader */}
-              <span className="inline-flex items-center gap-1 text-body">
-                <Layers className="w-3.5 h-3.5 text-mute" />
-                <span>
-                  {instance?.loader ? `${instance.loader.toUpperCase()} ${instance.loaderVersion || ''}` : 'Vanilla'}
-                </span>
-              </span>
+              {instance?.loader && (
+                <>
+                  <span className="text-hairline-strong">|</span>
+                  <span className="inline-flex items-center gap-1 text-body">
+                    <Layers className="w-3.5 h-3.5 text-mute" />
+                    <span>{`${instance.loader.toUpperCase()} ${instance.loaderVersion || ''}`.trim()}</span>
+                  </span>
+                </>
+              )}
 
               <span className="text-hairline-strong">|</span>
 
@@ -203,7 +181,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
               {/* MOTD */}
               <span className="italic text-mute truncate max-w-sm">
-                &ldquo;{instance?.motd || 'No description for this server'}&rdquo;
+                &ldquo;{instance?.motd || t('overview.no_motd')}&rdquo;
               </span>
             </div>
           </div>

@@ -4,7 +4,9 @@ import {
   CloudLightning,
   Gamepad2,
   Gift,
+  Globe,
   Heart,
+  ListChecks,
   MapPin,
   MessageSquare,
   Package,
@@ -25,13 +27,15 @@ import {
   Zap
 } from 'lucide-react';
 
-/** Icons a game pack can reference by name in `playerActions[].icon`. Unknown names fall back to a wand. */
+/** Icons a game pack can reference by name in `playerActions[].icon` and `playerLists[].icon`. Unknown names fall back to a wand. */
 export const PLAYER_ACTION_ICONS: Record<string, LucideIcon> = {
   ban: Ban,
   'cloud-lightning': CloudLightning,
   gamepad: Gamepad2,
   gift: Gift,
+  globe: Globe,
   heart: Heart,
+  'list-checks': ListChecks,
   'map-pin': MapPin,
   message: MessageSquare,
   package: Package,

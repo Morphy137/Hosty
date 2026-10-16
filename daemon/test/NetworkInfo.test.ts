@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { buildFirewallRuleArgs, fetchPublicIp, firewallRuleName, isValidPort, listLanAddresses } from '../src/core/NetworkInfo';
+import { buildFirewallRuleArgs, fetchPublicIp, firewallRuleName, getPublicIp, isValidPort, listLanAddresses } from '../src/core/NetworkInfo';
 
 describe('NetworkInfo', () => {
+  it('remembers the public IP for a while instead of looking it up on every visit', async () => {
+    let calls = 0;
+    const lookup = (async () => {
+      calls += 1;
+      return new Response('198.51.100.4');
+    }) as unknown as typeof fetch;
+    const start = 1_000_000;
+    expect(await getPublicIp(start, lookup)).toBe('198.51.100.4');
+    expect(await getPublicIp(start + 60_000, lookup)).toBe('198.51.100.4');
+    expect(calls).toBe(1);
+    await getPublicIp(start + 11 * 60_000, lookup);
+    expect(calls).toBe(2);
+  });
+
   it('lists only external IPv4 addresses', () => {
     const interfaces = {
       lo: [{ family: 'IPv4', address: '127.0.0.1', internal: true }],

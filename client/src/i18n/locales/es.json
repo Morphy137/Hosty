@@ -31,7 +31,7 @@
       "players_online": "Jugadores en Línea",
       "tps": "Rendimiento del Servidor (TPS)",
       "mspt": "Tiempo de Tick (MSPT)",
-      "bridge_connected": "Bridge Activo"
+      "bridge_connected": "Bridge activo"
     },
     "controls": {
       "start": "Iniciar Servidor",
@@ -39,10 +39,10 @@
       "restart": "Reiniciar Servidor",
       "kill": "Forzar Detención (SIGKILL)",
       "address": "Dirección del Servidor",
-      "status_online": "ONLINE",
-      "status_offline": "OFFLINE",
-      "status_starting": "INICIANDO",
-      "status_stopping": "DETENIENDO"
+      "status_online": "En línea",
+      "status_offline": "Apagado",
+      "status_starting": "Iniciando",
+      "status_stopping": "Deteniendo"
     },
     "players": {
       "title": "Jugadores Conectados",
@@ -60,7 +60,9 @@
     },
     "copy_ip_title": "Clic para copiar la IP",
     "console_source": "stdout",
-    "console_ready": "Listo. Esperando la salida del proceso..."
+    "console_ready": "Listo. Esperando la salida del proceso...",
+    "no_motd": "Este servidor no tiene descripción",
+    "bridge_badge_hint": "El Telemetry Bridge está conectado y enviando datos en vivo."
   },
   "players": {
     "search_placeholder": "Filtrar jugadores por nombre...",
@@ -73,6 +75,25 @@
     "muted": "Muteado",
     "actions": {
       "execute_button": "Aplicar Acción"
+    },
+    "lists": {
+      "online": "En línea",
+      "enforced": "Activada",
+      "add": "Agregar",
+      "remove": "Quitar a {{value}}",
+      "add_placeholder_player": "Nombre del jugador",
+      "add_placeholder_ip": "Dirección IP",
+      "reason_placeholder": "Motivo (opcional)",
+      "offline_hint": "Inicia el servidor para agregar entradas. Puedes quitarlas en cualquier momento.",
+      "empty": "Esta lista está vacía.",
+      "unreadable": "No se pudo leer {{file}}. Revisa que sea un JSON válido.",
+      "level": "Nivel {{level}}",
+      "detail": {
+        "reason": "Motivo",
+        "created": "Desde",
+        "source": "Por",
+        "expires": "Vence"
+      }
     }
   },
   "edit_server": {
@@ -84,7 +105,7 @@
     "name_label": "Nombre del Servidor",
     "motd_label": "Descripción (MOTD)",
     "folder_path": "Ruta de la Carpeta",
-    "force_save_label": "Forzar 'save-all' al detener el servidor",
+    "force_save_label": "Guardar el mundo antes de detener",
     "autostart_label": "Iniciar automáticamente al abrir Hosty",
     "icon_label": "Ícono del Servidor",
     "upload_icon": "Subir Ícono",
@@ -133,12 +154,24 @@
       }
     },
     "auto_restart_label": "Reiniciar automáticamente tras un fallo",
-    "scheduled_restart_label": "Reinicio programado cada N horas (0 = desactivado)",
+    "scheduled_restart_label": "Reinicio programado (horas)",
     "backups_kept_label": "Copias conservadas",
     "bridge_reinstall_button": "Actualizar Telemetry Bridge",
     "bridge_remove_button": "Quitar Telemetry Bridge",
     "bridge_removed": "Telemetry Bridge eliminado.",
-    "bridge_remove_offline": "Detén el servidor para quitar el bridge."
+    "bridge_remove_offline": "Detén el servidor para quitar el bridge.",
+    "tab_resources": "Recursos",
+    "tab_maintenance": "Mantenimiento",
+    "ram_hint": "Memoria que puede usar el servidor. Deja margen para el sistema y otras aplicaciones.",
+    "java_path_placeholder": "Java predeterminado",
+    "section_lifecycle": "Inicio y apagado",
+    "section_restarts": "Reinicios",
+    "section_backups": "Copias de seguridad",
+    "autostart_hint": "Inicia este servidor cada vez que se abre Hosty.",
+    "force_save_hint": "Envía primero el comando de guardado del juego para no perder progreso.",
+    "auto_restart_hint": "Si el servidor se cierra inesperadamente, Hosty lo vuelve a iniciar (hasta 5 intentos).",
+    "scheduled_restart_hint": "Reinicia el servidor cada N horas mientras está encendido, avisando antes a los jugadores. 0 lo desactiva.",
+    "backups_kept_hint": "Las copias más antiguas se borran automáticamente cuando una nueva supera este número."
   },
   "mod_files": {
     "total_mods": "Total de Mods",
@@ -158,6 +191,16 @@
       "size": "Tamaño",
       "status": "Estado",
       "actions": "Acciones"
+    },
+    "sort": {
+      "label": "Ordenar mods",
+      "name_asc": "Nombre (A–Z)",
+      "name_desc": "Nombre (Z–A)",
+      "newest": "Más recientes",
+      "oldest": "Más antiguos",
+      "size_desc": "Más pesados",
+      "size_asc": "Más livianos",
+      "enabled_first": "Activos primero"
     }
   },
   "create_server": {
@@ -255,7 +298,7 @@
     "JAR_MISSING": "No se encontró el archivo del servidor. Instala primero el software del servidor.",
     "JAVA_NOT_FOUND": "Ejecutable de Java no encontrado. Instala Java (JDK 21) o define MC_NEXUS_JAVA_PATH.",
     "PROCESS_ERROR": "Ocurrió un error con el proceso del servidor.",
-    "SERVER_NOT_ONLINE": "No se pueden enviar comandos mientras el servidor esté apagado.",
+    "SERVER_NOT_ONLINE": "El servidor debe estar encendido para esto.",
     "ALREADY_RUNNING": "El proceso del servidor ya se encuentra en ejecución.",
     "SERVER_RUNNING": "No se puede realizar la operación mientras el servidor esté en ejecución. Detenlo primero.",
     "INSTALL_IN_PROGRESS": "Ya hay una instalación en curso.",

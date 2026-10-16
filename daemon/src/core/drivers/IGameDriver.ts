@@ -1,4 +1,4 @@
-import type { DimensionSpec, InstallerSpec, PlayerActionSpec, PlayerView } from '../gamepacks/manifest';
+import type { DimensionSpec, InstallerSpec, PlayerActionSpec, PlayerListSpec, PlayerView } from '../gamepacks/manifest';
 import type { ProvisionHooks } from '../../provisioning/download';
 
 export type GameAvailability = 'available' | 'beta' | 'coming_soon';
@@ -106,6 +106,8 @@ export interface GameDriverSummary {
     key: string;
   }>;
   quickCommands?: Array<{ label: string; command: string }>;
+  /** Whitelist, operators, bans... kept by the server in JSON files (see `PlayerListSpec`). */
+  playerLists?: PlayerListSpec[];
   playerView?: PlayerView;
   dimensions?: DimensionSpec[];
   performance?: { tickRate: number };

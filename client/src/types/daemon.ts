@@ -259,6 +259,8 @@ export interface GameDriverSummary {
   playerActions?: PlayerActionSpec[];
   creationSettings?: CreationSetting[];
   quickCommands?: Array<{ label: string; command: string }>;
+  /** Whitelist, operators, bans... the server keeps in JSON files. */
+  playerLists?: PlayerListSpec[];
   playerView?: PlayerView;
   dimensions?: DimensionSpec[];
   listPlayersCommand?: string;
@@ -319,6 +321,8 @@ export interface InstanceInfo {
   motd: string;
   hasJar: boolean;
   hasIcon: boolean;
+  /** Changes with the icon file; part of the icon URL so a replaced icon is not served from cache. */
+  iconVersion?: number;
   isImported: boolean;
   createdAt: string;
   maxPlayers: number;
@@ -348,6 +352,35 @@ export interface InstanceInfo {
 export interface InstancesResponse {
   instances: InstanceInfo[];
   activeId: string;
+}
+
+/** A list of players or addresses declared by the game (`playerLists` in its manifest). */
+export interface PlayerListSpec {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  icon?: string;
+  file: string;
+  key: string;
+  details?: string[];
+  valueType?: 'player' | 'ip';
+  add: string;
+  remove: string;
+  reason?: boolean;
+  toggle?: { configFile: string; key: string; on: string; off: string };
+}
+
+export interface PlayerListEntry {
+  value: string;
+  details: Record<string, string | number | boolean>;
+}
+
+export interface PlayerListState {
+  id: string;
+  entries: PlayerListEntry[];
+  /** Enforcement switch for lists with a `toggle`; null when unknown. */
+  enabled: boolean | null;
+  unreadable: boolean;
 }
 
 export interface ModFileInfo {

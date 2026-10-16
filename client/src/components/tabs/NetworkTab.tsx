@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, ShieldCheck } from 'lucide-react';
 import { fetchNetworkInfo, openFirewall } from '../../api/daemonApi';
 import type { NetworkInfo } from '../../types/daemon';
+import { useCachedResource } from '../../hooks/useCachedResource';
 import { Button } from '../ui/Button';
+import { Skeleton } from '../ui/Skeleton';
 import { useToast } from '../ui/toastContext';
+
+const PLACEHOLDER_ROWS = 2;
+const EMPTY_NETWORK: NetworkInfo = { lanAddresses: [], publicIp: null };
 
 interface NetworkTabProps {
   instanceId: string;
@@ -14,18 +19,10 @@ interface NetworkTabProps {
 export const NetworkTab: React.FC<NetworkTabProps> = ({ instanceId, port }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [info, setInfo] = useState<NetworkInfo | null>(null);
+  // Machine-wide and slow to resolve (public IP lookup): cached so the tab renders at once on every visit.
+  const network = useCachedResource<NetworkInfo>('network', fetchNetworkInfo);
+  const info = network.data ?? (network.error ? EMPTY_NETWORK : null);
   const [isBusy, setIsBusy] = useState(false);
-
-  useEffect(() => {
-    let ignore = false;
-    void fetchNetworkInfo()
-      .then((result) => !ignore && setInfo(result))
-      .catch(() => !ignore && setInfo({ lanAddresses: [], publicIp: null }));
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   const copy = (value: string) => void navigator.clipboard.writeText(value).catch(() => undefined);
 
@@ -71,7 +68,8 @@ export const NetworkTab: React.FC<NetworkTabProps> = ({ instanceId, port }) => {
         <p className="text-[12px] text-soft">{t('network.description')}</p>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" aria-busy={network.isLoading || network.isRefreshing}>
+        {!info && Array.from({ length: PLACEHOLDER_ROWS }, (_, index) => <Skeleton key={index} className="h-[58px] w-full rounded-[8px]" />)}
         {(info?.lanAddresses ?? []).map((address) => addressRow(t('network.lan'), address))}
         {info?.publicIp ? addressRow(t('network.public'), info.publicIp) : null}
       </ul>

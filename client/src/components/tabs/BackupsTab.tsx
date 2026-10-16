@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Archive, RotateCcw, Trash2 } from 'lucide-react';
 import { createBackup, deleteBackup, fetchBackups, fetchInstallerVersions, installServer, restoreBackup } from '../../api/daemonApi';
 import type { BackupInfo, GameDriverSummary } from '../../types/daemon';
+import { useCachedResource } from '../../hooks/useCachedResource';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
+import { Skeleton } from '../ui/Skeleton';
 import { useToast } from '../ui/toastContext';
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
+const PLACEHOLDER_ROWS = 2;
 
 interface BackupsTabProps {
   instanceId: string;
@@ -20,38 +23,31 @@ interface BackupsTabProps {
 export const BackupsTab: React.FC<BackupsTabProps> = ({ instanceId, isRunning, game, currentVariant, currentVersion }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [isBusy, setIsBusy] = useState(false);
+  // Cached per server: returning to the tab shows the last list at once and refreshes it in the background.
+  const backupsResource = useCachedResource<BackupInfo[]>(
+    `backups:${instanceId}`,
+    () => fetchBackups(instanceId).then((result) => result.backups)
+  );
+  const backups = backupsResource.data ?? [];
+  const refresh = backupsResource.refresh;
 
   const variants = (game?.installer?.variants ?? []).filter((variant) => variant.automatic);
   const [variantId, setVariantId] = useState(currentVariant ?? '');
-  const [versions, setVersions] = useState<string[]>([]);
-  const [versionId, setVersionId] = useState('');
   const activeVariant = variants.find((variant) => variant.id === variantId) ?? variants[0];
-
-  useEffect(() => {
-    if (!game || !activeVariant) return;
-    let ignore = false;
-    void fetchInstallerVersions(game.id, activeVariant.id).then((list) => {
-      if (ignore) return;
-      setVersions(list);
-      setVersionId(list.includes(currentVersion ?? '') ? (currentVersion as string) : (list[0] ?? ''));
-    });
-    return () => {
-      ignore = true;
-    };
-  }, [game, activeVariant, currentVersion]);
-
-  const refresh = useCallback(async () => {
-    const result = await fetchBackups(instanceId);
-    setBackups(result.backups);
-  }, [instanceId]);
-
-  useEffect(() => {
-    void Promise.resolve()
-      .then(refresh)
-      .catch(() => setBackups([]));
-  }, [refresh]);
+  const gameId = game?.id ?? '';
+  const activeVariantId = activeVariant?.id ?? '';
+  const versionsResource = useCachedResource<string[]>(
+    gameId && activeVariantId ? `versions:${gameId}:${activeVariantId}` : null,
+    () => fetchInstallerVersions(gameId, activeVariantId)
+  );
+  const versions = versionsResource.data ?? [];
+  const [pickedVersion, setPickedVersion] = useState('');
+  const versionId = versions.includes(pickedVersion)
+    ? pickedVersion
+    : versions.includes(currentVersion ?? '')
+      ? (currentVersion as string)
+      : (versions[0] ?? '');
 
   const run = async (operation: () => Promise<unknown>, successKey: string) => {
     setIsBusy(true);
@@ -89,7 +85,7 @@ export const BackupsTab: React.FC<BackupsTabProps> = ({ instanceId, isRunning, g
         </Button>
       </div>
 
-      {activeVariant && versions.length > 0 && (
+      {activeVariant && (versionsResource.isLoading || versions.length > 0) && (
         <div className="space-y-2 rounded-[8px] border border-hairline bg-surface-2 p-3.5">
           <h3 className="text-[13px] font-semibold text-ink">{t('backups.version_title')}</h3>
           <p className="text-[12px] text-soft">{t('backups.version_hint')}</p>
@@ -102,14 +98,18 @@ export const BackupsTab: React.FC<BackupsTabProps> = ({ instanceId, isRunning, g
               className="w-44"
               options={variants.map((variant) => ({ value: variant.id, label: variant.name }))}
             />
-            <Select
-              value={versionId}
-              onValueChange={setVersionId}
-              disabled={isBusy || isRunning}
-              ariaLabel={t('backups.version_title')}
-              className="w-36"
-              options={versions.map((version) => ({ value: version, label: version }))}
-            />
+            {versionsResource.isLoading ? (
+              <Skeleton className="h-8 w-36" />
+            ) : (
+              <Select
+                value={versionId}
+                onValueChange={setPickedVersion}
+                disabled={isBusy || isRunning}
+                ariaLabel={t('backups.version_title')}
+                className="w-36"
+                options={versions.map((version) => ({ value: version, label: version }))}
+              />
+            )}
             <Button
               variant="secondary"
               disabled={isBusy || isRunning || !versionId}
@@ -125,9 +125,11 @@ export const BackupsTab: React.FC<BackupsTabProps> = ({ instanceId, isRunning, g
       )}
 
       {isRunning && <p className="text-[12px] text-mute">{t('backups.stop_first')}</p>}
-      {backups.length === 0 && <p className="text-[13px] text-mute">{t('backups.empty')}</p>}
+      {!backupsResource.isLoading && backups.length === 0 && <p className="text-[13px] text-mute">{t('backups.empty')}</p>}
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" aria-busy={backupsResource.isLoading || backupsResource.isRefreshing}>
+        {backupsResource.isLoading &&
+          Array.from({ length: PLACEHOLDER_ROWS }, (_, index) => <Skeleton key={index} className="h-[58px] w-full rounded-[8px]" />)}
         {backups.map((backup) => (
           <li
             key={backup.name}

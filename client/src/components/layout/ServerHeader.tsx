@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Activity, Archive, Copy, Globe, Ellipsis, FileCode, Loader2, Package, Play, RotateCcw, Settings, Skull, Square, Users, Sliders } from 'lucide-react';
 import type { DaemonAction, GameDriverSummary, InstanceInfo, ServerStatus } from '../../types/daemon';
 import type { TabId } from '../../utils/tabs';
-import { GameLogo } from '../common/GameIcons';
-import { StatusDot } from '../common/StatusDot';
-import { Badge, type BadgeVariant } from '../ui/Badge';
+import { ServerAvatar } from '../common/ServerAvatar';
+import { ServerStatusBadge } from '../common/ServerStatusBadge';
+import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { DropdownMenu } from '../ui/DropdownMenu';
@@ -21,20 +21,6 @@ const TAB_ICONS: Record<TabId, React.ReactNode> = {
   properties: <Sliders className="h-4 w-4" />,
   backups: <Archive className="h-4 w-4" />,
   network: <Globe className="h-4 w-4" />
-};
-
-const STATUS_BADGE: Record<ServerStatus, BadgeVariant> = {
-  OFFLINE: 'neutral',
-  STARTING: 'warning',
-  ONLINE: 'success',
-  STOPPING: 'warning'
-};
-
-const STATUS_KEY: Record<ServerStatus, string> = {
-  OFFLINE: 'overview.controls.status_offline',
-  STARTING: 'overview.controls.status_starting',
-  ONLINE: 'overview.controls.status_online',
-  STOPPING: 'overview.controls.status_stopping'
 };
 
 interface ServerHeaderProps {
@@ -92,15 +78,12 @@ export const ServerHeader: React.FC<ServerHeaderProps> = ({
     <header className="shrink-0 border-b border-hairline bg-surface px-6 pt-4">
       <div className="flex items-center justify-between gap-4 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <GameLogo gameId={instance.gameId ?? ''} size={36} />
+          <ServerAvatar instance={instance} size={36} />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-[17px] font-semibold tracking-[-0.34px] text-ink">{instance.name}</h1>
               {isInstalled ? (
-                <Badge variant={STATUS_BADGE[status]}>
-                  <StatusDot status={status} className="h-1.5 w-1.5" />
-                  {t(STATUS_KEY[status])}
-                </Badge>
+                <ServerStatusBadge status={status} />
               ) : (
                 <Badge variant="warning">{t('server_header.not_installed')}</Badge>
               )}

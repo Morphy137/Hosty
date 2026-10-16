@@ -42,10 +42,10 @@
       "restart": "Reiniciar servidor",
       "kill": "Forçar encerramento (SIGKILL)",
       "address": "Endereço do servidor",
-      "status_online": "ONLINE",
-      "status_offline": "OFFLINE",
-      "status_starting": "INICIANDO",
-      "status_stopping": "PARANDO"
+      "status_online": "Online",
+      "status_offline": "Offline",
+      "status_starting": "Iniciando",
+      "status_stopping": "Parando"
     },
     "players": {
       "title": "Jogadores conectados",
@@ -63,7 +63,9 @@
     },
     "copy_ip_title": "Clique para copiar o IP",
     "console_source": "stdout",
-    "console_ready": "Pronto. Aguardando a saída do processo..."
+    "console_ready": "Pronto. Aguardando a saída do processo...",
+    "no_motd": "Este servidor não tem descrição",
+    "bridge_badge_hint": "O Telemetry Bridge está conectado e enviando dados ao vivo."
   },
   "players": {
     "search_placeholder": "Filtrar jogadores por nome...",
@@ -76,6 +78,25 @@
     "muted": "Silenciado",
     "actions": {
       "execute_button": "Aplicar ação"
+    },
+    "lists": {
+      "online": "Online",
+      "enforced": "Ativada",
+      "add": "Adicionar",
+      "remove": "Remover {{value}}",
+      "add_placeholder_player": "Nome do jogador",
+      "add_placeholder_ip": "Endereço IP",
+      "reason_placeholder": "Motivo (opcional)",
+      "offline_hint": "Inicie o servidor para adicionar entradas. Você pode removê-las a qualquer momento.",
+      "empty": "Esta lista está vazia.",
+      "unreadable": "Não foi possível ler {{file}}. Verifique se é um JSON válido.",
+      "level": "Nível {{level}}",
+      "detail": {
+        "reason": "Motivo",
+        "created": "Desde",
+        "source": "Por",
+        "expires": "Expira"
+      }
     }
   },
   "edit_server": {
@@ -87,7 +108,7 @@
     "name_label": "Nome do servidor",
     "motd_label": "Descrição (MOTD)",
     "folder_path": "Caminho da pasta",
-    "force_save_label": "Forçar 'save-all' ao parar o servidor",
+    "force_save_label": "Salvar o mundo antes de parar",
     "autostart_label": "Iniciar automaticamente quando o Hosty abrir",
     "icon_label": "Ícone do servidor",
     "upload_icon": "Enviar ícone",
@@ -136,12 +157,24 @@
       }
     },
     "auto_restart_label": "Reiniciar automaticamente após uma falha",
-    "scheduled_restart_label": "Reinício agendado a cada N horas (0 = desligado)",
+    "scheduled_restart_label": "Reinício programado (horas)",
     "backups_kept_label": "Backups mantidos",
     "bridge_reinstall_button": "Atualizar Telemetry Bridge",
     "bridge_remove_button": "Remover Telemetry Bridge",
     "bridge_removed": "Telemetry Bridge removido.",
-    "bridge_remove_offline": "Pare o servidor para remover o bridge."
+    "bridge_remove_offline": "Pare o servidor para remover o bridge.",
+    "tab_resources": "Recursos",
+    "tab_maintenance": "Manutenção",
+    "ram_hint": "Memória que o servidor pode usar. Deixe espaço para o sistema e outros aplicativos.",
+    "java_path_placeholder": "Java padrão",
+    "section_lifecycle": "Início e desligamento",
+    "section_restarts": "Reinícios",
+    "section_backups": "Backups",
+    "autostart_hint": "Inicia este servidor sempre que o Hosty abrir.",
+    "force_save_hint": "Envia primeiro o comando de salvar do jogo para não perder progresso.",
+    "auto_restart_hint": "Se o servidor fechar inesperadamente, o Hosty o inicia de novo (até 5 tentativas).",
+    "scheduled_restart_hint": "Reinicia o servidor a cada N horas enquanto estiver ligado, avisando os jogadores antes. 0 desativa.",
+    "backups_kept_hint": "Os backups mais antigos são apagados automaticamente quando um novo ultrapassa este número."
   },
   "mod_files": {
     "total_mods": "Total de mods",
@@ -161,6 +194,16 @@
       "size": "Tamanho",
       "status": "Status",
       "actions": "Ações"
+    },
+    "sort": {
+      "label": "Ordenar mods",
+      "name_asc": "Nome (A–Z)",
+      "name_desc": "Nome (Z–A)",
+      "newest": "Mais recentes",
+      "oldest": "Mais antigos",
+      "size_desc": "Maiores primeiro",
+      "size_asc": "Menores primeiro",
+      "enabled_first": "Ativos primeiro"
     }
   },
   "create_server": {
@@ -258,7 +301,7 @@
     "JAR_MISSING": "Arquivo do servidor não encontrado. Instale primeiro o software do servidor.",
     "JAVA_NOT_FOUND": "Executável do Java não encontrado. Instale o Java (JDK 21) ou defina MC_NEXUS_JAVA_PATH.",
     "PROCESS_ERROR": "Ocorreu um erro no processo do servidor.",
-    "SERVER_NOT_ONLINE": "Não é possível enviar comandos com o servidor offline.",
+    "SERVER_NOT_ONLINE": "O servidor precisa estar ligado para isso.",
     "ALREADY_RUNNING": "O processo do servidor já está em execução.",
     "SERVER_RUNNING": "Não é possível realizar a operação com o servidor em execução. Pare o servidor primeiro.",
     "INSTALL_IN_PROGRESS": "Já existe uma instalação em andamento.",

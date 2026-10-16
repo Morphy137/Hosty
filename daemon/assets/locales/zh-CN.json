@@ -34,7 +34,7 @@
       "players_online": "在线玩家",
       "tps": "服务器性能 (TPS)",
       "mspt": "刻耗时 (MSPT)",
-      "bridge_connected": "桥已启用"
+      "bridge_connected": "桥接已启用"
     },
     "controls": {
       "start": "启动服务器",
@@ -63,7 +63,9 @@
     },
     "copy_ip_title": "点击复制 IP",
     "console_source": "stdout",
-    "console_ready": "就绪。正在等待进程输出..."
+    "console_ready": "就绪。正在等待进程输出...",
+    "no_motd": "此服务器没有描述",
+    "bridge_badge_hint": "遥测桥已连接并正在传输实时数据。"
   },
   "players": {
     "search_placeholder": "按用户名筛选玩家...",
@@ -76,6 +78,25 @@
     "muted": "已禁言",
     "actions": {
       "execute_button": "执行操作"
+    },
+    "lists": {
+      "online": "在线",
+      "enforced": "已启用",
+      "add": "添加",
+      "remove": "移除 {{value}}",
+      "add_placeholder_player": "玩家名称",
+      "add_placeholder_ip": "IP 地址",
+      "reason_placeholder": "原因（可选）",
+      "offline_hint": "启动服务器后才能添加条目。随时可以移除条目。",
+      "empty": "此列表为空。",
+      "unreadable": "无法读取 {{file}}。请检查它是否为有效的 JSON。",
+      "level": "等级 {{level}}",
+      "detail": {
+        "reason": "原因",
+        "created": "自",
+        "source": "操作者",
+        "expires": "到期"
+      }
     }
   },
   "edit_server": {
@@ -87,7 +108,7 @@
     "name_label": "服务器名称",
     "motd_label": "描述 (MOTD)",
     "folder_path": "文件夹路径",
-    "force_save_label": "停止服务器时强制执行 'save-all'",
+    "force_save_label": "停止前保存世界",
     "autostart_label": "Hosty 启动时自动启动",
     "icon_label": "服务器图标",
     "upload_icon": "上传图标",
@@ -136,12 +157,24 @@
       }
     },
     "auto_restart_label": "崩溃后自动重启",
-    "scheduled_restart_label": "每 N 小时定时重启（0 = 关闭）",
+    "scheduled_restart_label": "定时重启（小时）",
     "backups_kept_label": "保留的备份数",
     "bridge_reinstall_button": "更新遥测桥",
     "bridge_remove_button": "移除遥测桥",
     "bridge_removed": "遥测桥已移除。",
-    "bridge_remove_offline": "请先停止服务器再移除。"
+    "bridge_remove_offline": "请先停止服务器再移除。",
+    "tab_resources": "资源",
+    "tab_maintenance": "维护",
+    "ram_hint": "服务器可使用的内存。请为系统和其他应用预留空间。",
+    "java_path_placeholder": "默认 Java",
+    "section_lifecycle": "启动与关闭",
+    "section_restarts": "重启",
+    "section_backups": "备份",
+    "autostart_hint": "每次打开 Hosty 时启动此服务器。",
+    "force_save_hint": "先发送游戏的保存命令，避免丢失进度。",
+    "auto_restart_hint": "服务器意外关闭时，Hosty 会重新启动它（最多 5 次）。",
+    "scheduled_restart_hint": "运行时每 N 小时重启一次，并提前通知玩家。0 表示关闭。",
+    "backups_kept_hint": "新备份超过此数量时，会自动删除较旧的备份。"
   },
   "mod_files": {
     "total_mods": "模组总数",
@@ -161,6 +194,16 @@
       "size": "文件大小",
       "status": "状态",
       "actions": "操作"
+    },
+    "sort": {
+      "label": "排序模组",
+      "name_asc": "名称（A–Z）",
+      "name_desc": "名称（Z–A）",
+      "newest": "最新优先",
+      "oldest": "最旧优先",
+      "size_desc": "最大优先",
+      "size_asc": "最小优先",
+      "enabled_first": "已启用优先"
     }
   },
   "create_server": {
@@ -258,7 +301,7 @@
     "JAR_MISSING": "未找到服务器文件。请先安装服务器软件。",
     "JAVA_NOT_FOUND": "未找到 Java 可执行文件。请安装 Java (JDK 21) 或设置 MC_NEXUS_JAVA_PATH。",
     "PROCESS_ERROR": "服务器进程出现错误。",
-    "SERVER_NOT_ONLINE": "服务器离线时无法发送命令。",
+    "SERVER_NOT_ONLINE": "此操作需要服务器正在运行。",
     "ALREADY_RUNNING": "服务器进程已在运行。",
     "SERVER_RUNNING": "服务器运行时无法执行此操作。请先停止服务器。",
     "INSTALL_IN_PROGRESS": "已有安装正在进行。",

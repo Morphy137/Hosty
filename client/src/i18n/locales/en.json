@@ -31,7 +31,7 @@
       "players_online": "Players Online",
       "tps": "Server Performance (TPS)",
       "mspt": "Tick Time (MSPT)",
-      "bridge_connected": "Bridge Active"
+      "bridge_connected": "Bridge active"
     },
     "controls": {
       "start": "Start Server",
@@ -39,10 +39,10 @@
       "restart": "Restart Server",
       "kill": "Kill (SIGKILL)",
       "address": "Server Address",
-      "status_online": "ONLINE",
-      "status_offline": "OFFLINE",
-      "status_starting": "STARTING",
-      "status_stopping": "STOPPING"
+      "status_online": "Online",
+      "status_offline": "Offline",
+      "status_starting": "Starting",
+      "status_stopping": "Stopping"
     },
     "players": {
       "title": "Connected Players",
@@ -60,7 +60,9 @@
     },
     "copy_ip_title": "Click to copy IP",
     "console_source": "stdout",
-    "console_ready": "Ready. Awaiting process output stream..."
+    "console_ready": "Ready. Awaiting process output stream...",
+    "no_motd": "No description for this server",
+    "bridge_badge_hint": "The Telemetry Bridge is connected and streaming live data."
   },
   "players": {
     "search_placeholder": "Filter players by username...",
@@ -73,6 +75,25 @@
     "muted": "Muted",
     "actions": {
       "execute_button": "Apply Action"
+    },
+    "lists": {
+      "online": "Online",
+      "enforced": "Enabled",
+      "add": "Add",
+      "remove": "Remove {{value}}",
+      "add_placeholder_player": "Player name",
+      "add_placeholder_ip": "IP address",
+      "reason_placeholder": "Reason (optional)",
+      "offline_hint": "Start the server to add entries. You can remove entries at any time.",
+      "empty": "This list is empty.",
+      "unreadable": "{{file}} could not be read. Check that it is valid JSON.",
+      "level": "Level {{level}}",
+      "detail": {
+        "reason": "Reason",
+        "created": "Since",
+        "source": "By",
+        "expires": "Expires"
+      }
     }
   },
   "edit_server": {
@@ -84,7 +105,7 @@
     "name_label": "Server Name",
     "motd_label": "Description (MOTD)",
     "folder_path": "Folder Path",
-    "force_save_label": "Force 'save-all' on server stop",
+    "force_save_label": "Save the world before stopping",
     "autostart_label": "Start automatically when Hosty opens",
     "icon_label": "Server Icon",
     "upload_icon": "Upload Icon",
@@ -133,12 +154,24 @@
       }
     },
     "auto_restart_label": "Restart automatically after a crash",
-    "scheduled_restart_label": "Scheduled restart every N hours (0 = off)",
+    "scheduled_restart_label": "Scheduled restart (hours)",
     "backups_kept_label": "Backups kept",
     "bridge_reinstall_button": "Update Telemetry Bridge",
     "bridge_remove_button": "Remove Telemetry Bridge",
     "bridge_removed": "Telemetry Bridge removed.",
-    "bridge_remove_offline": "Stop the server to remove the bridge."
+    "bridge_remove_offline": "Stop the server to remove the bridge.",
+    "tab_resources": "Resources",
+    "tab_maintenance": "Maintenance",
+    "ram_hint": "Memory the server may use. Leave room for your system and other apps.",
+    "java_path_placeholder": "Default Java",
+    "section_lifecycle": "Startup and shutdown",
+    "section_restarts": "Restarts",
+    "section_backups": "Backups",
+    "autostart_hint": "Starts this server each time Hosty opens.",
+    "force_save_hint": "Sends the game's save command first so no progress is lost.",
+    "auto_restart_hint": "If the server closes unexpectedly, Hosty starts it again (up to 5 attempts).",
+    "scheduled_restart_hint": "Restarts the server every N hours while it runs, warning players first. 0 turns it off.",
+    "backups_kept_hint": "Older backups are deleted automatically when a new one exceeds this number."
   },
   "mod_files": {
     "total_mods": "Total Mods",
@@ -158,6 +191,16 @@
       "size": "File Size",
       "status": "Status",
       "actions": "Actions"
+    },
+    "sort": {
+      "label": "Sort mods",
+      "name_asc": "Name (A–Z)",
+      "name_desc": "Name (Z–A)",
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "size_desc": "Largest first",
+      "size_asc": "Smallest first",
+      "enabled_first": "Enabled first"
     }
   },
   "create_server": {
@@ -255,7 +298,7 @@
     "JAR_MISSING": "Server file not found. Install the server software first.",
     "JAVA_NOT_FOUND": "Java executable not found. Please install Java (JDK 21) or set MC_NEXUS_JAVA_PATH.",
     "PROCESS_ERROR": "An error occurred with the server process.",
-    "SERVER_NOT_ONLINE": "Cannot send commands while the server is offline.",
+    "SERVER_NOT_ONLINE": "The server must be running for this.",
     "ALREADY_RUNNING": "The server process is already running.",
     "SERVER_RUNNING": "Cannot perform operation while server is running. Stop the server first.",
     "INSTALL_IN_PROGRESS": "An installation is already running.",

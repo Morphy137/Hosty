@@ -55,6 +55,8 @@ export interface InstanceInfo {
   motd: string;
   hasJar: boolean;
   hasIcon: boolean;
+  /** Changes whenever the icon file changes; clients append it to the icon URL so a new icon is not served from cache. */
+  iconVersion?: number;
   isImported: boolean;
   createdAt: string;
   maxPlayers: number;
@@ -356,7 +358,9 @@ export class InstanceManager {
 
     const stat = fs.statSync(dir);
     const hasJar = driver?.validateInstallation(dir, settings.launchFile) ?? false;
-    const hasIcon = findInstanceIcon(dir, driver?.summary.serverIcon) !== null;
+    const iconPath = findInstanceIcon(dir, driver?.summary.serverIcon);
+    const hasIcon = iconPath !== null;
+    const iconVersion = iconPath ? Math.round(fs.statSync(iconPath).mtimeMs) : undefined;
     const bridgeTargets = driver?.summary.bridgeTargets ?? { default: { dir: 'mods' } };
     const bridgeLoaders = driver?.summary.bridgeLoaders ?? [];
 
@@ -368,6 +372,7 @@ export class InstanceManager {
       motd,
       hasJar,
       hasIcon,
+      iconVersion,
       isImported,
       createdAt: customCreatedAt || stat.birthtime.toISOString(),
       maxPlayers,

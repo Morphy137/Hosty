@@ -63,7 +63,9 @@
     },
     "copy_ip_title": "IP कॉपी करने के लिए क्लिक करें",
     "console_source": "stdout",
-    "console_ready": "तैयार। प्रोसेस आउटपुट की प्रतीक्षा है..."
+    "console_ready": "तैयार। प्रोसेस आउटपुट की प्रतीक्षा है...",
+    "no_motd": "इस सर्वर का कोई विवरण नहीं है",
+    "bridge_badge_hint": "टेलीमेट्री ब्रिज जुड़ा है और लाइव डेटा भेज रहा है।"
   },
   "players": {
     "search_placeholder": "यूज़रनेम से खिलाड़ी फ़िल्टर करें...",
@@ -76,6 +78,25 @@
     "muted": "म्यूट",
     "actions": {
       "execute_button": "कार्रवाई लागू करें"
+    },
+    "lists": {
+      "online": "ऑनलाइन",
+      "enforced": "सक्षम",
+      "add": "जोड़ें",
+      "remove": "{{value}} हटाएँ",
+      "add_placeholder_player": "खिलाड़ी का नाम",
+      "add_placeholder_ip": "IP पता",
+      "reason_placeholder": "कारण (वैकल्पिक)",
+      "offline_hint": "प्रविष्टियाँ जोड़ने के लिए सर्वर शुरू करें। हटाना कभी भी किया जा सकता है।",
+      "empty": "यह सूची खाली है।",
+      "unreadable": "{{file}} पढ़ा नहीं जा सका। जाँचें कि यह मान्य JSON है।",
+      "level": "स्तर {{level}}",
+      "detail": {
+        "reason": "कारण",
+        "created": "से",
+        "source": "द्वारा",
+        "expires": "समाप्ति"
+      }
     }
   },
   "edit_server": {
@@ -87,7 +108,7 @@
     "name_label": "सर्वर का नाम",
     "motd_label": "विवरण (MOTD)",
     "folder_path": "फ़ोल्डर पथ",
-    "force_save_label": "सर्वर रोकते समय 'save-all' अनिवार्य करें",
+    "force_save_label": "रोकने से पहले दुनिया सहेजें",
     "autostart_label": "Hosty खुलने पर अपने आप शुरू करें",
     "icon_label": "सर्वर आइकन",
     "upload_icon": "आइकन अपलोड करें",
@@ -136,12 +157,24 @@
       }
     },
     "auto_restart_label": "क्रैश के बाद अपने आप रीस्टार्ट करें",
-    "scheduled_restart_label": "हर N घंटे में निर्धारित रीस्टार्ट (0 = बंद)",
+    "scheduled_restart_label": "निर्धारित पुनः आरंभ (घंटे)",
     "backups_kept_label": "रखे गए बैकअप",
     "bridge_reinstall_button": "टेलीमेट्री ब्रिज अपडेट करें",
     "bridge_remove_button": "टेलीमेट्री ब्रिज हटाएं",
     "bridge_removed": "टेलीमेट्री ब्रिज हटा दिया गया।",
-    "bridge_remove_offline": "ब्रिज हटाने के लिए सर्वर रोकें।"
+    "bridge_remove_offline": "ब्रिज हटाने के लिए सर्वर रोकें।",
+    "tab_resources": "संसाधन",
+    "tab_maintenance": "रखरखाव",
+    "ram_hint": "सर्वर कितनी मेमोरी उपयोग कर सकता है। सिस्टम और अन्य ऐप्स के लिए जगह छोड़ें।",
+    "java_path_placeholder": "डिफ़ॉल्ट Java",
+    "section_lifecycle": "शुरू और बंद करना",
+    "section_restarts": "पुनः आरंभ",
+    "section_backups": "बैकअप",
+    "autostart_hint": "हर बार Hosty खुलने पर यह सर्वर शुरू करता है।",
+    "force_save_hint": "पहले गेम का सेव कमांड भेजता है ताकि प्रगति न खोए।",
+    "auto_restart_hint": "अगर सर्वर अचानक बंद हो, तो Hosty उसे फिर शुरू करता है (अधिकतम 5 प्रयास)।",
+    "scheduled_restart_hint": "चलते समय हर N घंटे में सर्वर फिर शुरू करता है, पहले खिलाड़ियों को चेतावनी देता है। 0 से बंद।",
+    "backups_kept_hint": "नया बैकअप इस संख्या से अधिक होने पर पुराने बैकअप अपने आप हट जाते हैं।"
   },
   "mod_files": {
     "total_mods": "कुल मॉड",
@@ -161,6 +194,16 @@
       "size": "फ़ाइल आकार",
       "status": "स्थिति",
       "actions": "कार्रवाइयाँ"
+    },
+    "sort": {
+      "label": "मॉड क्रमबद्ध करें",
+      "name_asc": "नाम (A–Z)",
+      "name_desc": "नाम (Z–A)",
+      "newest": "नवीनतम पहले",
+      "oldest": "सबसे पुराने पहले",
+      "size_desc": "सबसे बड़े पहले",
+      "size_asc": "सबसे छोटे पहले",
+      "enabled_first": "सक्षम पहले"
     }
   },
   "create_server": {
@@ -258,7 +301,7 @@
     "JAR_MISSING": "सर्वर फ़ाइल नहीं मिली। पहले सर्वर सॉफ़्टवेयर इंस्टॉल करें।",
     "JAVA_NOT_FOUND": "Java एक्ज़ीक्यूटेबल नहीं मिला। कृपया Java (JDK 21) इंस्टॉल करें या MC_NEXUS_JAVA_PATH सेट करें।",
     "PROCESS_ERROR": "सर्वर प्रोसेस में त्रुटि हुई।",
-    "SERVER_NOT_ONLINE": "सर्वर ऑफ़लाइन होने पर कमांड नहीं भेजी जा सकती।",
+    "SERVER_NOT_ONLINE": "इसके लिए सर्वर चालू होना चाहिए।",
     "ALREADY_RUNNING": "सर्वर प्रोसेस पहले से चल रही है।",
     "SERVER_RUNNING": "सर्वर चलते समय यह कार्रवाई नहीं हो सकती। पहले सर्वर रोकें।",
     "INSTALL_IN_PROGRESS": "एक इंस्टॉलेशन पहले से चल रहा है।",

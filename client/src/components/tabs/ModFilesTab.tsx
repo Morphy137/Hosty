@@ -1,7 +1,20 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Package, Trash2, Sliders, CheckCircle2, XCircle, Download } from 'lucide-react';
 import type { ModFileInfo } from '../../types/daemon';
+import { DEFAULT_MOD_SORT, isModSort, MOD_SORTS, sortModFiles, type ModSort } from '../../utils/modSort';
+import { Select } from '../ui/Select';
+
+const SORT_STORAGE_KEY = 'hosty.modSort';
+
+const readStoredSort = (): ModSort => {
+  try {
+    const stored = localStorage.getItem(SORT_STORAGE_KEY);
+    return isModSort(stored) ? stored : DEFAULT_MOD_SORT;
+  } catch {
+    return DEFAULT_MOD_SORT;
+  }
+};
 
 interface ModFilesTabProps {
   files: ModFileInfo[];
@@ -23,13 +36,32 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
   onOpenConfigTab,
   onBrowseCatalog
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [sort, setSort] = useState<ModSort>(readStoredSort);
 
-  const filteredFiles = files.filter(
-    (f) =>
-      f.originalName.toLowerCase().includes(filter.toLowerCase()) ||
-      f.filename.toLowerCase().includes(filter.toLowerCase())
+  const changeSort = (value: string) => {
+    if (!isModSort(value)) return;
+    setSort(value);
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, value);
+    } catch {
+      // Remembering the choice is a convenience only.
+    }
+  };
+
+  const filteredFiles = useMemo(
+    () =>
+      sortModFiles(
+        files.filter(
+          (f) =>
+            f.originalName.toLowerCase().includes(filter.toLowerCase()) ||
+            f.filename.toLowerCase().includes(filter.toLowerCase())
+        ),
+        sort
+      ),
+    [files, filter, sort]
   );
+  const dateFormat = useMemo(() => new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }), [i18n.language]);
 
   const activeCount = files.filter((f) => f.enabled).length;
   const disabledCount = files.length - activeCount;
@@ -107,9 +139,16 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
           />
         </div>
 
-        <span className="font-mono text-[12px] text-mute">
-          {t('mod_files.directory_hint')}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[12px] text-mute">{t('mod_files.directory_hint')}</span>
+          <Select
+            value={sort}
+            onValueChange={changeSort}
+            ariaLabel={t('mod_files.sort.label')}
+            className="w-48"
+            options={MOD_SORTS.map((option) => ({ value: option, label: t(`mod_files.sort.${option}`) }))}
+          />
+        </div>
       </div>
 
       {/* Mods Table */}
@@ -146,8 +185,9 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
                   </div>
                 </div>
 
-                <div className="col-span-2 font-mono text-[12px] text-body">
-                  {mod.sizeFormatted}
+                <div className="col-span-2">
+                  <div className="font-mono text-[12px] text-body">{mod.sizeFormatted}</div>
+                  <div className="mt-0.5 text-[11px] text-mute">{dateFormat.format(new Date(mod.modifiedAt))}</div>
                 </div>
 
                 <div className="col-span-2 flex justify-center">

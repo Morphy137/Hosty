@@ -118,6 +118,13 @@ describe('InstanceManager', () => {
     expect(fs.existsSync(path.join(inst.dir, 'server-icon.png'))).toBe(true);
     expect(manager.getInstance('icon-test')?.hasIcon).toBe(true);
 
+    // The version changes with the file so the app never shows a cached old icon.
+    const firstVersion = manager.getInstance('icon-test')?.iconVersion;
+    expect(firstVersion).toBeGreaterThan(0);
+    const later = new Date(Date.now() + 5000);
+    fs.utimesSync(path.join(inst.dir, '.hosty', 'icon.png'), later, later);
+    expect(manager.getInstance('icon-test')?.iconVersion).not.toBe(firstVersion);
+
     // A size the game rejects only updates Hosty's copy.
     fs.rmSync(path.join(inst.dir, 'server-icon.png'));
     expect(manager.saveInstanceIcon('icon-test', fakePng(128))).toBe('wrong-size');

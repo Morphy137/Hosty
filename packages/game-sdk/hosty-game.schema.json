@@ -1089,6 +1089,91 @@
           }
         }
       }
+    },
+    "playerLists": {
+      "type": "array",
+      "description": "Lists the server keeps in JSON files (whitelist, operators, bans...).",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "file",
+          "key",
+          "add",
+          "remove"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,39}$"
+          },
+          "label": {
+            "$ref": "#/$defs/localized"
+          },
+          "description": {
+            "$ref": "#/$defs/localized"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "valueType": {
+            "enum": [
+              "player",
+              "ip"
+            ]
+          },
+          "add": {
+            "type": "string",
+            "pattern": "\\{\\{value\\}\\}"
+          },
+          "remove": {
+            "type": "string",
+            "pattern": "\\{\\{value\\}\\}"
+          },
+          "reason": {
+            "type": "boolean"
+          },
+          "toggle": {
+            "type": "object",
+            "required": [
+              "configFile",
+              "key",
+              "on",
+              "off"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "configFile": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "on": {
+                "type": "string"
+              },
+              "off": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
