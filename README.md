@@ -10,7 +10,7 @@ Create, run and manage dedicated servers on your own PC — no terminals, no con
 
 ![Version](https://img.shields.io/badge/version-0.5.1--alpha-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
 </div>
 
@@ -89,4 +89,9 @@ Hosty is in **alpha** (`0.5.x`) and evolving quickly. Feedback and ideas are ver
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+Hosty is free to use, copy and modify for any noncommercial purpose under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Selling it, or using it in a paid product or service, is not allowed,
+and anyone who shares it or a modified version must keep the copyright notice (`Required Notice:` line in [LICENSE](LICENSE)).
+
+The SDK packages in `packages/` (`game-sdk`, `create-hosty-game`, `bridge-protocol`) stay under MIT so anyone can build
+game packs with them. Game packs by other authors keep the license their authors chose.
