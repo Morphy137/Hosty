@@ -6,7 +6,7 @@
 
 Create, run and manage dedicated servers on your own PC — no terminals, no config-file hunting, no headaches.
 
-![Version](https://img.shields.io/badge/version-0.3.1--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.3.2--alpha-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
