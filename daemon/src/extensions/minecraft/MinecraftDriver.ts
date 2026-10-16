@@ -69,8 +69,9 @@ export class MinecraftDriver extends DeclarativeGameDriver {
   /** Paper / Purpur / Fabric / Vanilla / Forge / NeoForge downloads and uploaded jars (variants: manifest `installer`). */
   public readonly installer: GameInstaller = {
     listVersions: (variant) => ServerInstaller.getVersions(variant as LoaderType),
-    install: (instanceDir, variant, version, hooks) =>
-      ServerInstaller.provisionServer(instanceDir, variant as LoaderType, version, hooks),
+    listBuilds: (variant, version) => ServerInstaller.getBuilds(variant as LoaderType, version),
+    install: (instanceDir, variant, version, hooks, build) =>
+      ServerInstaller.provisionServer(instanceDir, variant as LoaderType, version, hooks, build),
     inspectFile: (filePath): InstallFileInfo => {
       const inspection = inspectJar(filePath);
       return {

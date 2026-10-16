@@ -8,10 +8,12 @@ import {
   FORGE_METADATA_URL,
   NEOFORGE_METADATA_URL,
   compareVersions,
+  forgeBuilds,
   forgeInstallerUrl,
   forgeMinecraftVersions,
   latestForgeVersion,
   latestNeoForgeVersion,
+  neoForgeBuilds,
   neoForgeInstallerUrl,
   neoForgeMinecraftVersions,
   parseMavenVersions
@@ -49,6 +51,8 @@ export const DEFAULT_MINECRAFT_VERSIONS: readonly string[] = [
   '1.18.2',
   '1.16.5'
 ];
+
+const BUILD_PATTERN = /^[0-9a-zA-Z._+-]+$/;
 
 const sha256Of = (hex: string | undefined): ExpectedChecksum | undefined =>
   hex ? { algorithm: 'sha256', hex } : undefined;
@@ -95,11 +99,52 @@ export class ServerInstaller {
     }
   }
 
+  /**
+   * Builds of a loader for one Minecraft version, newest first (what the user may pick instead of "latest").
+   * Empty for loaders without separate builds (vanilla) or when the upstream cannot be reached.
+   */
+  public static async getBuilds(loader: LoaderType, mcVersion: string): Promise<string[]> {
+    if (!this.isValidLoader(loader) || !AUTOMATIC_LOADERS.includes(loader)) return [];
+    if (!BUILD_PATTERN.test(mcVersion)) return [];
+
+    try {
+      if (loader === 'forge') return forgeBuilds(await this.fetchMavenVersions(FORGE_METADATA_URL), mcVersion);
+      if (loader === 'neoforge') return neoForgeBuilds(await this.fetchMavenVersions(NEOFORGE_METADATA_URL), mcVersion);
+
+      if (loader === 'paper') {
+        const res = await fetch(`https://fill.papermc.io/v3/projects/paper/versions/${mcVersion}/builds`, { headers: DEFAULT_HEADERS });
+        if (!res.ok) return [];
+        const builds = (await res.json()) as Array<{ id: number; channel?: string }>;
+        const ids = builds.map((build) => build.id).sort((a, b) => b - a);
+        return ids.map(String);
+      }
+
+      if (loader === 'purpur') {
+        const res = await fetch(`https://api.purpurmc.org/v2/purpur/${mcVersion}`, { headers: DEFAULT_HEADERS });
+        if (!res.ok) return [];
+        const data = (await res.json()) as { builds?: { all?: string[] } };
+        return (data.builds?.all ?? []).slice().sort((a, b) => Number(b) - Number(a));
+      }
+
+      if (loader === 'fabric') {
+        const res = await fetch(`https://meta.fabricmc.net/v2/versions/loader/${mcVersion}`, { headers: DEFAULT_HEADERS });
+        if (!res.ok) return [];
+        const data = (await res.json()) as Array<{ loader: { version: string; stable: boolean } }>;
+        const versions = data.map((entry) => entry.loader);
+        return [...versions.filter((entry) => entry.stable), ...versions.filter((entry) => !entry.stable)].map((entry) => entry.version);
+      }
+    } catch {
+      return [];
+    }
+    return [];
+  }
+
   public static async provisionServer(
     workingDir: string,
     loader: LoaderType,
     mcVersion: string,
-    hooks: ProvisionHooks
+    hooks: ProvisionHooks,
+    build?: string
   ): Promise<void> {
     if (!this.isValidLoader(loader)) {
       throw new DaemonError('INVALID_LOADER', `Invalid loader: "${loader}".`);
@@ -124,7 +169,8 @@ export class ServerInstaller {
 
     onPhase?.('resolve');
     onLog(`[Provisioner] Resolving ${loader.toUpperCase()} build for Minecraft ${mcVersion}...`);
-    const download = await this.resolveDownload(loader, mcVersion);
+    if (build && !BUILD_PATTERN.test(build)) throw new DaemonError('INVALID_VERSION', `Invalid build: "${build}".`);
+    const download = await this.resolveDownload(loader, mcVersion, build || undefined);
 
     const isInstallerLoader = loader === 'forge' || loader === 'neoforge';
     const downloadTarget = path.join(workingDir, isInstallerLoader ? 'installer.jar' : 'server.jar');
@@ -219,24 +265,27 @@ export class ServerInstaller {
   /** Download URL of the server (or installer) and, when the source publishes one, its checksum. */
   private static async resolveDownload(
     loader: LoaderType,
-    mcVersion: string
+    mcVersion: string,
+    build?: string
   ): Promise<{ url: string; checksum?: ExpectedChecksum }> {
     if (loader === 'forge') {
-      const version = latestForgeVersion(await this.fetchMavenVersions(FORGE_METADATA_URL), mcVersion);
+      const all = await this.fetchMavenVersions(FORGE_METADATA_URL);
+      const version = build ? (all.includes(`${mcVersion}-${build}`) ? `${mcVersion}-${build}` : null) : latestForgeVersion(all, mcVersion);
       if (!version) throw new DaemonError('INVALID_VERSION', `No Forge build found for Minecraft ${mcVersion}`);
       return { url: forgeInstallerUrl(version) };
     }
 
     if (loader === 'neoforge') {
-      const version = latestNeoForgeVersion(await this.fetchMavenVersions(NEOFORGE_METADATA_URL), mcVersion);
+      const all = await this.fetchMavenVersions(NEOFORGE_METADATA_URL);
+      const version = build ? (neoForgeBuilds(all, mcVersion).includes(build) ? build : null) : latestNeoForgeVersion(all, mcVersion);
       if (!version) throw new DaemonError('INVALID_VERSION', `No NeoForge build found for Minecraft ${mcVersion}`);
       return { url: neoForgeInstallerUrl(version) };
     }
 
     if (loader === 'paper') {
       try {
-        // Paper Fill v3 latest build
-        const res = await fetch(`https://fill.papermc.io/v3/projects/paper/versions/${mcVersion}/builds/latest`, {
+        // Paper Fill v3: the chosen build, or the latest one
+        const res = await fetch(`https://fill.papermc.io/v3/projects/paper/versions/${mcVersion}/builds/${build ?? 'latest'}`, {
           headers: DEFAULT_HEADERS
         });
         if (res.ok) {
@@ -252,6 +301,7 @@ export class ServerInstaller {
         // Fallback to v2 builds
       }
 
+      if (build) throw new DaemonError('INVALID_VERSION', `Paper build ${build} was not found for Minecraft ${mcVersion}`);
       const v2Res = await fetch(`https://api.papermc.io/v2/projects/paper/versions/${mcVersion}/builds`, {
         headers: DEFAULT_HEADERS
       });
@@ -273,7 +323,7 @@ export class ServerInstaller {
     }
 
     if (loader === 'purpur') {
-      return { url: `https://api.purpurmc.org/v2/purpur/${mcVersion}/latest/download` };
+      return { url: `https://api.purpurmc.org/v2/purpur/${mcVersion}/${build ?? 'latest'}/download` };
     }
 
     if (loader === 'fabric') {
@@ -285,12 +335,13 @@ export class ServerInstaller {
       if (!installerRes.ok) throw new DaemonError('UPSTREAM_ERROR', 'Failed to fetch Fabric installer metadata');
       const installers = (await installerRes.json()) as Array<{ version: string }>;
 
-      if (!loaders[0] || !installers[0]) {
+      const loaderVersion = build ?? loaders[0]?.version;
+      if (!loaderVersion || !installers[0]) {
         throw new DaemonError('UPSTREAM_ERROR', 'Fabric loader or installer version not found');
       }
 
       return {
-        url: `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}/${loaders[0].version}/${installers[0].version}/server/jar`
+        url: `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}/${loaderVersion}/${installers[0].version}/server/jar`
       };
     }
 

@@ -46,6 +46,22 @@ export const latestForgeVersion = (mavenVersions: string[], mcVersion: string): 
   return matches.length > 0 ? matches[matches.length - 1] : null;
 };
 
+/** Forge builds of a Minecraft version (the part after `<mc>-`), newest first. */
+export const forgeBuilds = (mavenVersions: string[], mcVersion: string): string[] =>
+  mavenVersions
+    .filter((version) => version.startsWith(`${mcVersion}-`))
+    .map((version) => version.slice(mcVersion.length + 1))
+    .reverse();
+
+/** NeoForge versions that target a Minecraft version, newest first; stable releases come before pre-releases. */
+export const neoForgeBuilds = (mavenVersions: string[], mcVersion: string): string[] => {
+  const matches = mavenVersions
+    .filter((version) => neoForgeToMinecraftVersion(version) === mcVersion)
+    .sort((a, b) => compareVersions(b, a));
+  const isPreRelease = (version: string) => /-(alpha|beta|rc)/i.test(version);
+  return [...matches.filter((version) => !isPreRelease(version)), ...matches.filter(isPreRelease)];
+};
+
 export const forgeInstallerUrl = (forgeVersion: string): string =>
   `https://maven.minecraftforge.net/net/minecraftforge/forge/${forgeVersion}/forge-${forgeVersion}-installer.jar`;
 
