@@ -480,9 +480,7 @@
     "install_placeholder": "Path to a game pack folder (contains hosty-game.json)",
     "install_title": "Select a game pack folder",
     "install_button": "Install",
-    "builtin": "Built-in",
     "uninstall": "Uninstall pack",
-    "copy_manifest": "Copy manifest as a template",
     "template_placeholder": "New pack id (e.g. my-game)",
     "template_button": "New pack from template",
     "open_folder": "Open games folder"

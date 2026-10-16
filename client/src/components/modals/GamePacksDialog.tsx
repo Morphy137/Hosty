@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Copy, FolderInput, FolderOpen, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertTriangle, FolderInput, FolderOpen, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
 import {
   createGamePackFromTemplate,
-  fetchGamePackManifest,
   fetchGamePacks,
   installGamePack,
   openGamePacksFolder,
@@ -183,7 +182,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
 
         <ul className="space-y-2">
           {packs.map((pack) => (
-            <li key={`${pack.source}:${pack.id ?? pack.dir}`} className="rounded-[8px] border border-hairline bg-surface-2 p-3.5">
+            <li key={pack.id ?? pack.dir} className="rounded-[8px] border border-hairline bg-surface-2 p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -193,23 +192,6 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                   <div className="truncate font-mono text-[11px] text-mute">{pack.id ?? pack.dir}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {pack.source === 'builtin' && <Badge variant="neutral">{t('packs.builtin')}</Badge>}
-                  {pack.source === 'builtin' && !pack.hasCode && pack.id && (
-                    <button
-                      type="button"
-                      title={t('packs.copy_manifest')}
-                      aria-label={t('packs.copy_manifest')}
-                      className="cursor-pointer rounded-[4px] p-1 text-mute hover:bg-surface-3 hover:text-ink"
-                      onClick={() =>
-                        void fetchGamePackManifest(pack.id as string)
-                          .then((manifest) => navigator.clipboard.writeText(JSON.stringify(manifest, null, 2)))
-                          .then(() => setError(null))
-                          .catch((err) => setError(err instanceof Error ? err.message : String(err)))
-                      }
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                  )}
                   {pack.loaded ? (
                     <Badge variant="success">{t('packs.loaded')}</Badge>
                   ) : pack.enabled === false ? (
@@ -217,7 +199,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                   ) : (
                     <Badge variant="danger">{t('packs.invalid')}</Badge>
                   )}
-                  {pack.source === 'external' && pack.id && (
+                  {pack.id && (
                     <button
                       type="button"
                       aria-label={t('packs.uninstall')}
@@ -228,7 +210,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
-                  {pack.hasCode && pack.source === 'external' && (
+                  {pack.hasCode && (
                     <Badge variant={pack.trusted ? 'accent' : 'warning'}>
                       {pack.trusted ? t('packs.code_trusted') : t('packs.code_untrusted')}
                     </Badge>
@@ -254,7 +236,7 @@ export const GamePacksDialog: React.FC<GamePacksDialogProps> = ({ open, onClose,
                 </ul>
               )}
 
-              {pack.source === 'external' && pack.hasCode && !pack.trusted && pack.id && (
+              {pack.hasCode && !pack.trusted && pack.id && (
                 <div className="mt-3 flex items-start gap-3 rounded-[6px] border border-warning bg-warning-soft p-3">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                   <div className="space-y-2 text-[12px]">

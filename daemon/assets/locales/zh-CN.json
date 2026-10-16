@@ -482,10 +482,8 @@
     "trust_button": "信任并启用代码",
     "install_placeholder": "游戏包文件夹路径（包含 hosty-game.json）",
     "install_title": "选择游戏包文件夹",
-    "install_button": "安装",
-    "builtin": "内置",
-    "uninstall": "卸载游戏包",
-    "copy_manifest": "复制清单作为模板",
+    "install_button": "安装",
+    "uninstall": "卸载游戏包",
     "template_placeholder": "新包 ID（例如 my-game）",
     "template_button": "从模板新建包",
     "open_folder": "打开游戏文件夹"

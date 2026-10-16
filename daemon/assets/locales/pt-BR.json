@@ -482,10 +482,8 @@
     "trust_button": "Confiar e ativar o código",
     "install_placeholder": "Caminho de uma pasta de pacote (contém hosty-game.json)",
     "install_title": "Selecione uma pasta de pacote de jogo",
-    "install_button": "Instalar",
-    "builtin": "Integrado",
-    "uninstall": "Desinstalar pacote",
-    "copy_manifest": "Copiar manifest como modelo",
+    "install_button": "Instalar",
+    "uninstall": "Desinstalar pacote",
     "template_placeholder": "ID do novo pack (ex.: meu-jogo)",
     "template_button": "Novo pack a partir do modelo",
     "open_folder": "Abrir pasta de jogos"
