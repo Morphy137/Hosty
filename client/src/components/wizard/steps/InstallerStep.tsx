@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle2, ExternalLink, FileText, Loader2, Search } from 'lucide-react';
-import { fetchInstallerVersions, inspectServerFile } from '../../../api/daemonApi';
+import { fetchInstallerBuilds, fetchInstallerVersions, inspectServerFile } from '../../../api/daemonApi';
 import type { InstallerVariant } from '../../../types/daemon';
 import { checkJava } from '../../../utils/javaRequirement';
 import { resolveLocalized } from '../../../utils/localized';
 import { Badge } from '../../ui/Badge';
 import { Dropzone } from '../../ui/Dropzone';
 import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
 import { cn } from '../../../utils/cn';
 import type { CustomSetupProps } from '../wizardTypes';
 
@@ -31,12 +32,14 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [isInspecting, setIsInspecting] = useState(false);
   const [filter, setFilter] = useState('');
+  const [builds, setBuilds] = useState<string[]>([]);
+  const [isLoadingBuilds, setIsLoadingBuilds] = useState(false);
 
   const patch = (changes: Partial<typeof install>) => update({ install: { ...install, ...changes } });
 
   // The draft starts without a variant; settle on the game's default once its manifest is known.
   useEffect(() => {
-    if (variant && install.variant !== variant.id) update({ install: { ...install, variant: variant.id, version: '' } });
+    if (variant && install.variant !== variant.id) update({ install: { ...install, variant: variant.id, version: '', build: '' } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant?.id]);
 
@@ -48,7 +51,7 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
       .then((list) => {
         if (ignore) return;
         setVersions(list);
-        if (!list.includes(install.version)) update({ install: { ...install, variant: variant.id, version: list[0] ?? '' } });
+        if (!list.includes(install.version)) update({ install: { ...install, variant: variant.id, version: list[0] ?? '', build: '' } });
       })
       .finally(() => {
         if (!ignore) setIsLoadingVersions(false);
@@ -59,6 +62,26 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
     // `install.version` is intentionally excluded: the list is refetched per variant only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.id, variant?.id, variant?.automatic, install.useOwnFile]);
+
+  // The loader builds of the chosen version; the user may keep the latest one (empty value) or pick another.
+  useEffect(() => {
+    if (!variant?.automatic || install.useOwnFile || !install.version) {
+      setBuilds([]);
+      return;
+    }
+    let ignore = false;
+    setIsLoadingBuilds(true);
+    fetchInstallerBuilds(game.id, variant.id, install.version)
+      .then((list) => {
+        if (!ignore) setBuilds(list);
+      })
+      .finally(() => {
+        if (!ignore) setIsLoadingBuilds(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [game.id, variant?.id, variant?.automatic, install.useOwnFile, install.version]);
 
   const isValid = usesFile ? install.file !== null && !isInspecting : install.version !== '';
   useEffect(() => {
@@ -137,7 +160,7 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
                 key={candidate.id}
                 type="button"
                 disabled={disabled}
-                onClick={() => patch({ variant: candidate.id, version: '' })}
+                onClick={() => patch({ variant: candidate.id, version: '', build: '' })}
                 className={cn(
                   'cursor-pointer rounded-[6px] border p-2.5 text-left transition-colors',
                   isSelected ? 'border-accent bg-info-soft' : 'border-hairline bg-surface hover:bg-surface-2'
@@ -200,7 +223,7 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
                 key={version}
                 type="button"
                 disabled={disabled}
-                onClick={() => patch({ version })}
+                onClick={() => patch({ version, build: '' })}
                 className={cn(
                   'flex w-full cursor-pointer items-center justify-between border-b border-hairline px-3 py-2 text-left font-mono text-[12px] last:border-b-0',
                   install.version === version ? 'bg-info-soft text-accent-fg' : 'text-ink hover:bg-surface-2'
@@ -211,6 +234,25 @@ export const InstallerStep: React.FC<CustomSetupProps> = ({ game, draft, update,
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {!usesFile && (builds.length > 0 || isLoadingBuilds) && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[11px] uppercase text-mute">{t('wizard.build_label', { loader: variant.name })}</p>
+            {isLoadingBuilds && <Loader2 className="h-3 w-3 animate-spin text-accent-fg" />}
+          </div>
+          <Select
+            value={install.build}
+            disabled={disabled || isLoadingBuilds}
+            ariaLabel={t('wizard.build_label', { loader: variant.name })}
+            onValueChange={(build) => patch({ build })}
+            options={[
+              { value: '', label: t('wizard.build_latest', { build: builds[0] ?? '' }) },
+              ...builds.map((build) => ({ value: build, label: build }))
+            ]}
+          />
         </div>
       )}
 

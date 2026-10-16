@@ -455,7 +455,9 @@
     "bridge_recommended": "Recomendado",
     "bridge_desc": "Añade TPS, MSPT, chunks cargados y salud y coordenadas por jugador en tiempo real al panel, y habilita acciones sobre jugadores, sin consultar la consola.",
     "bridge_later": "También puedes instalarlo o comprobarlo luego desde Editar servidor > Telemetry Bridge.",
-    "warn_bridge": "El servidor se creó, pero no se pudo instalar el Telemetry Bridge. Puedes reintentarlo desde Editar servidor."
+    "warn_bridge": "El servidor se creó, pero no se pudo instalar el Telemetry Bridge. Puedes reintentarlo desde Editar servidor.",
+    "build_label": "Build de {{loader}}",
+    "build_latest": "Última ({{build}})"
   },
   "config": {
     "no_files": "Este juego no tiene archivos de configuración editables.",

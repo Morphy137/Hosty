@@ -43,6 +43,7 @@ export interface WizardActions {
   install: (params: {
     variant: string;
     version: string;
+    build?: string;
     instanceId: string;
     instanceName: string;
     settings?: Partial<InstanceSettings>;
@@ -235,6 +236,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
           await actions.install({
             variant: plan.variant,
             version: plan.version,
+            build: plan.build,
             instanceId: plan.instanceId,
             instanceName: plan.name,
             settings: plan.settings

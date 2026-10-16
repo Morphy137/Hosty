@@ -13,6 +13,8 @@ export interface InstallDraft {
   /** Installer variant id (e.g. a mod loader); empty until the step picks the game's default. */
   variant: string;
   version: string;
+  /** Loader build chosen for `version`; empty = the latest one. */
+  build: string;
   /** User chose to bring their own server file instead of downloading. */
   useOwnFile: boolean;
   file: File | null;
@@ -46,7 +48,7 @@ export const INITIAL_DRAFT: WizardDraft = {
   importPath: '',
   importInfo: null,
   setupValues: {},
-  install: { variant: '', version: '', useOwnFile: false, file: null, fileInfo: null },
+  install: { variant: '', version: '', build: '', useOwnFile: false, file: null, fileInfo: null },
   name: '',
   instanceId: '',
   idTouched: false,

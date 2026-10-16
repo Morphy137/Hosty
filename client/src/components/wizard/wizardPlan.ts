@@ -8,6 +8,7 @@ export type CreationPlan =
       kind: 'install';
       variant: string;
       version: string;
+      build: string;
       instanceId: string;
       name: string;
       settings: Partial<InstanceSettings>;
@@ -84,6 +85,7 @@ export function buildCreationPlan(draft: WizardDraft, game: GameDriverSummary | 
       kind: 'install',
       variant: variant.id,
       version: install.version,
+      build: install.build,
       instanceId: draft.instanceId,
       name,
       settings
