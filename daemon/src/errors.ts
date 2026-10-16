@@ -12,6 +12,7 @@ export type DaemonErrorCode =
   | 'BRIDGE_ASSET_MISSING'
   | 'GAME_UNAVAILABLE'
   | 'SETTINGS_CORRUPT'
+  | 'SERVER_NOT_ONLINE'
   | 'INTERNAL_ERROR';
 
 const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
@@ -28,6 +29,7 @@ const HTTP_STATUS_BY_CODE: Record<DaemonErrorCode, number> = {
   BRIDGE_ASSET_MISSING: 500,
   GAME_UNAVAILABLE: 409,
   SETTINGS_CORRUPT: 500,
+  SERVER_NOT_ONLINE: 409,
   INTERNAL_ERROR: 500
 };
 

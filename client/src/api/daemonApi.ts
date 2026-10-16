@@ -1,6 +1,7 @@
 import { getDaemonHttpUrl, getDaemonToken, withDaemonToken } from '../config/daemon';
 import type {
   NetworkInfo,
+  PlayerListState,
   BackupInfo,
   CatalogFilters,
   ModFacets,
@@ -405,8 +406,38 @@ export function removeInstanceBridge(id: string): Promise<{ ok: boolean; removed
   return deleteRequest<{ ok: boolean; removed: number }>(`/api/instances/${encodeURIComponent(id)}/bridge`);
 }
 
-export function getInstanceIconUrl(id: string): string {
-  return withDaemonToken(`${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon`);
+/** `version` (the instance's `iconVersion`) makes the URL change when the icon changes, defeating the image cache. */
+// Player lists (whitelist, operators, bans...)
+export async function fetchPlayerLists(id: string): Promise<PlayerListState[]> {
+  const result = await request<{ lists: PlayerListState[] }>(`/api/instances/${encodeURIComponent(id)}/player-lists`);
+  return result.lists;
+}
+
+export async function updatePlayerList(
+  id: string,
+  listId: string,
+  action: 'add' | 'remove',
+  value: string,
+  reason?: string
+): Promise<PlayerListState> {
+  const result = await postJson<{ list: PlayerListState }>(
+    `/api/instances/${encodeURIComponent(id)}/player-lists/${encodeURIComponent(listId)}`,
+    { action, value, reason }
+  );
+  return result.list;
+}
+
+export async function togglePlayerList(id: string, listId: string, enabled: boolean): Promise<PlayerListState> {
+  const result = await postJson<{ list: PlayerListState }>(
+    `/api/instances/${encodeURIComponent(id)}/player-lists/${encodeURIComponent(listId)}/toggle`,
+    { enabled }
+  );
+  return result.list;
+}
+
+export function getInstanceIconUrl(id: string, version?: number): string {
+  const query = version ? `?v=${version}` : '';
+  return withDaemonToken(`${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon${query}`);
 }
 
 // Properties

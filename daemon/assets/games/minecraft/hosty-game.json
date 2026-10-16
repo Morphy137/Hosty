@@ -1080,5 +1080,93 @@
       "dir": "mods",
       "asset": "mc-nexus-bridge-fabric.jar"
     }
-  }
+  },
+  "playerLists": [
+    {
+      "id": "whitelist",
+      "label": {
+        "en": "Whitelist",
+        "es": "Lista blanca"
+      },
+      "description": {
+        "en": "Only these players can join while the whitelist is on.",
+        "es": "Solo estos jugadores pueden entrar mientras la lista blanca está activa."
+      },
+      "icon": "list-checks",
+      "file": "whitelist.json",
+      "key": "name",
+      "add": "whitelist add {{value}}",
+      "remove": "whitelist remove {{value}}",
+      "toggle": {
+        "configFile": "server.properties",
+        "key": "white-list",
+        "on": "whitelist on",
+        "off": "whitelist off"
+      }
+    },
+    {
+      "id": "operators",
+      "label": {
+        "en": "Operators",
+        "es": "Operadores"
+      },
+      "description": {
+        "en": "Players with administrator permissions (op).",
+        "es": "Jugadores con permisos de administrador (op)."
+      },
+      "icon": "shield",
+      "file": "ops.json",
+      "key": "name",
+      "details": [
+        "level"
+      ],
+      "add": "op {{value}}",
+      "remove": "deop {{value}}"
+    },
+    {
+      "id": "banned-players",
+      "label": {
+        "en": "Banned players",
+        "es": "Jugadores baneados"
+      },
+      "description": {
+        "en": "Players who cannot join the server.",
+        "es": "Jugadores que no pueden entrar al servidor."
+      },
+      "icon": "ban",
+      "file": "banned-players.json",
+      "key": "name",
+      "details": [
+        "reason",
+        "created",
+        "source"
+      ],
+      "reason": true,
+      "add": "ban {{value}} {{reason}}",
+      "remove": "pardon {{value}}"
+    },
+    {
+      "id": "banned-ips",
+      "label": {
+        "en": "Banned IPs",
+        "es": "IPs baneadas"
+      },
+      "description": {
+        "en": "Addresses that cannot connect to the server.",
+        "es": "Direcciones que no pueden conectarse al servidor."
+      },
+      "icon": "globe",
+      "file": "banned-ips.json",
+      "key": "ip",
+      "valueType": "ip",
+      "details": [
+        "reason",
+        "created",
+        "source"
+      ],
+      "reason": true,
+      "add": "ban-ip {{value}} {{reason}}",
+      "remove": "pardon-ip {{value}}"
+    }
+  ]
 }

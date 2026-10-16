@@ -188,6 +188,34 @@ export interface QuickCommand {
   command: string;
 }
 
+/**
+ * A list of players (or addresses) the server keeps in a JSON file, e.g. a whitelist, operators or bans. Entries are
+ * read from `file`; while the server runs, changes go through the game's own `add`/`remove` commands (which also
+ * apply them at once), and while it is stopped a removal edits the file directly.
+ */
+export interface PlayerListSpec {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  /** Icon name (same set as player actions). */
+  icon?: string;
+  /** JSON file (an array of objects) relative to the server folder. */
+  file: string;
+  /** Field of each entry that identifies it (the player name, the address...). */
+  key: string;
+  /** Other fields shown per entry (e.g. `reason`, `created`, `level`). */
+  details?: string[];
+  /** What an entry is: a player name (default) or an IP address. Decides how input is validated. */
+  valueType?: 'player' | 'ip';
+  /** Commands with `{{value}}` (and `{{reason}}` when `reason` is set). */
+  add: string;
+  remove: string;
+  /** The add form asks for an optional reason. */
+  reason?: boolean;
+  /** Whether the list is enforced: a key in one of the declared config files plus the commands that switch it. */
+  toggle?: { configFile: string; key: string; on: string; off: string };
+}
+
 /** What the generic player list shows for this game. */
 export interface PlayerView {
   dimensions?: boolean;
@@ -249,6 +277,7 @@ export interface GameManifest {
   playerActions?: PlayerActionSpec[];
   creationSettings?: CreationSetting[];
   quickCommands?: QuickCommand[];
+  playerLists?: PlayerListSpec[];
   playerView?: PlayerView;
   /** Worlds/dimensions players can be in (labels, icons, filter chips). */
   dimensions?: DimensionSpec[];
@@ -569,6 +598,41 @@ export function validateManifest(raw: unknown): ManifestValidation {
       !quick.every((item) => isObject(item) && typeof item.label === 'string' && typeof item.command === 'string')
     ) {
       errors.push('quickCommands must be a list of { label, command }');
+    }
+  }
+
+  if (raw.playerLists !== undefined) {
+    const lists = raw.playerLists;
+    const listIds = new Set<string>();
+    const commandOk = (value: unknown) => typeof value === 'string' && value.includes('{{value}}');
+    const listOk = (list: unknown): boolean => {
+      if (!isObject(list) || typeof list.id !== 'string' || !ID_PATTERN.test(list.id) || listIds.has(list.id)) return false;
+      listIds.add(list.id);
+      const toggle = list.toggle;
+      return (
+        isLocalized(list.label) &&
+        (list.description === undefined || isLocalized(list.description)) &&
+        (list.icon === undefined || typeof list.icon === 'string') &&
+        isSafeRelativePath(list.file) &&
+        typeof list.key === 'string' &&
+        list.key !== '' &&
+        (list.details === undefined || (Array.isArray(list.details) && list.details.every((field) => typeof field === 'string'))) &&
+        (list.valueType === undefined || list.valueType === 'player' || list.valueType === 'ip') &&
+        commandOk(list.add) &&
+        commandOk(list.remove) &&
+        (list.reason === undefined || typeof list.reason === 'boolean') &&
+        (toggle === undefined ||
+          (isObject(toggle) &&
+            isSafeRelativePath(toggle.configFile) &&
+            typeof toggle.key === 'string' &&
+            typeof toggle.on === 'string' &&
+            typeof toggle.off === 'string'))
+      );
+    };
+    if (!Array.isArray(lists) || !lists.every(listOk)) {
+      errors.push(
+        'playerLists must be a list of { id (unique), label, file (relative), key, add and remove (with {{value}}), description?, icon?, details?, valueType?, reason?, toggle? }'
+      );
     }
   }
 

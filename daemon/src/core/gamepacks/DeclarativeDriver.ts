@@ -159,6 +159,7 @@ export class DeclarativeGameDriver implements IGameDriver {
       modLayout: manifest.modLayout,
       bridgeTargets: manifest.bridgeTargets,
       quickCommands: manifest.quickCommands,
+      playerLists: manifest.playerLists,
       playerView: manifest.playerView,
       dimensions: manifest.dimensions,
       performance: manifest.performance,

@@ -28,10 +28,11 @@ import { detectJavaEnvironment, resolveJavaExecutable } from './core/Environment
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
 import { BackupManager } from './core/BackupManager';
-import { fetchPublicIp, firewallRuleName, isValidPort, listLanAddresses, openFirewallPort } from './core/NetworkInfo';
+import { firewallRuleName, getPublicIp, isValidPort, listLanAddresses, openFirewallPort } from './core/NetworkInfo';
 import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
 import { renderActionCommands, sanitizeActionValues, toBridgeAction } from './core/PlayerActions';
 import { readConfigFile, writeConfigFile, resolveConfigPath } from './core/ConfigFileEditor';
+import { readPlayerList, removeFromListFile, renderListCommand, sanitizeReason, validateListValue, writeToggle } from './core/PlayerLists';
 import net from 'net';
 
 const config = loadConfig();
@@ -431,7 +432,7 @@ app.delete('/api/instances/:id/backups/:name', (req, res, next) => {
 
 app.get('/api/system/network', async (_req, res, next) => {
   try {
-    res.json({ lanAddresses: listLanAddresses(), publicIp: await fetchPublicIp() });
+    res.json({ lanAddresses: listLanAddresses(), publicIp: await getPublicIp() });
   } catch (err) {
     next(err);
   }
@@ -1015,6 +1016,98 @@ app.post('/api/mods/configs/:filename', (req, res, next) => {
     ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body, activeModLayout().configDir);
     logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod config ${req.params.filename} saved.`);
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Player lists (whitelist, operators, bans...): declared by the game (`playerLists`) -----------------
+const PLAYER_LIST_WAIT_MS = 3000;
+const PLAYER_LIST_POLL_MS = 150;
+
+const playerListContext = (instanceId: string, listId?: string) => {
+  const instance = requireInstance(instanceId);
+  const summary = driverRegistry.getDriver(instance.gameId).summary;
+  const configFormats = Object.fromEntries(summary.configFiles.map((file) => [file.path, file.format]));
+  const lists = summary.playerLists ?? [];
+  const spec = listId === undefined ? undefined : lists.find((candidate) => candidate.id === listId);
+  if (listId !== undefined && !spec) throw new DaemonError('CONFIG_NOT_FOUND', `This game has no "${listId}" list.`);
+  const sup = registry.getSupervisor(instance.id);
+  return { instance, lists, spec, configFormats, online: sup?.getStatus() === 'ONLINE' ? sup : null };
+};
+
+const fileStamp = (file: string): number => (fs.existsSync(file) ? fs.statSync(file).mtimeMs : 0);
+
+/**
+ * Waits (briefly) until the server rewrites `file` after a command, so the answer already shows the change. Servers
+ * apply console commands on their next tick, which can take a while when they are idle or paused.
+ */
+const waitForFileChange = async (file: string, before: number): Promise<void> => {
+  const deadline = Date.now() + PLAYER_LIST_WAIT_MS;
+  while (Date.now() < deadline && fileStamp(file) === before) {
+    await new Promise((resolve) => setTimeout(resolve, PLAYER_LIST_POLL_MS));
+  }
+};
+
+app.get('/api/instances/:id/player-lists', (req, res, next) => {
+  try {
+    const { instance, lists, configFormats } = playerListContext(req.params.id);
+    res.json({ lists: lists.map((spec) => readPlayerList(instance.dir, spec, configFormats)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/player-lists/:listId', async (req, res, next) => {
+  try {
+    const { instance, spec, configFormats, online } = playerListContext(req.params.id, req.params.listId);
+    const { action, value: rawValue, reason } = req.body as { action?: unknown; value?: unknown; reason?: unknown };
+    if (action !== 'add' && action !== 'remove') throw new DaemonError('INVALID_PAYLOAD', 'action must be "add" or "remove".');
+    const list = spec!;
+    const value = validateListValue(list, rawValue);
+
+    if (online) {
+      // The game's own command applies the change immediately (kicks a banned player, etc.).
+      const command = renderListCommand(action === 'add' ? list.add : list.remove, value, list.reason ? sanitizeReason(reason) : '');
+      const file = resolveConfigPath(instance.dir, list.file);
+      const before = fileStamp(file);
+      if (online.sendCommand(command)) {
+        logToInstance(instance.id, `> ${command}`);
+        await waitForFileChange(file, before);
+      }
+    } else if (action === 'remove') {
+      removeFromListFile(instance.dir, list, value);
+      logToInstance(instance.id, `[Hypervisor] "${value}" removed from ${list.file}.`);
+    } else {
+      // Offline entries would need data only the game knows (player ids), so adding waits for the server.
+      throw new DaemonError('SERVER_NOT_ONLINE', 'Start the server to add entries to this list.');
+    }
+    res.json({ ok: true, list: readPlayerList(instance.dir, list, configFormats) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/instances/:id/player-lists/:listId/toggle', async (req, res, next) => {
+  try {
+    const { instance, spec, configFormats, online } = playerListContext(req.params.id, req.params.listId);
+    const { enabled } = req.body as { enabled?: unknown };
+    if (typeof enabled !== 'boolean') throw new DaemonError('INVALID_PAYLOAD', '"enabled" must be a boolean.');
+    const list = spec!;
+    if (!list.toggle) throw new DaemonError('INVALID_PAYLOAD', 'This list cannot be switched on or off.');
+
+    if (online) {
+      const command = enabled ? list.toggle.on : list.toggle.off;
+      const file = resolveConfigPath(instance.dir, list.toggle.configFile);
+      const before = fileStamp(file);
+      if (online.sendCommand(command)) {
+        logToInstance(instance.id, `> ${command}`);
+        await waitForFileChange(file, before);
+      }
+    } else {
+      writeToggle(instance.dir, list, enabled, configFormats);
+    }
+    res.json({ ok: true, list: readPlayerList(instance.dir, list, configFormats) });
   } catch (err) {
     next(err);
   }

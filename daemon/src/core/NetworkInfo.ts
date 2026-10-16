@@ -24,6 +24,17 @@ export function listLanAddresses(interfaces: ReturnType<typeof os.networkInterfa
   return addresses;
 }
 
+const PUBLIC_IP_CACHE_MS = 10 * 60 * 1000;
+let cachedPublicIp: { value: string; at: number } | null = null;
+
+/** Public address, remembered for a few minutes so the Network tab does not wait for the lookup on every visit. */
+export async function getPublicIp(now: number = Date.now(), fetchImpl: typeof fetch = fetch): Promise<string | null> {
+  if (cachedPublicIp && now - cachedPublicIp.at < PUBLIC_IP_CACHE_MS) return cachedPublicIp.value;
+  const value = await fetchPublicIp(fetchImpl);
+  cachedPublicIp = value ? { value, at: now } : null;
+  return value;
+}
+
 /** Public address as seen from the internet; null when offline or the lookup fails. */
 export async function fetchPublicIp(fetchImpl: typeof fetch = fetch): Promise<string | null> {
   try {

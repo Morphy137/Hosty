@@ -34,7 +34,7 @@ export type DaemonSocketEvent =
   | { kind: 'clearInventory' }
   | { kind: 'resetProvisionLogs'; lines: string[] }
   /** The viewed server changed: drop everything that belonged to the previous one. */
-  | { kind: 'resetInstanceView'; lines: string[]; status: ServerStatus };
+  | { kind: 'resetInstanceView'; lines: string[]; status: ServerStatus; keepLive?: boolean };
 
 export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   status: 'OFFLINE',
@@ -125,8 +125,9 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
         ...state,
         logs: event.lines.slice(-MAX_CONSOLE_LINES),
         status: event.status,
-        metrics: INITIAL_DAEMON_SOCKET_STATE.metrics,
-        players: [],
+        // On the first view the socket already delivered this server's live data; only a switch clears it.
+        metrics: event.keepLive ? state.metrics : INITIAL_DAEMON_SOCKET_STATE.metrics,
+        players: event.keepLive ? state.players : [],
         inventory: null,
         lastError: null
       };

@@ -16,7 +16,8 @@ export interface DaemonSocket extends DaemonSocketState {
   clearError: () => void;
   clearInventory: () => void;
   resetProvisionLogs: (lines: string[]) => void;
-  resetInstanceView: (lines: string[], status: ServerStatus) => void;
+  /** `keepLive`: keep metrics and players already received (first view after connecting). */
+  resetInstanceView: (lines: string[], status: ServerStatus, keepLive?: boolean) => void;
 }
 
 /** Maintains a WebSocket connection to the daemon with automatic exponential-backoff reconnects. */
@@ -89,7 +90,7 @@ export function useDaemonSocket(url: string = getDaemonWsUrl()): DaemonSocket {
   );
 
   const resetInstanceView = useCallback(
-    (lines: string[], status: ServerStatus) => dispatch({ kind: 'resetInstanceView', lines, status }),
+    (lines: string[], status: ServerStatus, keepLive?: boolean) => dispatch({ kind: 'resetInstanceView', lines, status, keepLive }),
     []
   );
 
