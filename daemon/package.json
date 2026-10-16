@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "build:games": "node scripts/build-games.mjs",
+    "pretest": "npm run build:games",
     "lint": "oxlint",
     "test": "vitest run",
     "build:sidecar": "node scripts/build-sidecar.mjs"

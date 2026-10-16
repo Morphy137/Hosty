@@ -35,7 +35,8 @@ export interface PackDriverContext {
   base: IGameDriver;
 }
 
-export type PackDriverFactory = (context: PackDriverContext) => Partial<IGameDriver> | void;
+/** A pack may return only the methods it overrides, or a complete driver (e.g. a subclass of the declarative one). */
+export type PackDriverFactory = (context: PackDriverContext) => Partial<IGameDriver> | IGameDriver | void;
 
 interface TrustStore {
   [packId: string]: string;
@@ -200,7 +201,7 @@ export class PackLoader {
               | PackDriverFactory;
             const factory = typeof required === 'function' ? required : (required.createDriver ?? required.default);
             const overrides = factory?.({ manifest, packDir: dir, base });
-            if (overrides) driver = mergeDriver(base, overrides);
+            if (overrides) driver = isCompleteDriver(overrides) ? overrides : mergeDriver(base, overrides);
           } catch (error) {
             info.errors.push(`${DRIVER_FILE} failed to load: ${(error as Error).message}`);
             results.push({ info, driver: null });
@@ -217,6 +218,8 @@ export class PackLoader {
     return results;
   }
 }
+
+const isCompleteDriver = (value: Partial<IGameDriver>): value is IGameDriver => 'id' in value && 'summary' in value;
 
 /** Lets a pack override individual driver methods while inheriting the declarative behaviour. */
 function mergeDriver(base: DeclarativeGameDriver, overrides: Partial<IGameDriver>): IGameDriver {

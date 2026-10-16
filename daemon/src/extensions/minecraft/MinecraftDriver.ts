@@ -62,8 +62,8 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
  * login lines), jar inspection and the default `server.properties`.
  */
 export class MinecraftDriver extends DeclarativeGameDriver {
-  constructor(manifest: GameManifest, packDir: string | null) {
-    super(manifest, packDir, 'builtin');
+  constructor(manifest: GameManifest, packDir: string | null, source: 'builtin' | 'pack' = 'builtin') {
+    super(manifest, packDir, source);
   }
 
   /** Paper / Purpur / Fabric / Vanilla / Forge / NeoForge downloads and uploaded jars (variants: manifest `installer`). */
