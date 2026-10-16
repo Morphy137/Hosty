@@ -35,6 +35,9 @@ if (process.argv.includes('--if-missing') && existsSync(join(binariesDir, `hosty
   process.exit(0);
 }
 
+console.log('[sidecar] bundling game drivers');
+execFileSync(process.execPath, [join(daemonDir, 'scripts', 'build-games.mjs')], { stdio: 'inherit' });
+
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 mkdirSync(binariesDir, { recursive: true });

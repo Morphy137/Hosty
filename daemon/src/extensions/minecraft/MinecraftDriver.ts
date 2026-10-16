@@ -57,13 +57,13 @@ export function resolveMinecraftLaunchTarget(instanceDir: string, preferredJar =
 }
 
 /**
- * Minecraft is described by the bundled pack `assets/games/minecraft` (launch discovery, player queries, config sync,
+ * Minecraft is described by the pack `assets/games/minecraft` (seeded into the games folder, with this class bundled as its `driver.js`) (launch discovery, player queries, config sync,
  * presets, mod catalog). Only what data cannot express lives here: richer log parsing (positions in
  * login lines), jar inspection and the default `server.properties`.
  */
 export class MinecraftDriver extends DeclarativeGameDriver {
   constructor(manifest: GameManifest, packDir: string | null) {
-    super(manifest, packDir, 'builtin');
+    super(manifest, packDir);
   }
 
   /** Paper / Purpur / Fabric / Vanilla / Forge / NeoForge downloads and uploaded jars (variants: manifest `installer`). */

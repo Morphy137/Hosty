@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { GameDriverRegistry } from '../src/core/drivers/GameDriverRegistry';
+import { createSeededRegistry } from './helpers/packs';
 import { validateManifest } from '../src/core/gamepacks/manifest';
 import {
   readPlayerList,
@@ -13,7 +13,7 @@ import {
   writeToggle
 } from '../src/core/PlayerLists';
 
-const minecraft = new GameDriverRegistry().getDriver('minecraft').summary;
+const minecraft = createSeededRegistry().getDriver('minecraft').summary;
 const list = (id: string) => minecraft.playerLists!.find((spec) => spec.id === id)!;
 const formats = Object.fromEntries(minecraft.configFiles.map((file) => [file.path, file.format]));
 

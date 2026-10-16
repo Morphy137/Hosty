@@ -289,10 +289,8 @@ export interface GameManifest {
   motd?: { colorCodes?: boolean; preview?: boolean };
   /** Development only: JSON file in the pack with sample `players` (and `inventory`) for simulated telemetry. */
   devMock?: string;
-  /** Variants the bundled installer offers (requires a bundled `extension` that implements it). */
+  /** Variants the bundled installer offers (requires a `driver.js` that implements it). */
   installer?: InstallerSpec;
-  /** Bundled packs only: id of a code extension shipped with Hosty (rejected in user packs). */
-  extension?: string;
   playerQueries?: PlayerQuery[];
   configSync?: ConfigSync;
   /** Loaders (or variants) a Telemetry Bridge artifact exists for. */
@@ -636,10 +634,6 @@ export function validateManifest(raw: unknown): ManifestValidation {
   }
 
   if (raw.playerView !== undefined && !isObject(raw.playerView)) errors.push('playerView must be an object');
-
-  if (raw.extension !== undefined && (typeof raw.extension !== 'string' || !ID_PATTERN.test(raw.extension))) {
-    errors.push('extension must be an extension id (lowercase letters, digits and dashes)');
-  }
 
   if (raw.playerQueries !== undefined) {
     const queries = raw.playerQueries;

@@ -406,7 +406,6 @@
     "size": 64
   },
   "logo": "logo.svg",
-  "extension": "minecraft",
   "playerView": {
     "dimensions": true,
     "coordinates": true,

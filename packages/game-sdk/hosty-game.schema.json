@@ -674,10 +674,6 @@
         }
       }
     },
-    "extension": {
-      "type": "string",
-      "description": "Reserved for packs bundled with Hosty."
-    },
     "playerActions": {
       "type": "array",
       "items": {
@@ -939,7 +935,7 @@
         "variants"
       ],
       "additionalProperties": false,
-      "description": "Bundled packs whose extension implements an installer: variants offered by the generic installer step.",
+      "description": "Packs whose driver.js implements an installer: variants offered by the generic installer step.",
       "properties": {
         "variants": {
           "type": "array",
