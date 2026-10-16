@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="client/public/logo.svg" alt="Hosty logo" width="96" />
-
-# Hosty
+<img src="docs/brand/hosty-banner.svg" alt="Hosty - Local game servers, made simple." width="100%" />
 
 **Your local game servers, one friendly dashboard.**
 
