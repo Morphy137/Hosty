@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-hairline bg-surface">
       <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
-        <img src="/logo.svg" alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+        <img src="/logo.svg" alt="" className="h-9 w-9 shrink-0 object-contain" />
         <span className="text-[18px] font-semibold tracking-[-0.36px] text-ink">{t('header.title')}</span>
       </div>
 

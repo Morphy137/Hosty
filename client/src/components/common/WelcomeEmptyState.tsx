@@ -14,7 +14,7 @@ export const WelcomeEmptyState: React.FC<WelcomeEmptyStateProps> = ({ onCreateSe
       <div className="max-w-[620px] w-full flex flex-col items-center">
         {/* Large Logo */}
         <div className="relative mb-6">
-          <img src="/logo.svg" alt="Hosty" className="h-20 w-20 rounded-full object-cover shadow-md" />
+          <img src="/logo.svg" alt="Hosty" className="h-20 w-20 rounded-[22%] object-contain shadow-md" />
           <span className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-accent text-white shadow-xs">
             <Sparkles className="w-3.5 h-3.5" />
           </span>
