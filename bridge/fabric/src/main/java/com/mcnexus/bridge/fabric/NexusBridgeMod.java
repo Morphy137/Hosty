@@ -2,16 +2,10 @@ package com.mcnexus.bridge.fabric;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -20,26 +14,34 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Hosty bridge for Fabric (server side). Speaks Hosty bridge protocol v1 (docs/bridge-protocol.md).
- * Actions are executed through vanilla commands so one build works across 1.20.x - 1.21.x.
+ * Game access goes through {@link GameAccess} so one build works on 1.20.x - 1.21.x and on unobfuscated 26.x;
+ * actions are vanilla commands. Nothing the bridge does may stop the server: any failure is contained, and an
+ * incompatible game version switches the bridge off so Hosty falls back to reading the server log.
  */
 public class NexusBridgeMod implements DedicatedServerModInitializer {
     private static final Logger LOGGER = Logger.getLogger("Hosty-Bridge");
     private static final Gson GSON = new Gson();
     private static final int PROTOCOL_VERSION = 1;
+    private static final String IMPLEMENTATION_NAME = "hosty-bridge-fabric";
+    private static final String IMPLEMENTATION_VERSION = "1.3.0";
     private static final String[] CAPABILITIES = {
         "telemetry.server", "telemetry.players", "inventory.view",
         "action.heal", "action.damage", "action.kill", "action.kick", "action.teleport",
         "action.freeze", "action.unfreeze", "action.smite", "action.give_exp"
     };
+    /** WebSocket close code for "policy violation": tells Hosty the bridge stopped on purpose. */
+    private static final int CLOSE_UNSUPPORTED = 1008;
 
     private volatile WebSocketClient wsClient;
     private volatile MinecraftServer server;
     private volatile boolean authenticated = false;
     private volatile boolean shuttingDown = false;
+    private volatile GameAccess access;
     private long reconnectDelayMs = 5_000L;
     private final Timer reconnectTimer = new Timer("hosty-bridge-reconnect", true);
 
@@ -53,6 +55,12 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
 
     @Override
     public void onInitializeServer() {
+        try {
+            access = GameAccess.detect();
+        } catch (LinkageError e) {
+            LOGGER.log(Level.WARNING, "[Hosty Bridge] This Minecraft version is not supported; the bridge stays off.", e);
+            return;
+        }
         connectToDaemon();
         // No Fabric API dependency: the server comes from Fabric Loader and telemetry runs on our own timer,
         // hopping onto the server thread to read game state.
@@ -60,10 +68,10 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         telemetryTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                requestTelemetry();
+                guarded("telemetry", () -> requestTelemetry());
             }
         }, interval, interval);
-        LOGGER.info("[Hosty Bridge] Fabric server module initialized.");
+        LOGGER.info("[Hosty Bridge] Fabric server module initialized (" + access.name() + " names).");
     }
 
     /** Reads `config/mc-nexus-bridge.json` (`telemetryIntervalMs`); falls back to one second. */
@@ -78,6 +86,33 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         } catch (Exception e) {
             return DEFAULT_TELEMETRY_INTERVAL_MS;
         }
+    }
+
+    /**
+     * Runs bridge work so that it can never take the server down. A {@link LinkageError} means the game does not
+     * have a method or class the bridge relies on (another Minecraft version): the bridge shuts itself off.
+     */
+    private void guarded(String what, Runnable work) {
+        if (shuttingDown) return;
+        try {
+            work.run();
+        } catch (LinkageError e) {
+            disable(what, e);
+        } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "[Hosty Bridge] " + what + " failed: " + t, t);
+        }
+    }
+
+    private void disable(String what, Throwable cause) {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        authenticated = false;
+        telemetryTimer.cancel();
+        reconnectTimer.cancel();
+        LOGGER.log(Level.SEVERE, "[Hosty Bridge] This Minecraft version is not supported by the bridge (" + what
+            + "). The bridge is now off; Hosty keeps working from the server log. Please update the bridge.", cause);
+        WebSocketClient client = wsClient;
+        if (client != null && client.isOpen()) client.close(CLOSE_UNSUPPORTED, "UNSUPPORTED_GAME_VERSION");
     }
 
     private boolean loadConnectionConfig() {
@@ -103,15 +138,20 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
 
     private void scheduleReconnect() {
         if (shuttingDown) return;
-        reconnectTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                connectToDaemon();
-            }
-        }, reconnectDelayMs);
+        try {
+            reconnectTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    connectToDaemon();
+                }
+            }, reconnectDelayMs);
+        } catch (IllegalStateException cancelled) {
+            // The bridge was switched off meanwhile.
+        }
     }
 
     private void connectToDaemon() {
+        if (shuttingDown) return;
         if (!loadConnectionConfig()) {
             scheduleReconnect();
             return;
@@ -140,6 +180,8 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
                     // Reconnect is handled in onClose
                 }
             };
+            // Non-daemon socket threads would keep the JVM alive after `stop`, so Hosty had to kill the server.
+            wsClient.setDaemon(true);
             wsClient.connect();
         } catch (Exception e) {
             LOGGER.warning("[Hosty Bridge] Error connecting: " + e.getMessage());
@@ -156,8 +198,8 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         hello.addProperty("game", "minecraft");
 
         JsonObject implementation = new JsonObject();
-        implementation.addProperty("name", "hosty-bridge-fabric");
-        implementation.addProperty("version", "1.2.0");
+        implementation.addProperty("name", IMPLEMENTATION_NAME);
+        implementation.addProperty("version", IMPLEMENTATION_VERSION);
         hello.add("implementation", implementation);
 
         JsonArray caps = new JsonArray();
@@ -187,7 +229,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
             if (authenticated && "ACTION".equals(type)) {
                 MinecraftServer current = server;
                 if (current != null) {
-                    current.execute(() -> executeAction(current, obj));
+                    current.execute(() -> guarded("action", () -> executeAction(current, obj)));
                 }
             }
         } catch (Exception e) {
@@ -211,10 +253,6 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         return value.replaceAll("[\\r\\n]+", " ");
     }
 
-    private void run(MinecraftServer current, String command) {
-        current.getCommandManager().executeWithPrefix(current.getCommandSource(), command);
-    }
-
     private void executeAction(MinecraftServer current, JsonObject message) {
         String actionId = message.has("actionId") && !message.get("actionId").isJsonNull()
             ? message.get("actionId").getAsString() : null;
@@ -228,16 +266,15 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
             if (target.has("name")) name = target.get("name").getAsString();
         }
 
-        ServerPlayerEntity player = name == null ? null : current.getPlayerManager().getPlayer(name);
-        if (player == null) {
+        String who = name == null ? null : access.onlinePlayerName(current, name);
+        if (who == null) {
             sendResult(actionId, false, "Player is not online");
             return;
         }
-        String who = player.getName().getString();
 
         switch (action) {
             case "inventory_view":
-                sendInventory(player);
+                sendInventory(current, who);
                 break;
             case "heal": {
                 int amplifier = (int) Math.max(0, Math.min(255, params.has("amount") ? params.get("amount").getAsInt() : 20));
@@ -292,65 +329,19 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         sendResult(actionId, true, null);
     }
 
-    private JsonElement slot(ItemStack stack, int index) {
-        if (stack == null || stack.isEmpty()) return JsonNull.INSTANCE;
-        JsonObject o = new JsonObject();
-        o.addProperty("index", index);
-        o.addProperty("itemId", Registries.ITEM.getId(stack.getItem()).toString());
-        o.addProperty("count", stack.getCount());
-        JsonObject meta = new JsonObject();
-        if (stack.isDamageable()) {
-            meta.addProperty("damage", stack.getDamage());
-            meta.addProperty("maxDamage", stack.getMaxDamage());
-        }
-        if (stack.hasCustomName()) {
-            meta.addProperty("customName", stack.getName().getString());
-        }
-        o.add("meta", meta);
-        return o;
+    private void run(MinecraftServer current, String command) {
+        access.runCommand(current, command);
     }
 
-    private static JsonObject container(String id, JsonArray slots) {
-        JsonObject c = new JsonObject();
-        c.addProperty("id", id);
-        c.add("slots", slots);
-        return c;
-    }
-
-    private void sendInventory(ServerPlayerEntity player) {
+    private void sendInventory(MinecraftServer current, String playerName) {
         WebSocketClient client = wsClient;
         if (client == null || !client.isOpen()) return;
-
-        JsonObject root = new JsonObject();
-        root.addProperty("type", "INVENTORY");
-        JsonObject who = new JsonObject();
-        who.addProperty("id", player.getUuidAsString());
-        who.addProperty("name", player.getName().getString());
-        root.add("player", who);
-
-        JsonArray containers = new JsonArray();
-
-        JsonArray armor = new JsonArray();
-        // getArmorStack: 0 = boots ... 3 = helmet; the protocol lists helmet first.
-        for (int i = 3; i >= 0; i--) {
-            armor.add(slot(player.getInventory().getArmorStack(i), 36 + i));
-        }
-        containers.add(container("armor", armor));
-
-        JsonArray offhand = new JsonArray();
-        offhand.add(slot(player.getOffHandStack(), 40));
-        containers.add(container("offhand", offhand));
-
-        JsonArray hotbar = new JsonArray();
-        for (int i = 0; i < 9; i++) hotbar.add(slot(player.getInventory().getStack(i), i));
-        containers.add(container("hotbar", hotbar));
-
-        JsonArray main = new JsonArray();
-        for (int i = 9; i < 36; i++) main.add(slot(player.getInventory().getStack(i), i));
-        containers.add(container("main", main));
-
-        root.add("containers", containers);
-        client.send(GSON.toJson(root));
+        JsonObject inventory = access.inventory(current, playerName);
+        if (inventory == null) return;
+        JsonObject frame = new JsonObject();
+        frame.addProperty("type", "INVENTORY");
+        for (String key : inventory.keySet()) frame.add(key, inventory.get(key));
+        client.send(GSON.toJson(frame));
     }
 
     private void requestTelemetry() {
@@ -360,58 +351,17 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         this.server = current;
         WebSocketClient probe = wsClient;
         if (!authenticated || probe == null || !probe.isOpen()) return;
-        current.execute(() -> sendTelemetry(current));
+        current.execute(() -> guarded("telemetry", () -> sendTelemetry(current)));
     }
 
     private void sendTelemetry(MinecraftServer current) {
         WebSocketClient client = wsClient;
         if (!authenticated || client == null || !client.isOpen()) return;
 
-        try {
-            JsonObject frame = new JsonObject();
-            frame.addProperty("type", "TELEMETRY");
-
-            double mspt = Math.round(current.getAverageTickTime() * 10.0) / 10.0;
-            int chunks = 0;
-            for (ServerWorld world : current.getWorlds()) {
-                chunks += world.getChunkManager().getLoadedChunkCount();
-            }
-
-            JsonObject serverObj = new JsonObject();
-            serverObj.addProperty("tps", Math.min(20.0, mspt > 0 ? Math.round(1000.0 / mspt * 100.0) / 100.0 : 20.0));
-            serverObj.addProperty("mspt", mspt);
-            serverObj.addProperty("loadedChunks", chunks);
-            frame.add("server", serverObj);
-
-            JsonArray players = new JsonArray();
-            for (ServerPlayerEntity p : current.getPlayerManager().getPlayerList()) {
-                JsonObject po = new JsonObject();
-                po.addProperty("id", p.getUuidAsString());
-                po.addProperty("name", p.getName().getString());
-                po.addProperty("ping", p.networkHandler != null ? p.networkHandler.getLatency() : 0);
-                po.addProperty("health", Math.round(p.getHealth() * 10.0) / 10.0);
-                po.addProperty("maxHealth", (double) p.getMaxHealth());
-
-                JsonObject position = new JsonObject();
-                position.addProperty("x", Math.round(p.getX() * 10.0) / 10.0);
-                position.addProperty("y", Math.round(p.getY() * 10.0) / 10.0);
-                position.addProperty("z", Math.round(p.getZ() * 10.0) / 10.0);
-                position.addProperty("world", p.getWorld().getRegistryKey().getValue().toString());
-                po.add("position", position);
-
-                JsonObject stats = new JsonObject();
-                stats.addProperty("food", p.getHungerManager().getFoodLevel());
-                stats.addProperty("gamemode", p.interactionManager.getGameMode().getName());
-                stats.addProperty("isOp", current.getPlayerManager().isOperator(p.getGameProfile()));
-                po.add("stats", stats);
-
-                players.add(po);
-            }
-            frame.add("players", players);
-
-            client.send(GSON.toJson(frame));
-        } catch (Exception ignored) {
-            // Telemetry must never disturb the server tick
-        }
+        JsonObject frame = new JsonObject();
+        frame.addProperty("type", "TELEMETRY");
+        frame.add("server", access.serverTelemetry(current));
+        frame.add("players", access.playersTelemetry(current));
+        client.send(GSON.toJson(frame));
     }
 }

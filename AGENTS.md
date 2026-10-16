@@ -45,7 +45,7 @@ hosty/
 
 ### Bridge (`bridge/`)
 
-- `paper/` (Maven, one jar for MC 1.16–1.21+, Paper/Purpur/Spigot) and `fabric/` (Gradle, server-side, 1.20.x–1.21.x); both implement protocol v1. Build: `mvn clean package` / `./gradlew build`; copy outputs into `daemon/assets/bridge/` (as `mc-nexus-bridge-paper.jar`, `mc-nexus-bridge-fabric.jar` and the generic `mc-nexus-bridge.jar`) when updated.
+- `paper/` (Maven, one jar for MC 1.16–1.21+, Paper/Purpur/Spigot) and `fabric/` (Gradle, server-side, 1.20.x–1.21.x and unobfuscated 26.x: `GameAccess` picks Yarn calls or Mojang names by reflection, and any game incompatibility switches the bridge off instead of crashing the server); both implement protocol v1. Build: `mvn clean package` / `./gradlew build`; copy outputs into `daemon/assets/bridge/` (as `mc-nexus-bridge-paper.jar`, `mc-nexus-bridge-fabric.jar` and the generic `mc-nexus-bridge.jar`) when updated.
 
 ## Adding a new game
 
