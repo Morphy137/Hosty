@@ -2,6 +2,7 @@ import { spawn as nodeSpawn, ChildProcessWithoutNullStreams, SpawnOptionsWithout
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import pidusage from 'pidusage';
 import { LineBuffer } from './LineBuffer';
 import type { IGameDriver } from './drivers/IGameDriver';
@@ -126,6 +127,15 @@ export function resolveSpawnCommand(
   }
   const commandLine = [executable, ...args].map((part) => quoteForCmd(part.replace(/[\r\n]+/g, ' '))).join(' ');
   return { executable: comSpec, args: ['/d', '/s', '/c', `"${commandLine}"`], verbatim: true };
+}
+
+/**
+ * `pidusage` reports CPU as a percentage of one core (a busy 8-thread JVM reads 800%). The app shows the share of
+ * the whole machine, like the Task Manager, so the value is divided by the logical cores and kept within 0-100.
+ */
+export function normalizeCpuPercent(perCorePercent: number, cores: number = os.cpus().length): number {
+  const share = perCorePercent / Math.max(1, cores);
+  return Number(Math.min(100, Math.max(0, share)).toFixed(1));
 }
 
 export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
@@ -542,7 +552,7 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
       try {
         const stats = await pidusage(pid);
         this.emit('metrics', {
-          cpu: Number(stats.cpu.toFixed(1)),
+          cpu: normalizeCpuPercent(stats.cpu),
           ramMb: Math.round(stats.memory / BYTES_PER_MEGABYTE),
           maxRamMb: this.config.maxRamMb,
           uptime: stats.elapsed,
