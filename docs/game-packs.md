@@ -6,7 +6,7 @@ folder, so adding a game never requires rebuilding Hosty.
 
 - Games folder (Windows): `%APPDATA%\Hosty\games\<pack-id>\` — **Sidebar → Game packs** shows the exact path.
 - Development: `<repo>/games/`, or any folder set with `MC_NEXUS_GAMES_DIR`.
-- Built-in games (Minecraft, Project Zomboid, Hytale) use the same format and cannot be replaced by a pack.
+- Minecraft, Project Zomboid and Hytale are ordinary packs: Hosty copies them into the games folder on first run (and upgrades them when the bundled version is higher). You can disable or uninstall them like any other pack; an uninstalled one is not copied back.
 
 ```
 my-game/
@@ -19,7 +19,7 @@ Scaffold one with `npm create hosty-game my-game` (or **Game packs → New pack 
 creates it directly in the games folder; **Open games folder** shows it). Check it with `npx hosty-pack validate my-game`
 (the same rules the daemon applies), then install it and press **Reload packs**. Full examples live in [`docs/examples/valheim`](examples/valheim/hosty-game.json),
 [`project-zomboid`](examples/project-zomboid/hosty-game.json) and [`hytale`](examples/hytale/hosty-game.json) (the built-in games
-expressed as packs). In the app, the Game packs dialog can copy any built-in game's manifest as a template.
+expressed as packs). Open the games folder from the Game packs dialog to use the installed manifests as templates.
 
 ## Manifest (`hosty-game.json`, `apiVersion: 1`)
 
@@ -29,7 +29,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | Field | Required | Description |
 |---|---|---|
 | `apiVersion` | yes | Always `1`. Packs with another version are rejected with a clear error. |
-| `id` | yes | 2–40 chars of `a-z`, `0-9`, `-`. Unique; cannot reuse a built-in id. |
+| `id` | yes | 2–40 chars of `a-z`, `0-9`, `-`. Unique. |
 | `name`, `version` | yes | Display name and pack version. |
 | `description` | | Text or a language map `{ "en": "...", "es": "..." }`. |
 | `logo` | | Relative path to an image inside the pack. |
@@ -56,7 +56,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `instanceFolders` | | Folders created inside every new instance (e.g. `["mods", "config"]`); none by default. |
 | `modLayout` | | `{ modsDir, configDir, fileTypes? }`: where the Mods tabs look (defaults `mods` / `config`) and which file extensions are mods (e.g. `[".jar"]`; empty = any file). |
 | `bridgeTargets` | | Loader -> `{ dir, asset }` for the Telemetry Bridge install; `default` is the fallback. |
-| `default` | | Bundled packs only: marks the game used when none is chosen (else the first bundled game). |
+| `default` | | Marks the game used when none is chosen (else the first loaded game). |
 | `provision.branchField` | | For `steamcmd`: id of the setup field whose value is the Steam beta branch. |
 | `playerActions` | | Actions an operator can run on an online player: `{ id, label, command?, bridgeAction?, params?, danger?, quick?, icon? }`. `command` is one command or a list; `{{player}}` and `{{paramId}}` are replaced and params render as a form. When the Telemetry Bridge is connected and advertises `bridgeAction`, it runs the action instead (it receives the param values under their ids). `quick` actions appear on every player card and in the Overview; the rest in the player's menu. |
 | `dimensions` | | Worlds players can be in: `{ id, label, aliases?, icon?, primary? }`. Labels and pack images (`icon`) are shown on cards and as filter chips; `primary` ones are always offered. |
@@ -69,7 +69,7 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `playerLists` | | Lists the server keeps in JSON files, shown as views of the Players tab: `{ id, label, file, key, add, remove, description?, icon?, details?, valueType?, reason?, toggle? }`. `file` is a JSON array; `key` is the field that identifies an entry and `details` the extra fields shown (`reason`, `created`, `level`...); `valueType` is `player` (default) or `ip`. While the server runs, changes are sent as the `add`/`remove` commands (`{{value}}`, plus `{{reason}}` when `reason` is true); while it is stopped, removals edit the file directly and adding waits for the server. `toggle: { configFile, key, on, off }` adds an on/off switch (e.g. whitelist enforcement): commands while running, the config key while stopped. |
 | `playerView` | | What the player cards show: `dimensions`, `coordinates`, `vitals`, an `avatarUrl` template, inventory item images (`itemIconUrls` templates with `{{item}}` / `{{namespace}}`, limited to `itemNamespaces`) and `inventoryClearAction` (id of the action the inventory viewer offers). |
 | `setup[].type: "custom"` | | Renders a component registered by the app (`component` id). `installer` is the generic server-software step driven by `installer`. |
-| `installer` | | Bundled packs whose extension implements an installer: `{ variants: [{ id, name, automatic, group?, url? }], defaultVariant?, fileTypes?, javaRequirements? }`. The wizard lists the variants, their versions (asked to the extension) or lets the user bring their own server file (`fileTypes`); `javaRequirements: { default, versions: [{ from, java }] }` drives the Java check. |
+| `installer` | | Packs whose `driver.js` implements an installer: `{ variants: [{ id, name, automatic, group?, url? }], defaultVariant?, fileTypes?, javaRequirements? }`. The wizard lists the variants, their versions (asked to the extension) or lets the user bring their own server file (`fileTypes`); `javaRequirements: { default, versions: [{ from, java }] }` drives the Java check. |
 | `motd` | | `{ colorCodes?, preview? }` for games whose `configSync` maps a MOTD: `§`/`&` formatting codes and a server-list style preview with the icon. |
 | `devMock` | | Development only: JSON file in the pack with sample `players` (and an `inventory`) used by "Simulate telemetry". |
 
@@ -113,6 +113,8 @@ module.exports.createDriver = ({ manifest, packDir, base }) => ({
 Overridable methods: `validateInstallation`, `buildLaunchPlan`, `buildStopCommand`, `buildSaveCommand`,
 `parseLogLine`. Identity (`id`, `summary`) always comes from the manifest.
 
+`createDriver` may also return a complete driver (for example a subclass of the declarative one, which is how Minecraft's `driver.js` is built); its installer (`installer`), `inspectFolder` and `scaffoldInstance` then apply too.
+
 ### Trust model
 
 `driver.js` is arbitrary code with the same permissions as Hosty, so:
@@ -120,6 +122,7 @@ Overridable methods: `validateInstallation`, `buildLaunchPlan`, `buildStopComman
 1. A pack with code is loaded **declaratively only** until the user presses **Trust** in *Game packs*.
 2. Trust is bound to the SHA-256 of `driver.js` (`<games>/.trusted.json`); editing the file revokes it.
 3. Invalid packs are listed with every validation error and are never executed.
+4. The `driver.js` of games that ship with Hosty is approved automatically when the pack is copied to the games folder.
 
 A curated community index (a `hosty-games` repository with reviewed packs, hashes and signatures) is the
 intended next step; it is not part of this version.
@@ -144,7 +147,7 @@ test('detects joins', () => {
 | `GET /api/games` | Driver summaries (capabilities, setup schema, config files, status). |
 | `GET /api/games/:id/logo` | Pack logo image. |
 | `GET /api/games/:id/setup-schema` | Setup fields of a game. |
-| `GET /api/game-packs`, `POST /api/game-packs/reload` | List (built-ins first, read-only) / rescan packs. |
+| `GET /api/game-packs`, `POST /api/game-packs/reload` | List / rescan packs. |
 | `POST /api/game-packs/install` `{ path }` | Validate and copy a pack folder into the games folder (code is never auto-trusted). |
 | `DELETE /api/game-packs/:id` | Uninstall an installed pack (refused while servers use it). |
 | `GET /api/locales`, `GET /api/locales/:code` | UI translation packs: `<localesDir>/<code>.json` with optional `_meta.name`; partial packs fall back to English. |
