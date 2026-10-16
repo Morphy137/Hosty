@@ -137,7 +137,11 @@
     },
     "auto_restart_label": "क्रैश के बाद अपने आप रीस्टार्ट करें",
     "scheduled_restart_label": "हर N घंटे में निर्धारित रीस्टार्ट (0 = बंद)",
-    "backups_kept_label": "रखे गए बैकअप"
+    "backups_kept_label": "रखे गए बैकअप",
+    "bridge_reinstall_button": "टेलीमेट्री ब्रिज अपडेट करें",
+    "bridge_remove_button": "टेलीमेट्री ब्रिज हटाएं",
+    "bridge_removed": "टेलीमेट्री ब्रिज हटा दिया गया।",
+    "bridge_remove_offline": "ब्रिज हटाने के लिए सर्वर रोकें।"
   },
   "mod_files": {
     "total_mods": "कुल मॉड",

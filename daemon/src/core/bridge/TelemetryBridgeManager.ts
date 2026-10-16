@@ -292,6 +292,18 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     return targetFile;
   }
 
+  /** Deletes the bridge jar from the given folders; returns how many files were removed. */
+  public static removeBridge(instanceDir: string, folders: string[] = ['mods']): number {
+    let removed = 0;
+    for (const folder of folders) {
+      const file = path.join(instanceDir, folder, 'mc-nexus-bridge.jar');
+      if (!fs.existsSync(file)) continue;
+      fs.rmSync(file, { force: true });
+      removed += 1;
+    }
+    return removed;
+  }
+
   /** True when a bridge jar is present in any of the given folders (defaults to `mods`). */
   public static isBridgeInstalled(instanceDir: string, folders: string[] = ['mods']): boolean {
     return folders.some((folder) => fs.existsSync(path.join(instanceDir, folder, 'mc-nexus-bridge.jar')));

@@ -134,7 +134,11 @@
     },
     "auto_restart_label": "Reiniciar automáticamente tras un fallo",
     "scheduled_restart_label": "Reinicio programado cada N horas (0 = desactivado)",
-    "backups_kept_label": "Copias conservadas"
+    "backups_kept_label": "Copias conservadas",
+    "bridge_reinstall_button": "Actualizar Telemetry Bridge",
+    "bridge_remove_button": "Quitar Telemetry Bridge",
+    "bridge_removed": "Telemetry Bridge eliminado.",
+    "bridge_remove_offline": "Detén el servidor para quitar el bridge."
   },
   "mod_files": {
     "total_mods": "Total de Mods",
