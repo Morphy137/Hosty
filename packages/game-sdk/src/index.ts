@@ -10,6 +10,11 @@ export type { ManifestValidation } from './validate';
 
 export const GAME_PACK_API_VERSION = 1;
 
+export interface PackAuthor {
+  name: string;
+  url?: string;
+}
+
 export type LocalizedText = string | Record<string, string>;
 export type PlatformValue = string | { win32?: string; linux?: string; darwin?: string; default?: string };
 
@@ -218,6 +223,8 @@ export interface GameManifest {
   /** Relative path to a logo image inside the pack (png / webp / svg). */
   logo?: string;
   description?: LocalizedText;
+  /** Who made the pack; `url` (https) is shown as a link, usually to their GitHub profile or repository. */
+  author?: PackAuthor;
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';

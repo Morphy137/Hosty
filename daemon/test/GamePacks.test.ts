@@ -533,6 +533,14 @@ describe('declared layout, actions and defaults', () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
+  it('accepts an author with an https link and rejects anything else', () => {
+    expect(validateManifest({ ...validManifest, author: { name: 'Ana', url: 'https://github.com/ana' } }).ok).toBe(true);
+    expect(validateManifest({ ...validManifest, author: { name: 'Ana' } }).ok).toBe(true);
+    for (const author of [{ name: '' }, { name: 'Ana', url: 'http://github.com/ana' }, { name: 'Ana', url: 'javascript:alert(1)' }, 'Ana']) {
+      expect(validateManifest({ ...validManifest, author }).ok, JSON.stringify(author)).toBe(false);
+    }
+  });
+
   it('rejects malformed player actions, folders and bridge targets', () => {
     const result = validateManifest({
       ...validManifest,

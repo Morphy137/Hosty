@@ -3,6 +3,7 @@
   "id": "project-zomboid",
   "name": "Project Zomboid",
   "version": "1.0.0",
+  "author": { "name": "Hosty", "url": "https://github.com/Morphy137/Hosty" },
   "badge": "PZ",
   "category": "survival",
   "status": "beta",
