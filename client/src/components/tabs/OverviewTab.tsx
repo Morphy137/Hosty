@@ -42,6 +42,8 @@ interface OverviewTabProps {
   game?: GameDriverSummary;
 }
 
+const CONSOLE_FOLLOW_THRESHOLD_PX = 120;
+
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   metrics,
   players,
@@ -78,8 +80,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     p.username.toLowerCase().includes(playerSearch.toLowerCase())
   );
 
+  // Jump straight to the end when the tab opens (no scroll animation through the whole history), then
+  // follow new lines smoothly, but only while the user has not scrolled up to read.
+  const hasPositionedConsole = useRef(false);
+  const previousLogCount = useRef(0);
   useEffect(() => {
-    consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const end = consoleEndRef.current;
+    if (!end) return;
+    // A shorter list means another server's console was loaded: position it like a fresh open.
+    if (logs.length < previousLogCount.current) hasPositionedConsole.current = false;
+    previousLogCount.current = logs.length;
+    if (!hasPositionedConsole.current) {
+      hasPositionedConsole.current = true;
+      end.scrollIntoView({ behavior: 'auto' });
+      return;
+    }
+    const container = end.parentElement;
+    const distanceFromBottom = container ? container.scrollHeight - container.scrollTop - container.clientHeight : 0;
+    if (distanceFromBottom <= CONSOLE_FOLLOW_THRESHOLD_PX) end.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
   const handleCommandSubmit = (e: React.FormEvent) => {
