@@ -14,7 +14,7 @@ import { ModCatalog, type ModSort } from './provisioning/ModCatalog';
 import { buildProvisionRunner } from './provisioning/InstallProviders';
 import { ModFileManager, DEFAULT_MOD_LAYOUT, type ModLayout } from './core/ModFileManager';
 import { driverRegistry } from './core/drivers/GameDriverRegistry';
-import { telemetryBridge } from './core/bridge/TelemetryBridgeManager';
+import { TelemetryBridgeManager, telemetryBridge } from './core/bridge/TelemetryBridgeManager';
 import { ensureBridgeConfig } from './core/bridge/BridgeAuth';
 import { tokensMatch } from './core/bridge/BridgeAuth';
 import type { PlayerInventoryData } from './core/bridge/BridgeProtocol';
@@ -302,6 +302,24 @@ app.get('/api/instances/:id/settings', (req, res, next) => {
       onlinePlayersCount: registry.getPlayers(instance.id).length,
       bridgeConnected: registry.isBridgeConnected(instance.id)
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/instances/:id/bridge', (req, res, next) => {
+  try {
+    const instance = instanceManager.getInstance(req.params.id);
+    if (!instance) {
+      throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${req.params.id}" not found.`);
+    }
+    if (registry.getSupervisor(instance.id)?.isRunning()) {
+      throw new DaemonError('SERVER_RUNNING', 'Stop the server before removing the bridge.');
+    }
+    const targets = driverRegistry.getDriver(instance.gameId).summary.bridgeTargets ?? { default: { dir: 'mods' } };
+    const folders = Array.from(new Set(Object.values(targets).map((target) => target.dir)));
+    const removed = TelemetryBridgeManager.removeBridge(instance.dir, folders);
+    res.json({ ok: true, removed });
   } catch (err) {
     next(err);
   }

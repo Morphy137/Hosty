@@ -396,6 +396,10 @@ export function installInstanceBridge(id: string): Promise<{ ok: boolean; server
   return postJson<{ ok: boolean; serverRunning: boolean }>(`/api/instances/${encodeURIComponent(id)}/bridge/install`, {});
 }
 
+export function removeInstanceBridge(id: string): Promise<{ ok: boolean; removed: number }> {
+  return deleteRequest<{ ok: boolean; removed: number }>(`/api/instances/${encodeURIComponent(id)}/bridge`);
+}
+
 export function getInstanceIconUrl(id: string): string {
   return withDaemonToken(`${getDaemonHttpUrl()}/api/instances/${encodeURIComponent(id)}/icon`);
 }

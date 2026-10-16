@@ -137,7 +137,11 @@
     },
     "auto_restart_label": "崩溃后自动重启",
     "scheduled_restart_label": "每 N 小时定时重启（0 = 关闭）",
-    "backups_kept_label": "保留的备份数"
+    "backups_kept_label": "保留的备份数",
+    "bridge_reinstall_button": "更新遥测桥",
+    "bridge_remove_button": "移除遥测桥",
+    "bridge_removed": "遥测桥已移除。",
+    "bridge_remove_offline": "请先停止服务器再移除。"
   },
   "mod_files": {
     "total_mods": "模组总数",

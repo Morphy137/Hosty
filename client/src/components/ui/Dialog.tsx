@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
@@ -43,6 +43,8 @@ export const Dialog: React.FC<DialogProps> = ({
   dismissible = true
 }) => {
   const { t } = useTranslation();
+  // A text selection that starts inside the dialog and ends on the backdrop must not dismiss it.
+  const pressStartedOnBackdrop = useRef(false);
 
   return (
     <RadixDialog.Root open={open} onOpenChange={(next) => (dismissible || next) && onOpenChange(next)}>
@@ -62,8 +64,13 @@ export const Dialog: React.FC<DialogProps> = ({
               forceMount
               onEscapeKeyDown={(event) => !dismissible && event.preventDefault()}
               onInteractOutside={(event) => !dismissible && event.preventDefault()}
+              onPointerDown={(event) => {
+                pressStartedOnBackdrop.current = event.target === event.currentTarget;
+              }}
               onClick={(event) => {
-                if (dismissible && event.target === event.currentTarget) onOpenChange(false);
+                const closes = pressStartedOnBackdrop.current && event.target === event.currentTarget;
+                pressStartedOnBackdrop.current = false;
+                if (dismissible && closes) onOpenChange(false);
               }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4 focus:outline-none"
             >

@@ -21,7 +21,8 @@ import {
   getInstanceIconUrl,
   uploadInstanceIcon,
   deleteInstanceIcon,
-  installInstanceBridge
+  installInstanceBridge,
+  removeInstanceBridge
 } from '../../api/daemonApi';
 
 interface EditServerModalProps {
@@ -111,6 +112,23 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
       setBridgeFeedback(
         result.serverRunning ? t('edit_server.bridge_installed_restart') : t('edit_server.bridge_installed_ready')
       );
+      await onRefreshInstances();
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      const message = err instanceof Error ? err.message : String(err);
+      setBridgeError(code ? t(`errors.${code}`, { defaultValue: message }) : message);
+    } finally {
+      setIsInstallingBridge(false);
+    }
+  };
+
+  const handleRemoveBridge = async () => {
+    setIsInstallingBridge(true);
+    setBridgeFeedback(null);
+    setBridgeError(null);
+    try {
+      await removeInstanceBridge(instance.id);
+      setBridgeFeedback(t('edit_server.bridge_removed'));
       await onRefreshInstances();
     } catch (err) {
       const code = (err as { code?: string }).code;
@@ -640,6 +658,19 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                     {t('edit_server.engine_label')}: <span className="font-semibold text-ink uppercase">{instance.loader || 'vanilla'}</span>
                   </div>
 
+                  <div className="flex items-center gap-2">
+                  {bridgeInstalled && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveBridge}
+                      disabled={isInstallingBridge || serverStatus !== 'OFFLINE'}
+                      title={serverStatus !== 'OFFLINE' ? t('edit_server.bridge_remove_offline') : undefined}
+                      className="h-8 px-3.5 rounded-[4px] border border-hairline text-ink hover:bg-surface-3 disabled:opacity-40 text-[12px] font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{t('edit_server.bridge_remove_button')}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleInstallBridge}
@@ -654,10 +685,11 @@ const EditServerModalContent: React.FC<EditModalContentProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-3.5 h-3.5 text-success-fg" />
-                        <span>{t('edit_server.bridge_install_button')}</span>
+                        <span>{bridgeInstalled ? t('edit_server.bridge_reinstall_button') : t('edit_server.bridge_install_button')}</span>
                       </>
                     )}
                   </button>
+                  </div>
                 </div>
               </div>
 

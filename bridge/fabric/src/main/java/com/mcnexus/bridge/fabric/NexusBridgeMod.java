@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -46,12 +46,20 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
     private String instanceId = "default";
     private String daemonUrl = "ws://127.0.0.1:4000/telemetry/bridge";
     private String token = "";
-    private int tickCounter = 0;
+    private static final long TELEMETRY_INTERVAL_MS = 1_000L;
+    private final Timer telemetryTimer = new Timer("hosty-bridge-telemetry", true);
 
     @Override
     public void onInitializeServer() {
         connectToDaemon();
-        ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
+        // No Fabric API dependency: the server comes from Fabric Loader and telemetry runs on our own timer,
+        // hopping onto the server thread to read game state.
+        telemetryTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                requestTelemetry();
+            }
+        }, TELEMETRY_INTERVAL_MS, TELEMETRY_INTERVAL_MS);
         LOGGER.info("[Hosty Bridge] Fabric server module initialized.");
     }
 
@@ -328,12 +336,17 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         client.send(GSON.toJson(root));
     }
 
-    private void onServerTick(MinecraftServer current) {
+    private void requestTelemetry() {
+        Object instance = FabricLoader.getInstance().getGameInstance();
+        if (!(instance instanceof MinecraftServer)) return;
+        MinecraftServer current = (MinecraftServer) instance;
         this.server = current;
-        tickCounter++;
-        if (tickCounter < 20) return; // 1 second
-        tickCounter = 0;
+        WebSocketClient probe = wsClient;
+        if (!authenticated || probe == null || !probe.isOpen()) return;
+        current.execute(() -> sendTelemetry(current));
+    }
 
+    private void sendTelemetry(MinecraftServer current) {
         WebSocketClient client = wsClient;
         if (!authenticated || client == null || !client.isOpen()) return;
 
