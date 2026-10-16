@@ -7,4 +7,4 @@ MCowBQYDK2VwAyEAZqbY+0pHjxF/STE1ouURP4CfzW/rn20EU6RdCp72x7s=
 -----END PUBLIC KEY-----`;
 
 /** Where the signed catalog is published (`index.json`, `index.json.sig`, `packs/<id>/...`). */
-export const DEFAULT_CATALOG_URL = 'https://raw.githubusercontent.com/Morphy137/hosty-games/main';
+export const DEFAULT_CATALOG_URL = 'https://raw.githubusercontent.com/Morphy137/Hosty-Games/main';

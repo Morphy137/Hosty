@@ -1,7 +1,7 @@
 # Hosty game catalog
 
 Tooling to publish game packs as a **signed catalog** that the app can browse and install from. Intended to live in its
-own repository (`hosty-games`); the app reads it from `MC_NEXUS_CATALOG_URL` (default in
+own repository (`Hosty-Games`); the app reads it from `MC_NEXUS_CATALOG_URL` (default in
 `daemon/src/core/catalog/catalogKey.ts`).
 
 ## What gets published
