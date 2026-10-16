@@ -246,10 +246,8 @@ export interface GameManifest {
   motd?: { colorCodes?: boolean; preview?: boolean };
   /** Development only: JSON file in the pack with sample `players` / `inventory` for simulated telemetry. */
   devMock?: string;
-  /** Bundled packs whose extension implements an installer. */
+  /** Packs whose `driver.js` implements an installer. */
   installer?: InstallerSpec;
-  /** Reserved for packs bundled with Hosty; user packs that set it are rejected. */
-  extension?: string;
   playerQueries?: PlayerQuery[];
   configSync?: ConfigSync;
   /** Loaders a Telemetry Bridge exists for. */
