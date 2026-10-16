@@ -12,6 +12,7 @@ import { DropdownMenu } from '../ui/DropdownMenu';
 import { IconButton } from '../ui/IconButton';
 import { Tabs, type TabItem } from '../ui/Tabs';
 import { useToast } from '../ui/toastContext';
+import { useShareableHost } from '../../hooks/useShareableHost';
 
 const TAB_ICONS: Record<TabId, React.ReactNode> = {
   overview: <Activity className="h-4 w-4" />,
@@ -50,7 +51,8 @@ export const ServerHeader: React.FC<ServerHeaderProps> = ({
   const { toast } = useToast();
   const [isKillDialogOpen, setIsKillDialogOpen] = useState(false);
 
-  const address = `localhost:${instance.port}`;
+  const shareableHost = useShareableHost();
+  const address = `${shareableHost}:${instance.port}`;
   const isInstalled = instance.hasJar;
   const isRunning = status === 'ONLINE';
   const isTransitioning = status === 'STARTING' || status === 'STOPPING';

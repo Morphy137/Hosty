@@ -78,3 +78,14 @@ export function parseMotd(input: string): MotdSegment[] {
 export function stripMotdCodes(input: string): string {
   return input.replace(FORMAT_MARKERS, '');
 }
+
+/** Segments of a MOTD: styled when the game uses formatting codes (manifest `motd.colorCodes`), plain otherwise. */
+export function motdSegments(motd: string, colorCodes: boolean): MotdSegment[] {
+  if (colorCodes) return parseMotd(motd);
+  return motd ? [{ text: motd, bold: false, italic: false, underline: false, strikethrough: false }] : [];
+}
+
+/** Servers store line breaks as a literal backslash-n; single-line views show them as a separator space. */
+export function flattenMotdLines(motd: string): string {
+  return motd.replace(/\\n|\r?\n/g, ' ').replace(/ {2,}/g, ' ').trim();
+}
