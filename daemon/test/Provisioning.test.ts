@@ -5,9 +5,11 @@ import AdmZip from 'adm-zip';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { classifyJar, inspectJar } from '../src/extensions/minecraft/JarInspector';
 import {
+  forgeBuilds,
   forgeMinecraftVersions,
   latestForgeVersion,
   latestNeoForgeVersion,
+  neoForgeBuilds,
   neoForgeMinecraftVersions,
   neoForgeToMinecraftVersion,
   parseMavenVersions
@@ -119,6 +121,15 @@ describe('ModLoaderCatalog', () => {
     expect(forgeMinecraftVersions(versions)).toEqual(['1.21.1', '1.20.1', '1.12.2']);
     expect(latestForgeVersion(versions, '1.20.1')).toBe('1.20.1-47.2.0');
     expect(latestForgeVersion(versions, '1.19')).toBeNull();
+  });
+
+  it('lists the builds of one Minecraft version newest first', () => {
+    const versions = parseMavenVersions(forgeXml);
+    expect(forgeBuilds(versions, '1.20.1')).toEqual(['47.2.0', '47.1.0']);
+    expect(forgeBuilds(versions, '1.19')).toEqual([]);
+
+    const neo = ['21.1.5', '21.1.173-beta', '21.1.172', '20.4.1'];
+    expect(neoForgeBuilds(neo, '1.21.1')).toEqual(['21.1.172', '21.1.5', '21.1.173-beta']);
   });
 
   it('maps NeoForge versions to Minecraft versions', () => {

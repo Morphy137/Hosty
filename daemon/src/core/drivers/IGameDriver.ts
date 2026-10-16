@@ -162,7 +162,10 @@ export interface InstallFileInfo {
 /** Server-software installer a bundled extension provides; the routes and the wizard step are generic. */
 export interface GameInstaller {
   listVersions(variant: string): Promise<string[]>;
-  install(instanceDir: string, variant: string, version: string, hooks: ProvisionHooks): Promise<void>;
+  /** Builds of a variant for one game version, newest first; the user may pick one instead of the latest. */
+  listBuilds?(variant: string, version: string): Promise<string[]>;
+  /** `build` is one of `listBuilds`; absent = the latest. */
+  install(instanceDir: string, variant: string, version: string, hooks: ProvisionHooks, build?: string): Promise<void>;
   inspectFile(filePath: string): InstallFileInfo;
   /** Moves an uploaded server file into the instance; `run` is set when it still has to be executed. */
   placeFile(

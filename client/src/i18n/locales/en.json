@@ -455,7 +455,9 @@
     "bridge_recommended": "Recommended",
     "bridge_desc": "Adds real-time TPS, MSPT, loaded chunks and per-player health and coordinates to the dashboard, and enables in-game player actions, without polling the console.",
     "bridge_later": "You can also install or check it later from Edit server > Telemetry Bridge.",
-    "warn_bridge": "The server was created, but the Telemetry Bridge could not be installed. You can retry from Edit server."
+    "warn_bridge": "The server was created, but the Telemetry Bridge could not be installed. You can retry from Edit server.",
+    "build_label": "{{loader}} build",
+    "build_latest": "Latest ({{build}})"
   },
   "config": {
     "no_files": "This game has no editable configuration files.",

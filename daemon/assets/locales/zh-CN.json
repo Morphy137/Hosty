@@ -458,7 +458,9 @@
     "bridge_recommended": "推荐",
     "bridge_desc": "无需轮询控制台，即可在面板中实时显示 TPS、MSPT、已加载区块以及每位玩家的生命值和坐标，并启用游戏内玩家操作。",
     "bridge_later": "你也可以之后在 编辑服务器 > 遥测桥 中安装或检查它。",
-    "warn_bridge": "服务器已创建，但遥测桥未能安装。你可以在“编辑服务器”中重试。"
+    "warn_bridge": "服务器已创建，但遥测桥未能安装。你可以在“编辑服务器”中重试。",
+    "build_label": "{{loader}} 构建版本",
+    "build_latest": "最新（{{build}}）"
   },
   "config": {
     "no_files": "此游戏没有可编辑的配置文件。",

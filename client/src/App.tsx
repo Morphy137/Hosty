@@ -229,12 +229,13 @@ export default function App() {
     async (params: {
       variant: string;
       version: string;
+      build?: string;
       instanceId: string;
       instanceName: string;
       settings?: Partial<InstanceSettings>;
     }) => {
       resetProvisionLogs([
-        `[Provisioner] Initializing ${params.variant.toUpperCase()} ${params.version} for "${params.instanceName}"...`
+        `[Provisioner] Initializing ${params.variant.toUpperCase()} ${params.version}${params.build ? ` (build ${params.build})` : ''} for "${params.instanceName}"...`
       ]);
       try {
         const started = await installServer(
@@ -242,7 +243,8 @@ export default function App() {
           params.version,
           params.instanceId,
           params.instanceName,
-          params.settings
+          params.settings,
+          params.build
         );
         await waitForProvisionJob(started.jobId);
         await instances.refresh();

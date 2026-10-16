@@ -480,6 +480,18 @@ export async function saveModConfig(filename: string, entries: ConfigEntry[]): P
 
 // Provisioning (implemented by the game's extension: `installer`)
 /** Versions the game's installer offers for a variant (empty when they cannot be listed). */
+/** Builds of a variant for one game version, newest first (empty when the game has none to choose). */
+export async function fetchInstallerBuilds(gameId: string, variant: string, version: string): Promise<string[]> {
+  try {
+    const data = await request<string[]>(
+      `/api/games/${encodeURIComponent(gameId)}/installer/builds/${encodeURIComponent(variant)}/${encodeURIComponent(version)}`
+    );
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchInstallerVersions(gameId: string, variant: string): Promise<string[]> {
   try {
     const data = await request<string[]>(
@@ -502,11 +514,13 @@ export async function installServer(
   version: string,
   instanceId?: string,
   instanceName?: string,
-  settings?: Partial<InstanceSettings>
+  settings?: Partial<InstanceSettings>,
+  build?: string
 ): Promise<InstallStarted> {
   return postJson<InstallStarted>('/api/provisioning/install', {
     variant,
     version,
+    build: build || undefined,
     instanceId,
     instanceName,
     settings

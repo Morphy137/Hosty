@@ -27,13 +27,11 @@ import { PlayerCard } from '../players/PlayerCard';
 import type { RunPlayerAction } from '../players/PlayerActionDialog';
 import { calculateRamPercent, formatUptime } from '../../utils/format';
 import { processLabel } from '../../utils/gameRuntime';
-import { GameLogo } from '../common/GameIcons';
-import { MotdText } from '../common/MotdText';
+import { GameTag } from '../common/GameTag';
 import { useShareableHost } from '../../hooks/useShareableHost';
-import { flattenMotdLines } from '../../utils/motd';
+import { flattenMotdLines, stripMotdCodes } from '../../utils/motd';
 import { ServerAvatar } from '../common/ServerAvatar';
 import { BridgeBadge, ServerStatusBadge } from '../common/ServerStatusBadge';
-import { Badge } from '../ui/Badge';
 import { AnimatedNumber } from '../motion/AnimatedNumber';
 import { Sparkline } from '../common/Sparkline';
 import type { MetricsHistory } from '../../hooks/useMetricsHistory';
@@ -82,7 +80,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const serverPort = instance?.port || game?.defaultPort || 0;
   const shareableHost = useShareableHost();
   const serverAddress = `${shareableHost}:${serverPort}`;
-  const motdColorCodes = Boolean(game?.motd?.colorCodes);
+  // The game's message of the day as a clean description: formatting codes and line breaks removed.
+  const motdText = instance?.motd ?? '';
+  const serverDescription = flattenMotdLines(game?.motd?.colorCodes ? stripMotdCodes(motdText) : motdText);
   const maxPlayersCount = instance?.maxPlayers || game?.defaultMaxPlayers || 0;
   // Tick rate the game runs at (manifest `performance.tickRate`); only then is a TPS reading meaningful.
   const tickRate = game?.performance?.tickRate;
@@ -145,10 +145,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 {instance?.name || t('header.instance')}
               </h1>
               <ServerStatusBadge status={status} />
-              <Badge>
-                <GameLogo gameId={instance?.gameId ?? ''} size={12} />
-                {gameName ?? instance?.gameId ?? ''}
-              </Badge>
+              <GameTag gameId={instance?.gameId ?? ''} name={gameName ?? instance?.gameId ?? ''} />
               {metrics.bridgeConnected && <BridgeBadge />}
             </div>
 
@@ -192,15 +189,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <span className="text-hairline-strong">|</span>
 
               {/* MOTD */}
-              {instance?.motd ? (
-                <span
-                  className="max-w-sm truncate rounded-[4px] bg-console px-2 py-0.5 font-mono text-[11px] text-white/70"
-                  title={flattenMotdLines(instance.motd)}
-                >
-                  <MotdText motd={flattenMotdLines(instance.motd)} colorCodes={motdColorCodes} />
+              {serverDescription ? (
+                <span className="max-w-sm truncate text-soft" title={serverDescription}>
+                  {serverDescription}
                 </span>
               ) : (
-                <span className="italic text-mute truncate max-w-sm">{t('overview.no_motd')}</span>
+                <span className="max-w-sm truncate text-mute">{t('overview.no_motd')}</span>
               )}
             </div>
           </div>

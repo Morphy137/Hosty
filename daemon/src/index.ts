@@ -1460,11 +1460,21 @@ app.get('/api/games/:gameId/installer/versions/:variant', async (req, res, next)
   }
 });
 
+app.get('/api/games/:gameId/installer/builds/:variant/:version', async (req, res, next) => {
+  try {
+    const installer = installerOf(req.params.gameId);
+    res.json((await installer.listBuilds?.(req.params.variant, req.params.version)) ?? []);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post('/api/provisioning/install', async (req, res, next) => {
   try {
-    const { variant, version, instanceId, instanceName, settings } = req.body as {
+    const { variant, version, build, instanceId, instanceName, settings } = req.body as {
       variant?: string;
       version?: string;
+      build?: string;
       instanceId?: string;
       instanceName?: string;
       settings?: Partial<InstanceSettings>;
@@ -1511,7 +1521,7 @@ app.post('/api/provisioning/install', async (req, res, next) => {
       version,
       rollbackInstanceId: createdInstanceId,
       javaPath: target.javaPath || config.javaPath,
-      run: (hooks) => installer.install(targetDir, variant, version, hooks)
+      run: (hooks) => installer.install(targetDir, variant, version, hooks, build || undefined)
     });
 
     res.status(202).json({ ok: true, jobId, instanceId: target.id });

@@ -41,13 +41,16 @@ const baseDraft: WizardDraft = {
   instanceId: 'my-server',
   motd: '§aHello',
   ramMb: 8192,
-  install: { variant: 'fabric', version: '1.21.1', useOwnFile: false, file: null, fileInfo: null }
+  install: { variant: 'fabric', version: '1.21.1', build: '', useOwnFile: false, file: null, fileInfo: null }
 };
 
 describe('buildCreationPlan', () => {
   it('installs automatic variants from a version', () => {
     const plan = buildCreationPlan(baseDraft, minecraft);
-    expect(plan).toMatchObject({ kind: 'install', variant: 'fabric', version: '1.21.1', instanceId: 'my-server' });
+    expect(plan).toMatchObject({ kind: 'install', variant: 'fabric', version: '1.21.1', build: '', instanceId: 'my-server' });
+    expect(buildCreationPlan({ ...baseDraft, install: { ...baseDraft.install, build: '0.19.5' } }, minecraft)).toMatchObject({
+      build: '0.19.5'
+    });
     if (plan.kind === 'install') {
       expect(plan.settings).toMatchObject({ maxRamMb: 8192, minRamMb: 2048, motd: '§aHello', gameId: 'minecraft' });
     }
