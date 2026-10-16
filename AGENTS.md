@@ -72,7 +72,7 @@ Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, J
 
 ## Conventions
 
-- **Versioning** `a.b.c` (current: `0.2.8`). The **source of truth is the `version` field in the root [package.json](package.json)**; every other version must be set to the same value:
+- **Versioning** `a.b.c` (current: `0.2.9`). The **source of truth is the `version` field in the root [package.json](package.json)**; every other version must be set to the same value:
   - `daemon/package.json`, `client/package.json`, `client/src-tauri/tauri.conf.json` and `client/src-tauri/Cargo.toml` (`[package] version`).
   - Lockfiles, refreshed by the tools and never edited by hand: `version` in `daemon/package-lock.json` and `client/package-lock.json` (`npm --prefix <dir> install --package-lock-only`), and the `hosty` entry in `client/src-tauri/Cargo.lock` (any `cargo` command, e.g. `cargo metadata`).
   - `a` (major): `0` while the tool is not yet fully functional. It becomes `1.0.0` only when the product is complete, and only after explicit manual approval.
