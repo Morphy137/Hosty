@@ -183,6 +183,11 @@ export class ProcessSupervisor extends EventEmitter<ProcessSupervisorEvents> {
     }
   }
 
+  /** Adds a Hosty message to this server's own console (and its persisted history). */
+  public log(message: string): void {
+    this.emitConsole(message.replace(/\r?\n$/, ''));
+  }
+
   public getStatus(): ServerStatus {
     return this.status;
   }

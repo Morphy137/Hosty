@@ -6,7 +6,7 @@ import {
   parseDaemonMessage,
   type DaemonSocketState
 } from '../state/daemonSocketReducer';
-import type { DaemonAction, SocketConnectionState } from '../types/daemon';
+import type { DaemonAction, ServerStatus, SocketConnectionState } from '../types/daemon';
 import { computeBackoffDelay } from '../utils/backoff';
 
 export interface DaemonSocket extends DaemonSocketState {
@@ -16,6 +16,7 @@ export interface DaemonSocket extends DaemonSocketState {
   clearError: () => void;
   clearInventory: () => void;
   resetProvisionLogs: (lines: string[]) => void;
+  resetInstanceView: (lines: string[], status: ServerStatus) => void;
 }
 
 /** Maintains a WebSocket connection to the daemon with automatic exponential-backoff reconnects. */
@@ -87,5 +88,10 @@ export function useDaemonSocket(url: string = getDaemonWsUrl()): DaemonSocket {
     []
   );
 
-  return { ...state, connectionState, sendAction, clearError, clearInventory, resetProvisionLogs };
+  const resetInstanceView = useCallback(
+    (lines: string[], status: ServerStatus) => dispatch({ kind: 'resetInstanceView', lines, status }),
+    []
+  );
+
+  return { ...state, connectionState, sendAction, clearError, clearInventory, resetProvisionLogs, resetInstanceView };
 }
