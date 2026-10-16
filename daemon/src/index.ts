@@ -1124,7 +1124,7 @@ app.get('/api/games/:gameId/logo', (req, res, next) => {
     if (!file || !fs.existsSync(file)) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Game "${gameId}" has no logo.`);
     }
-    res.sendFile(path.resolve(file));
+    res.sendFile(path.resolve(file), { dotfiles: 'allow' }); // the games folder may sit under a dot-folder
   } catch (err) {
     next(err);
   }
@@ -1144,7 +1144,7 @@ app.get('/api/games/:gameId/files', (req, res, next) => {
       throw new DaemonError('CONFIG_NOT_FOUND', `Game "${gameId}" has no file "${relative}".`);
     }
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.sendFile(path.resolve(file));
+    res.sendFile(path.resolve(file), { dotfiles: 'allow' }); // already confined to the pack folder
   } catch (err) {
     next(err);
   }
