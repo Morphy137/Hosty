@@ -15,6 +15,7 @@ import {
   saveConfigEntries,
   uploadInstanceIcon
 } from '../../api/daemonApi';
+import { nextFreePort } from '../../utils/ports';
 import { maxAllocatableRamMb, recommendedRamMb } from '../../utils/ram';
 import { iconSizeFor, resizeToServerIcon } from '../../utils/serverIcon';
 import { Button } from '../ui/Button';
@@ -78,13 +79,6 @@ const SLIDE = {
   exit: (direction: number) => ({ opacity: 0, x: direction * -28 })
 };
 
-function nextFreePort(base: number, instances: InstanceInfo[]): number {
-  const used = new Set(instances.map((instance) => instance.port));
-  let candidate = base;
-  while (used.has(candidate)) candidate += 1;
-  return candidate;
-}
-
 export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   isOpen,
   initialOrigin,
@@ -140,7 +134,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       instanceId: slugifyInstanceId(name),
       idTouched: false,
       motd: t('wizard.default_motd', { game: shortName }),
-      port: nextFreePort(selected.defaultPort, instances),
+      port: nextFreePort(selected.defaultPort, selected.portStride, instances, games),
       maxPlayers: selected.defaultMaxPlayers,
       ramMb: Math.min(
         selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),

@@ -1,10 +1,11 @@
+import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackupManager } from '../src/core/BackupManager';
-import { ProcessSupervisor, type ServerConfig, type SpawnFunction } from '../src/core/ProcessSupervisor';
+import { ProcessSupervisor, resolveSpawnCommand, type ServerConfig, type SpawnFunction } from '../src/core/ProcessSupervisor';
 import type { IGameDriver } from '../src/core/drivers/IGameDriver';
 
 class FakeChild extends EventEmitter {
@@ -82,6 +83,20 @@ describe('server resilience', () => {
     children[1].exit(0);
     vi.advanceTimersByTime(10_000);
     expect(children).toHaveLength(2);
+  });
+
+  it('returns to OFFLINE and reports the error when spawn throws synchronously', () => {
+    spawn = (() => {
+      throw Object.assign(new Error('spawn EINVAL'), { code: 'EINVAL' });
+    }) as SpawnFunction;
+    const supervisor = makeSupervisor();
+    const failures: string[] = [];
+    supervisor.on('failure', (failure) => failures.push(failure.code));
+
+    expect(() => supervisor.start()).not.toThrow();
+    expect(supervisor.getStatus()).toBe('OFFLINE');
+    expect(supervisor.isRunning()).toBe(false);
+    expect(failures).toEqual(['PROCESS_ERROR']);
   });
 
   it('does not restart when auto-restart is off', () => {
@@ -163,5 +178,35 @@ describe('BackupManager', () => {
     const manager = new BackupManager(dir);
     expect(() => manager.restore('../../etc/passwd')).toThrow();
     expect(() => manager.remove('..\\x.zip')).toThrow();
+  });
+});
+
+describe('script launches', () => {
+  it('runs .bat/.cmd files through cmd.exe on Windows only', () => {
+    const script = resolveSpawnCommand('C:/Servers/My PZ/StartServer64.bat', ['-port', '16261', 'a"b'], 'win32', 'cmd.exe');
+    expect(script).toEqual({
+      executable: 'cmd.exe',
+      args: ['/d', '/s', '/c', '""C:/Servers/My PZ/StartServer64.bat" "-port" "16261" "a""b""'],
+      verbatim: true
+    });
+    expect(resolveSpawnCommand('C:/x/server.exe', ['a'], 'win32')).toEqual({ executable: 'C:/x/server.exe', args: ['a'], verbatim: false });
+    expect(resolveSpawnCommand('/srv/start.cmd', ['a'], 'linux')).toEqual({ executable: '/srv/start.cmd', args: ['a'], verbatim: false });
+  });
+
+  it.runIf(process.platform === 'win32')('starts a real .bat script and passes its arguments', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hosty script '));
+    try {
+      const script = path.join(dir, 'start server.bat');
+      fs.writeFileSync(script, '@echo off\r\necho ARGS %1 %2\r\n');
+      const command = resolveSpawnCommand(script, ['-port', '16261']);
+      const child = spawn(command.executable, command.args, { windowsVerbatimArguments: command.verbatim });
+      let output = '';
+      child.stdout.on('data', (data: Buffer) => (output += data.toString()));
+      const code = await new Promise<number | null>((resolve) => child.on('close', resolve));
+      expect(code).toBe(0);
+      expect(output).toContain('ARGS "-port" "16261"');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

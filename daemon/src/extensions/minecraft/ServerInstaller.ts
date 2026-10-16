@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../../errors';
-import { downloadFile, type ProvisionHooks } from '../../provisioning/download';
+import { downloadFile, type ExpectedChecksum, type ProvisionHooks } from '../../provisioning/download';
 import { PropertiesParser } from './PropertiesParser';
 import { runServerInstaller } from './JavaInstallerRunner';
 import {
@@ -49,6 +49,9 @@ export const DEFAULT_MINECRAFT_VERSIONS: readonly string[] = [
   '1.18.2',
   '1.16.5'
 ];
+
+const sha256Of = (hex: string | undefined): ExpectedChecksum | undefined =>
+  hex ? { algorithm: 'sha256', hex } : undefined;
 
 export class ServerInstaller {
   public static isValidLoader(value: unknown): value is LoaderType {
@@ -121,14 +124,14 @@ export class ServerInstaller {
 
     onPhase?.('resolve');
     onLog(`[Provisioner] Resolving ${loader.toUpperCase()} build for Minecraft ${mcVersion}...`);
-    const downloadUrl = await this.resolveDownloadUrl(loader, mcVersion);
+    const download = await this.resolveDownload(loader, mcVersion);
 
     const isInstallerLoader = loader === 'forge' || loader === 'neoforge';
     const downloadTarget = path.join(workingDir, isInstallerLoader ? 'installer.jar' : 'server.jar');
 
     onPhase?.('download');
     onLog(`[Provisioner] Downloading ${isInstallerLoader ? 'installer' : 'server binary'}...`);
-    await downloadFile(downloadUrl, downloadTarget, hooks);
+    await downloadFile(download.url, downloadTarget, hooks, download.checksum);
 
     if (isInstallerLoader) {
       onPhase?.('install');
@@ -213,17 +216,21 @@ export class ServerInstaller {
     return data.versions.filter((v) => v.type === 'release').map((v) => v.id);
   }
 
-  private static async resolveDownloadUrl(loader: LoaderType, mcVersion: string): Promise<string> {
+  /** Download URL of the server (or installer) and, when the source publishes one, its checksum. */
+  private static async resolveDownload(
+    loader: LoaderType,
+    mcVersion: string
+  ): Promise<{ url: string; checksum?: ExpectedChecksum }> {
     if (loader === 'forge') {
       const version = latestForgeVersion(await this.fetchMavenVersions(FORGE_METADATA_URL), mcVersion);
       if (!version) throw new DaemonError('INVALID_VERSION', `No Forge build found for Minecraft ${mcVersion}`);
-      return forgeInstallerUrl(version);
+      return { url: forgeInstallerUrl(version) };
     }
 
     if (loader === 'neoforge') {
       const version = latestNeoForgeVersion(await this.fetchMavenVersions(NEOFORGE_METADATA_URL), mcVersion);
       if (!version) throw new DaemonError('INVALID_VERSION', `No NeoForge build found for Minecraft ${mcVersion}`);
-      return neoForgeInstallerUrl(version);
+      return { url: neoForgeInstallerUrl(version) };
     }
 
     if (loader === 'paper') {
@@ -233,9 +240,13 @@ export class ServerInstaller {
           headers: DEFAULT_HEADERS
         });
         if (res.ok) {
-          const data = (await res.json()) as { downloads?: { 'server:default'?: { url?: string } } };
-          const directUrl = data.downloads?.['server:default']?.url;
-          if (directUrl) return directUrl;
+          const data = (await res.json()) as {
+            downloads?: { 'server:default'?: { url?: string; checksums?: { sha256?: string } } };
+          };
+          const server = data.downloads?.['server:default'];
+          if (server?.url) {
+            return { url: server.url, checksum: sha256Of(server.checksums?.sha256) };
+          }
         }
       } catch {
         // Fallback to v2 builds
@@ -248,18 +259,21 @@ export class ServerInstaller {
         throw new DaemonError('UPSTREAM_ERROR', `No Paper builds found for Minecraft ${mcVersion}`);
       }
       const v2Data = (await v2Res.json()) as {
-        builds: Array<{ build: number; downloads: { application: { name: string } } }>;
+        builds: Array<{ build: number; downloads: { application: { name: string; sha256?: string } } }>;
       };
       if (!v2Data.builds || v2Data.builds.length === 0) {
         throw new DaemonError('UPSTREAM_ERROR', `No Paper builds found for Minecraft ${mcVersion}`);
       }
       const latest = v2Data.builds[v2Data.builds.length - 1];
       const fileName = latest.downloads.application.name;
-      return `https://api.papermc.io/v2/projects/paper/versions/${mcVersion}/builds/${latest.build}/downloads/${fileName}`;
+      return {
+        url: `https://api.papermc.io/v2/projects/paper/versions/${mcVersion}/builds/${latest.build}/downloads/${fileName}`,
+        checksum: sha256Of(latest.downloads.application.sha256)
+      };
     }
 
     if (loader === 'purpur') {
-      return `https://api.purpurmc.org/v2/purpur/${mcVersion}/latest/download`;
+      return { url: `https://api.purpurmc.org/v2/purpur/${mcVersion}/latest/download` };
     }
 
     if (loader === 'fabric') {
@@ -275,7 +289,9 @@ export class ServerInstaller {
         throw new DaemonError('UPSTREAM_ERROR', 'Fabric loader or installer version not found');
       }
 
-      return `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}/${loaders[0].version}/${installers[0].version}/server/jar`;
+      return {
+        url: `https://meta.fabricmc.net/v2/versions/loader/${mcVersion}/${loaders[0].version}/${installers[0].version}/server/jar`
+      };
     }
 
     const manifestRes = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', {
@@ -291,8 +307,9 @@ export class ServerInstaller {
     const versionRes = await fetch(target.url, { headers: DEFAULT_HEADERS });
     if (!versionRes.ok) throw new DaemonError('UPSTREAM_ERROR', 'Failed to fetch Mojang version details');
     const versionData = (await versionRes.json()) as {
-      downloads: { server: { url: string } };
+      downloads: { server: { url: string; sha1?: string } };
     };
-    return versionData.downloads.server.url;
+    const server = versionData.downloads.server;
+    return { url: server.url, checksum: server.sha1 ? { algorithm: 'sha1', hex: server.sha1 } : undefined };
   }
 }

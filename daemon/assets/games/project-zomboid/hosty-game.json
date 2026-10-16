@@ -12,7 +12,8 @@
   },
   "defaults": {
     "port": 16261,
-    "maxPlayers": 32
+    "maxPlayers": 32,
+    "portStride": 2
   },
   "provision": {
     "type": "steamcmd",
@@ -26,12 +27,17 @@
       "default": "start-server.sh"
     },
     "args": [
+      "-cachedir={{instanceDir}}/Zomboid",
       "-servername",
       "servertest",
+      "-adminpassword",
+      "{{adminPassword}}",
       "-memory",
       "{{maxRamMb}}m",
       "-port",
-      "{{port}}"
+      "{{port}}",
+      "-udpport",
+      "{{nextPort}}"
     ]
   },
   "detect": [
@@ -39,7 +45,8 @@
     "StartServer64.bat",
     "start-server.sh",
     "ProjectZomboid64.json",
-    "servertest.ini"
+    "servertest.ini",
+    "Zomboid/Server/servertest.ini"
   ],
   "logs": {
     "ready": [
@@ -67,7 +74,7 @@
   },
   "configFiles": [
     {
-      "path": "servertest.ini",
+      "path": "Zomboid/Server/servertest.ini",
       "format": "ini"
     }
   ],
@@ -96,18 +103,31 @@
           }
         }
       ]
+    },
+    {
+      "id": "adminPassword",
+      "type": "secret",
+      "required": true,
+      "label": {
+        "en": "Administrator password",
+        "es": "Contraseña de administrador"
+      },
+      "description": {
+        "en": "Used to create the admin account on the first start. The server waits for it otherwise.",
+        "es": "Se usa para crear la cuenta de administrador en el primer arranque. Sin ella el servidor se queda esperando."
+      }
     }
   ],
   "capabilities": {
     "players": true,
-    "mods": true,
+    "mods": false,
     "configEditor": true,
     "bridge": false
   },
   "modFormat": "Steam Workshop / Lua",
   "logo": "logo.webp",
   "configSync": {
-    "file": "servertest.ini",
+    "file": "Zomboid/Server/servertest.ini",
     "format": "ini",
     "map": {
       "port": "DefaultPort",

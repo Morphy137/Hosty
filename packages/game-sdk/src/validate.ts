@@ -52,6 +52,11 @@ export interface LaunchDiscovery {
   /** `jar` runs `java -jar <match>`; the default `args` mode puts `{{match}}` only where the args say so. */
   mode?: 'args' | 'jar';
   args?: LaunchArg[];
+  /**
+   * Variants (loaders) this entry belongs to. When the server's variant is known, entries of other variants are
+   * skipped, so files left behind by a previous loader never win over the installed one.
+   */
+  variants?: string[];
 }
 
 /** A command sent for every online player whose answer updates that player's state. */
@@ -217,7 +222,16 @@ export interface GameManifest {
   badge?: string;
   category?: 'voxel' | 'survival' | 'sandbox';
   status?: 'available' | 'beta' | 'coming_soon';
-  defaults: { port: number; maxPlayers: number; memoryMb?: number };
+  defaults: {
+    port: number;
+    maxPlayers: number;
+    memoryMb?: number;
+    /**
+     * Consecutive ports one server uses (e.g. 2 when it also listens on `port + 1`). New servers of any game are
+     * given a port range that does not overlap another server's. Default 1.
+     */
+    portStride?: number;
+  };
   provision?: ProvisionSpec;
   launch: {
     /** `native` runs the executable directly; `java` runs it as `java -jar <executable>` with RAM flags. */
@@ -297,6 +311,7 @@ export interface ManifestValidation {
 }
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,39}$/;
+const MAX_PORT_STRIDE = 10;
 const FIELD_TYPES = new Set(['select', 'text', 'secret', 'number', 'toggle', 'custom']);
 const CONFIG_FORMATS = new Set<ConfigFormat>(['properties', 'ini', 'json', 'toml', 'lines']);
 
@@ -367,6 +382,13 @@ export function validateManifest(raw: unknown): ManifestValidation {
   ) {
     errors.push('defaults.port (1-65535) and defaults.maxPlayers (>= 1) are required integers');
   }
+  if (
+    isObject(defaults) &&
+    defaults.portStride !== undefined &&
+    (!Number.isInteger(defaults.portStride) || (defaults.portStride as number) < 1 || (defaults.portStride as number) > MAX_PORT_STRIDE)
+  ) {
+    errors.push(`defaults.portStride must be an integer between 1 and ${MAX_PORT_STRIDE}`);
+  }
 
   const launch = raw.launch;
   if (!isObject(launch) || !isPlatformValue(launch.executable) || launch.executable === '') {
@@ -391,10 +413,12 @@ export function validateManifest(raw: unknown): ManifestValidation {
           isSafeRelativePath(entry.glob) &&
           (entry.platform === undefined || ['win32', 'linux', 'darwin'].includes(String(entry.platform))) &&
           (entry.mode === undefined || ['args', 'jar'].includes(String(entry.mode))) &&
-          (entry.args === undefined || (Array.isArray(entry.args) && entry.args.every(argOk)))
+          (entry.args === undefined || (Array.isArray(entry.args) && entry.args.every(argOk))) &&
+          (entry.variants === undefined ||
+            (Array.isArray(entry.variants) && entry.variants.every((variant) => typeof variant === 'string' && variant !== '')))
       )
     ) {
-      errors.push('launch.discover must be a list of { glob (relative), platform?, exclude?, mode?, args? }');
+      errors.push('launch.discover must be a list of { glob (relative), platform?, exclude?, mode?, args?, variants? }');
     } else {
       for (const entry of discover as Array<Record<string, unknown>>) {
         if (entry.exclude !== undefined) checkPatterns('launch.discover.exclude', entry.exclude, errors);

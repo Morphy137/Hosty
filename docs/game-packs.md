@@ -44,11 +44,12 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 | `setup` | | Fields of the wizard's setup step: `select`, `text`, `secret`, `number`, `toggle`. Values are available as `{{fieldId}}` in `launch.args`. |
 | `capabilities` | | `players`, `mods`, `configEditor`, `bridge` (booleans). They decide which tabs a server shows. |
 | `i18n` | | Extra UI strings `{ "en": { "key": "text" } }`. |
-| `launch.discover` | | Entry points only known after installation: `{ glob, platform?, exclude?, mode?, args? }`. First match wins; `{{match}}` is the matched relative path; an arg `{ "arg", "ifExists" }` is included only when that file exists. |
+| `launch.discover` | | Entry points only known after installation: `{ glob, platform?, exclude?, mode?, args?, variants? }`. First matching entry wins; when one entry matches several files (two installed versions), the most recently written one is used. `variants` limits an entry to those installed variants (loaders), so files left by a previous loader never win. `{{match}}` is the matched relative path; an arg `{ "arg", "ifExists" }` is included only when that file exists. |
 | `playerQueries` | | Commands sent per online player: `{ id, command, pattern, fields }`. The answer's named groups (`username` + `fields`) update the player (e.g. position). |
 | `configSync` | | `{ file, format: "properties"\|"ini"\|"json"\|"toml", map: { port, motd, maxPlayers } }` keeps those instance settings in a game config file and reads them back when importing. JSON/TOML keys are dotted paths (`server.port`), INI keys are `section.key`. |
 | `bridgeLoaders` | | Loaders a Telemetry Bridge exists for; enables the bridge install flow. |
 | `defaults.memoryMb` | | Default heap offered when creating a server ("Default: X GB"). |
+| `defaults.portStride` | | Consecutive ports one server uses (default 1; e.g. 2 when it also listens on `port + 1`). New servers get port ranges that do not overlap. |
 | `jvmFlagPresets` | | Recommended JVM flag sets shown in the server editor (`id`, `label`, `description`, `flags`, `recommendedFor`). |
 | `serverIcon` | | `{ file, size }`: the icon the game itself shows (e.g. `server-icon.png`, 64). Hosty writes the user's icon there as a `size`×`size` PNG; without it the icon is only shown inside Hosty. |
 | `modSources` | | Mod catalogs the server can search and install from (Modrinth-compatible API). |
@@ -73,7 +74,8 @@ JSON Schema: [`packages/game-sdk/hosty-game.schema.json`](../packages/game-sdk/h
 
 ### Launch placeholders
 
-`{{id}}` `{{name}}` `{{port}}` `{{maxPlayers}}` `{{minRamMb}}` `{{maxRamMb}}` `{{ramMb}}` plus every setup field id.
+`{{id}}` `{{name}}` `{{port}}` `{{nextPort}}` (`port + 1`) `{{maxPlayers}}` `{{minRamMb}}` `{{maxRamMb}}` `{{ramMb}}`
+`{{instanceDir}}` (absolute server folder, e.g. for a game's cache/data dir flag) plus every setup field id.
 Unknown placeholders render as an empty string.
 
 ### Capabilities and the UI

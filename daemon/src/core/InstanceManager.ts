@@ -5,6 +5,7 @@ import { driverRegistry } from './drivers/GameDriverRegistry';
 import { readSyncedValues, writeSyncedValues } from './ConfigSync';
 import { TelemetryBridgeManager } from './bridge/TelemetryBridgeManager';
 import { deleteInstanceIcon, findInstanceIcon, saveInstanceIcon, type GameIconResult } from './InstanceIcon';
+import { readJsonFile, writeJsonAtomic } from './JsonStore';
 
 const defaultGameId = (): string => driverRegistry.getDefaultGameId();
 
@@ -76,6 +77,11 @@ export interface InstanceInfo {
   bridgeInstalled?: boolean;
   /** A bridge artifact exists for this instance's loader. */
   bridgeSupported?: boolean;
+  /**
+   * False when the server's game is not loaded (pack disabled, removed or broken) or its settings file is
+   * damaged. Such servers are listed but cannot be started until the game is available again.
+   */
+  gameAvailable: boolean;
 }
 
 interface RegistryData {
@@ -163,7 +169,7 @@ export class InstanceManager {
     // 2. Include registered external/imported instances
     for (const [id, data] of Object.entries(registry.importedInstances)) {
       if (fs.existsSync(data.path) && !list.some((inst) => inst.id === id)) {
-        list.push(this.inspectInstance(id, data.path, true, data.name, data.createdAt));
+        list.push(this.inspectInstance(id, data.path, true, data.name, data.createdAt, data.gameId));
       }
     }
 
@@ -191,7 +197,7 @@ export class InstanceManager {
     }
 
     const serverName = name?.trim() || safeId;
-    const port = customSettings?.port ?? this.findNextAvailablePort(driver.summary.defaultPort);
+    const port = customSettings?.port ?? this.findNextAvailablePort(driver.summary.defaultPort, driver.summary.portStride);
     const motd = customSettings?.motd ?? `${driver.summary.name} - ${serverName}`;
     const maxPlayers = customSettings?.maxPlayers ?? driver.summary.defaultMaxPlayers;
 
@@ -215,11 +221,7 @@ export class InstanceManager {
       gameConfig: customSettings?.gameConfig
     };
 
-    fs.writeFileSync(
-      path.join(targetDir, INSTANCE_SETTINGS_FILE),
-      JSON.stringify(settings, null, 2),
-      'utf-8'
-    );
+    writeJsonAtomic(path.join(targetDir, INSTANCE_SETTINGS_FILE), settings);
 
     return this.inspectInstance(safeId, targetDir, false, serverName);
   }
@@ -230,25 +232,24 @@ export class InstanceManager {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
     }
 
-    const settingsPath = path.join(instance.dir, INSTANCE_SETTINGS_FILE);
-    let currentSettings: InstanceSettings = {};
-    if (fs.existsSync(settingsPath)) {
-      try {
-        currentSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-      } catch {
-        // Fallback to empty
-      }
+    const stored = readJsonFile<InstanceSettings>(path.join(instance.dir, INSTANCE_SETTINGS_FILE));
+    if (stored.status === 'corrupt') {
+      // Writing the patch alone would silently drop the game, RAM, port... of this server.
+      throw new DaemonError('SETTINGS_CORRUPT', `The settings of "${id}" are damaged and could not be recovered.`);
+    }
+    if (patch.gameId && !driverRegistry.findDriver(patch.gameId)) {
+      throw new DaemonError('GAME_UNAVAILABLE', `The game "${patch.gameId}" is not installed or failed to load.`);
     }
 
     const merged: InstanceSettings = {
-      ...currentSettings,
+      ...(stored.status === 'ok' ? stored.value : {}),
       ...patch
     };
 
-    fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
+    writeJsonAtomic(path.join(instance.dir, INSTANCE_SETTINGS_FILE), merged);
 
     // Keep the game's own config file in sync with the instance settings (declared by the driver).
-    const sync = driverRegistry.getDriver(merged.gameId || defaultGameId()).summary.configSync;
+    const sync = driverRegistry.findDriver(merged.gameId || defaultGameId())?.summary.configSync;
     if (sync) {
       writeSyncedValues(instance.dir, sync, { port: patch.port, motd: patch.motd, maxPlayers: patch.maxPlayers });
     }
@@ -280,7 +281,7 @@ export class InstanceManager {
   public getInstanceIconPath(id: string): string | null {
     const instance = this.getInstance(id);
     if (!instance) return null;
-    return findInstanceIcon(instance.dir, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
+    return findInstanceIcon(instance.dir, driverRegistry.findDriver(instance.gameId)?.summary.serverIcon);
   }
 
   /** Saves the app icon and, if the game declares a `serverIcon`, its in-game icon file too. */
@@ -289,7 +290,7 @@ export class InstanceManager {
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
     }
-    return saveInstanceIcon(instance.dir, buffer, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
+    return saveInstanceIcon(instance.dir, buffer, driverRegistry.findDriver(instance.gameId)?.summary.serverIcon);
   }
 
   public deleteInstanceIcon(id: string): void {
@@ -297,7 +298,7 @@ export class InstanceManager {
     if (!instance) {
       throw new DaemonError('CONFIG_NOT_FOUND', `Instance "${id}" does not exist.`);
     }
-    deleteInstanceIcon(instance.dir, driverRegistry.getDriver(instance.gameId).summary.serverIcon);
+    deleteInstanceIcon(instance.dir, driverRegistry.findDriver(instance.gameId)?.summary.serverIcon);
   }
 
   public importInstance(externalPath: string, name?: string, gameId?: string): InstanceInfo {
@@ -323,7 +324,7 @@ export class InstanceManager {
     };
     this.saveRegistry(registry);
 
-    return this.inspectInstance(id, resolvedPath, true, serverName);
+    return this.inspectInstance(id, resolvedPath, true, serverName, undefined, registry.importedInstances[id].gameId);
   }
 
   private inspectInstance(
@@ -331,27 +332,22 @@ export class InstanceManager {
     dir: string,
     isImported: boolean,
     customName?: string,
-    customCreatedAt?: string
+    customCreatedAt?: string,
+    registeredGameId?: string
   ): InstanceInfo {
-    let settings: InstanceSettings = {};
-    const settingsPath = path.join(dir, INSTANCE_SETTINGS_FILE);
-    if (fs.existsSync(settingsPath)) {
-      try {
-        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-      } catch {
-        // Fallback to empty
-      }
-    }
+    const stored = readJsonFile<InstanceSettings>(path.join(dir, INSTANCE_SETTINGS_FILE));
+    const settings: InstanceSettings = stored.status === 'ok' ? stored.value : {};
 
-    const gameId = settings.gameId || defaultGameId();
-    const driver = driverRegistry.getDriver(gameId);
+    const gameId = settings.gameId || registeredGameId || defaultGameId();
+    // A damaged settings file or a game that is not loaded must never be run with another game's driver.
+    const driver = stored.status === 'corrupt' ? null : driverRegistry.findDriver(gameId);
 
-    let port = settings.port ?? driver.summary.defaultPort;
+    let port = settings.port ?? driver?.summary.defaultPort ?? 0;
     let motd = settings.motd ?? id;
-    let maxPlayers = settings.maxPlayers ?? driver.summary.defaultMaxPlayers;
+    let maxPlayers = settings.maxPlayers ?? driver?.summary.defaultMaxPlayers ?? 0;
 
     // The game's own config file wins over stored settings (it is what the server really uses).
-    if (driver.summary.configSync) {
+    if (driver?.summary.configSync) {
       const synced = readSyncedValues(dir, driver.summary.configSync);
       port = synced.port ?? port;
       motd = synced.motd ?? motd;
@@ -359,8 +355,10 @@ export class InstanceManager {
     }
 
     const stat = fs.statSync(dir);
-    const hasJar = driver.validateInstallation(dir, settings.launchFile);
-    const hasIcon = findInstanceIcon(dir, driver.summary.serverIcon) !== null;
+    const hasJar = driver?.validateInstallation(dir, settings.launchFile) ?? false;
+    const hasIcon = findInstanceIcon(dir, driver?.summary.serverIcon) !== null;
+    const bridgeTargets = driver?.summary.bridgeTargets ?? { default: { dir: 'mods' } };
+    const bridgeLoaders = driver?.summary.bridgeLoaders ?? [];
 
     return {
       id,
@@ -391,9 +389,10 @@ export class InstanceManager {
       gameConfig: settings.gameConfig ?? legacyGameConfig(settings),
       bridgeInstalled: TelemetryBridgeManager.isBridgeInstalled(
         dir,
-        Array.from(new Set(Object.values(driver.summary.bridgeTargets ?? { default: { dir: 'mods' } }).map((target) => target.dir)))
+        Array.from(new Set(Object.values(bridgeTargets).map((target) => target.dir)))
       ),
-      bridgeSupported: (driver.summary.bridgeLoaders ?? []).length > 0 && (!settings.loader || (driver.summary.bridgeLoaders ?? []).includes(settings.loader))
+      bridgeSupported: bridgeLoaders.length > 0 && (!settings.loader || bridgeLoaders.includes(settings.loader)),
+      gameAvailable: driver !== null
     };
   }
 
@@ -405,12 +404,20 @@ export class InstanceManager {
     return sanitized;
   }
 
-  private findNextAvailablePort(basePort: number): number {
-    const instances = this.listInstances();
-    const usedPorts = new Set(instances.map((i) => i.port));
+  /**
+   * First port from `basePort` (moving in steps of `stride`) whose range `[port, port + stride)` does not overlap
+   * any other server's range. Games that listen on several consecutive ports declare their `portStride`.
+   */
+  private findNextAvailablePort(basePort: number, stride = 1): number {
+    const usedPorts = new Set<number>();
+    for (const instance of this.listInstances()) {
+      const instanceStride = driverRegistry.findDriver(instance.gameId)?.summary.portStride ?? 1;
+      for (let offset = 0; offset < instanceStride; offset += 1) usedPorts.add(instance.port + offset);
+    }
+    const overlaps = (port: number) => Array.from({ length: stride }, (_, offset) => port + offset).some((p) => usedPorts.has(p));
     let candidate = basePort;
-    while (usedPorts.has(candidate)) {
-      candidate += 1;
+    while (overlaps(candidate)) {
+      candidate += stride;
     }
     return candidate;
   }
@@ -446,26 +453,25 @@ export class InstanceManager {
         minRamMb: DEFAULT_MIN_RAM_MB,
         maxRamMb: DEFAULT_MAX_RAM_MB
       };
-      fs.writeFileSync(
-        path.join(dir, INSTANCE_SETTINGS_FILE),
-        JSON.stringify(defaultSettings, null, 2),
-        'utf-8'
-      );
+      writeJsonAtomic(path.join(dir, INSTANCE_SETTINGS_FILE), defaultSettings);
     }
   }
 
   private loadRegistry(): RegistryData {
-    if (!fs.existsSync(this.registryFilePath)) {
-      return { activeInstanceId: '', importedInstances: {} };
+    const stored = readJsonFile<RegistryData>(this.registryFilePath);
+    if (stored.status === 'ok') {
+      return { activeInstanceId: stored.value.activeInstanceId ?? '', importedInstances: stored.value.importedInstances ?? {} };
     }
-    try {
-      return JSON.parse(fs.readFileSync(this.registryFilePath, 'utf-8'));
-    } catch {
-      return { activeInstanceId: '', importedInstances: {} };
+    if (stored.status === 'corrupt') {
+      // Keep the damaged file for manual recovery instead of overwriting it with an empty registry.
+      const keptAs = `${this.registryFilePath}.corrupt-${Date.now()}`;
+      fs.renameSync(this.registryFilePath, keptAs);
+      console.warn(`[InstanceManager] ${REGISTRY_FILE} was damaged; kept as ${path.basename(keptAs)}.`);
     }
+    return { activeInstanceId: '', importedInstances: {} };
   }
 
   private saveRegistry(data: RegistryData): void {
-    fs.writeFileSync(this.registryFilePath, JSON.stringify(data, null, 2), 'utf-8');
+    writeJsonAtomic(this.registryFilePath, data);
   }
 }

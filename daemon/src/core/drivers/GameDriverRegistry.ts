@@ -1,5 +1,6 @@
-import fs from 'fs';
 import path from 'path';
+import { DaemonError } from '../../errors';
+import { readJsonFile, writeJsonAtomic } from '../JsonStore';
 import type { IGameDriver, GameDriverSummary } from './IGameDriver';
 import type { GameManifest } from '../gamepacks/manifest';
 import { PackLoader, loadBundledPacks, type PackInfo } from '../gamepacks/PackLoader';
@@ -79,17 +80,13 @@ export class GameDriverRegistry {
   }
 
   private readDisabled(): Set<string> {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(path.join(this.gamesDir, DISABLED_FILE), 'utf-8')) as unknown;
-      return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string').map((id) => id.toLowerCase()) : []);
-    } catch {
-      return new Set();
-    }
+    const stored = readJsonFile<unknown>(path.join(this.gamesDir, DISABLED_FILE));
+    const parsed = stored.status === 'ok' ? stored.value : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string').map((id) => id.toLowerCase()) : []);
   }
 
   private writeDisabled(): void {
-    fs.mkdirSync(this.gamesDir, { recursive: true });
-    fs.writeFileSync(path.join(this.gamesDir, DISABLED_FILE), JSON.stringify([...this.disabledIds].sort(), null, 2), 'utf-8');
+    writeJsonAtomic(path.join(this.gamesDir, DISABLED_FILE), [...this.disabledIds].sort());
   }
 
   /**
@@ -176,9 +173,25 @@ export class GameDriverRegistry {
     return ok;
   }
 
+  /** The driver of a game, or null when it is not loaded (disabled, uninstalled or failed to load). */
+  public findDriver(gameId: string | undefined): IGameDriver | null {
+    return gameId ? (this.drivers.get(gameId.toLowerCase()) ?? null) : null;
+  }
+
+  /**
+   * The driver of `gameId`, or the default game's when no id is given (legacy instances). An id whose game is
+   * not loaded throws instead of falling back: running another game's driver on a server folder would launch
+   * the wrong executable and write the wrong config files.
+   */
   public getDriver(gameId?: string): IGameDriver {
-    const found = gameId ? this.drivers.get(gameId.toLowerCase()) : undefined;
-    const driver = found ?? this.drivers.get(this.defaultDriverId);
+    if (gameId) {
+      const found = this.findDriver(gameId);
+      if (!found) {
+        throw new DaemonError('GAME_UNAVAILABLE', `The game "${gameId}" is not installed or failed to load.`);
+      }
+      return found;
+    }
+    const driver = this.drivers.get(this.defaultDriverId);
     if (!driver) {
       throw new Error(
         `No game drivers are loaded (bundled games folder: ${this.bundledDir || 'unset'}). Check MC_NEXUS_BUNDLED_GAMES_DIR.`

@@ -87,7 +87,8 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
         name: instance.name,
         port: instance.port,
         maxPlayers: instance.maxPlayers,
-        gameConfig: instance.gameConfig
+        gameConfig: instance.gameConfig,
+        loader: instance.loader
       });
       return existing;
     }
@@ -110,7 +111,8 @@ export class SupervisorRegistry extends EventEmitter<SupervisorRegistryEvents> {
       name: instance.name,
       port: instance.port,
       maxPlayers: instance.maxPlayers,
-      gameConfig: instance.gameConfig
+      gameConfig: instance.gameConfig,
+      loader: instance.loader
     };
 
     const supervisor = new ProcessSupervisor(config);
