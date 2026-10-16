@@ -19,7 +19,9 @@ export interface ModFilesState {
 export function useModFiles(
   connectionState: SocketConnectionState,
   activeInstanceId: string,
-  onError: (error: unknown) => void
+  onError: (error: unknown) => void,
+  /** Changes whenever files are added outside the Mods tab (e.g. bridge install), so the list refetches. */
+  refreshKey: string | number = ''
 ): ModFilesState {
   const [files, setFiles] = useState<ModFileInfo[]>([]);
   const [filter, setFilter] = useState('');
@@ -50,7 +52,7 @@ export function useModFiles(
     return () => {
       ignore = true;
     };
-  }, [connectionState, activeInstanceId, onError]);
+  }, [connectionState, activeInstanceId, onError, refreshKey]);
 
   const toggleMod = useCallback(
     async (filename: string) => {

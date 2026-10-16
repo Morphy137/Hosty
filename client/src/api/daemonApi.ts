@@ -133,6 +133,11 @@ export function deleteBackup(instanceId: string, name: string): Promise<{ ok: bo
   );
 }
 
+export async function fetchConsoleBuffer(instanceId: string): Promise<string[]> {
+  const result = await request<{ lines: string[] }>(`/api/instances/${encodeURIComponent(instanceId)}/console`);
+  return Array.isArray(result?.lines) ? result.lines : [];
+}
+
 export function fetchHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/api/health');
 }

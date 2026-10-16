@@ -46,7 +46,9 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
     private String instanceId = "default";
     private String daemonUrl = "ws://127.0.0.1:4000/telemetry/bridge";
     private String token = "";
-    private static final long TELEMETRY_INTERVAL_MS = 1_000L;
+    private static final long DEFAULT_TELEMETRY_INTERVAL_MS = 1_000L;
+    private static final long MIN_TELEMETRY_INTERVAL_MS = 250L;
+    private static final long MAX_TELEMETRY_INTERVAL_MS = 10_000L;
     private final Timer telemetryTimer = new Timer("hosty-bridge-telemetry", true);
 
     @Override
@@ -54,13 +56,28 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         connectToDaemon();
         // No Fabric API dependency: the server comes from Fabric Loader and telemetry runs on our own timer,
         // hopping onto the server thread to read game state.
+        long interval = readTelemetryInterval();
         telemetryTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 requestTelemetry();
             }
-        }, TELEMETRY_INTERVAL_MS, TELEMETRY_INTERVAL_MS);
+        }, interval, interval);
         LOGGER.info("[Hosty Bridge] Fabric server module initialized.");
+    }
+
+    /** Reads `config/mc-nexus-bridge.json` (`telemetryIntervalMs`); falls back to one second. */
+    private long readTelemetryInterval() {
+        try {
+            File file = new File(new File(new File(".").getCanonicalFile(), "config"), "mc-nexus-bridge.json");
+            if (!file.exists()) return DEFAULT_TELEMETRY_INTERVAL_MS;
+            JsonObject config = GSON.fromJson(Files.readString(file.toPath()), JsonObject.class);
+            if (config == null || !config.has("telemetryIntervalMs")) return DEFAULT_TELEMETRY_INTERVAL_MS;
+            long value = config.get("telemetryIntervalMs").getAsLong();
+            return Math.max(MIN_TELEMETRY_INTERVAL_MS, Math.min(MAX_TELEMETRY_INTERVAL_MS, value));
+        } catch (Exception e) {
+            return DEFAULT_TELEMETRY_INTERVAL_MS;
+        }
     }
 
     private boolean loadConnectionConfig() {

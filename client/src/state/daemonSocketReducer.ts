@@ -32,7 +32,9 @@ export type DaemonSocketEvent =
   | { kind: 'message'; message: DaemonMessage }
   | { kind: 'clearError' }
   | { kind: 'clearInventory' }
-  | { kind: 'resetProvisionLogs'; lines: string[] };
+  | { kind: 'resetProvisionLogs'; lines: string[] }
+  /** The viewed server changed: drop everything that belonged to the previous one. */
+  | { kind: 'resetInstanceView'; lines: string[]; status: ServerStatus };
 
 export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   status: 'OFFLINE',
@@ -118,6 +120,16 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
       return { ...state, lastError: null };
     case 'clearInventory':
       return { ...state, inventory: null };
+    case 'resetInstanceView':
+      return {
+        ...state,
+        logs: event.lines.slice(-MAX_CONSOLE_LINES),
+        status: event.status,
+        metrics: INITIAL_DAEMON_SOCKET_STATE.metrics,
+        players: [],
+        inventory: null,
+        lastError: null
+      };
     case 'resetProvisionLogs':
       return { ...state, provisionLogs: event.lines.slice(-MAX_PROVISION_LOG_LINES), provisionJob: null };
   }

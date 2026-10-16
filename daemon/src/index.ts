@@ -115,9 +115,7 @@ telemetryBridge.setInstanceDirResolver((instanceId) => instanceManager.getInstan
 telemetryBridge.setAllowLegacy(config.allowLegacyBridge);
 telemetryBridge.on('bridge_rejected', (instanceId, reason) => {
   console.warn(`[TelemetryBridge] Rejected bridge${instanceId ? ` for "${instanceId}"` : ''}: ${reason}`);
-  if (instanceId === instanceManager.getActiveInstanceId()) {
-    broadcast('CONSOLE', `[Hypervisor] Bridge connection rejected (${reason}).\r\n`);
-  }
+  logToInstance(instanceId, `[Hypervisor] Bridge connection rejected (${reason}).`);
 });
 
 /** Writes <instance>/.hosty/bridge.json so an installed bridge finds the daemon URL and its token. */
@@ -148,6 +146,17 @@ const broadcast = (type: string, payload: unknown) => {
       client.send(message);
     }
   });
+};
+
+/**
+ * Writes a Hosty message into one server's console. Messages belong to the server they describe, so they
+ * are only shown while that server is the one being viewed and never leak into another server's console.
+ */
+const logToInstance = (instanceId: string | undefined, line: string): void => {
+  if (!instanceId) return;
+  const instance = instanceManager.getInstance(instanceId);
+  if (!instance) return;
+  registry.getOrCreateSupervisor(instance).log(line);
 };
 
 // Wire Supervisor Registry events to WebSocket broadcast
@@ -274,7 +283,6 @@ app.post('/api/instances/select', (req, res, next) => {
 
     broadcast('STATUS', sup.getStatus());
     broadcast('PLAYERS', sup.getPlayers());
-    broadcast('CONSOLE', `[Hypervisor] Switched active view to "${selected.name}" (${selected.id})\r\n`);
 
     res.json({
       ok: true,
@@ -344,9 +352,7 @@ app.post('/api/instances/:id/bridge/install', (req, res, next) => {
       driverRegistry.getDriver(instance.gameId).summary.bridgeTargets
     );
     prepareBridgeConfig(instance.id);
-    broadcast('CONSOLE', `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".
-
-`);
+    logToInstance(instance.id, `[Hypervisor] MC-Nexus Bridge installed for "${instance.name}".`);
     const serverRunning = registry.getSupervisor(instance.id)?.isRunning() ?? false;
     res.json({ ok: true, path: installedPath, serverRunning });
   } catch (err) {
@@ -457,7 +463,7 @@ app.post('/api/instances/:id/settings', (req, res, next) => {
         scheduledRestartHours: updated.scheduledRestartHours
       });
     }
-    broadcast('CONSOLE', `[Hypervisor] Settings updated for server "${updated.name}".\r\n`);
+    logToInstance(updated.id, `[Hypervisor] Settings updated for server "${updated.name}".`);
     res.json({
       ok: true,
       instance: {
@@ -495,7 +501,7 @@ app.post('/api/instances/:id/icon', (req, res, next) => {
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
     const gameIcon = instanceManager.saveInstanceIcon(req.params.id, buffer);
-    broadcast('CONSOLE', `[Hypervisor] Server icon updated for "${req.params.id}".\r\n`);
+    logToInstance(req.params.id, '[Hypervisor] Server icon updated.');
     res.json({ ok: true, gameIcon });
   } catch (err) {
     next(err);
@@ -505,7 +511,7 @@ app.post('/api/instances/:id/icon', (req, res, next) => {
 app.delete('/api/instances/:id/icon', (req, res, next) => {
   try {
     instanceManager.deleteInstanceIcon(req.params.id);
-    broadcast('CONSOLE', `[Hypervisor] Server icon removed for "${req.params.id}".\r\n`);
+    logToInstance(req.params.id, '[Hypervisor] Server icon removed.');
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -670,7 +676,7 @@ app.post('/api/instances/:id/restart', (req, res, next) => {
     }
     const sup = registry.getOrCreateSupervisor(instance);
     sup.restart();
-    broadcast('CONSOLE', `[Hypervisor] Restarting server "${instance.name}"...\r\n`);
+    logToInstance(instance.id, `[Hypervisor] Restarting server "${instance.name}"...`);
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -919,7 +925,7 @@ app.post('/api/instances/upload-server-file', async (req, res, next) => {
       instanceManager.setActiveInstanceId(target.id);
     }
 
-    broadcast('CONSOLE', `[Hypervisor] Server file uploaded and registered for instance "${target.id}".\r\n`);
+    logToInstance(target.id, '[Hypervisor] Server file uploaded and registered.');
     res.json({ ok: true, instanceId: target.id, jobId, inspection });
   } catch (err) {
     if (createdInstanceId) {
@@ -948,7 +954,7 @@ app.post('/api/mods/files/toggle', (req, res, next) => {
     const { filename } = req.body as { filename: string };
     const updated = ModFileManager.toggleMod(getActiveDir(), filename, activeModLayout());
     const action = updated.enabled ? 'enabled' : 'disabled';
-    broadcast('CONSOLE', `[Hypervisor] Mod "${updated.originalName}" ${action}.\r\n`);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod "${updated.originalName}" ${action}.`);
     res.json({ ok: true, file: updated });
   } catch (err) {
     next(err);
@@ -958,7 +964,7 @@ app.post('/api/mods/files/toggle', (req, res, next) => {
 app.delete('/api/mods/files/:filename', (req, res, next) => {
   try {
     ModFileManager.deleteMod(getActiveDir(), req.params.filename, activeModLayout());
-    broadcast('CONSOLE', `[Hypervisor] Mod file "${req.params.filename}" deleted.\r\n`);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod file "${req.params.filename}" deleted.`);
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -968,8 +974,12 @@ app.delete('/api/mods/files/:filename', (req, res, next) => {
 // Mods/config folders of the active instance, as declared by its game.
 const activeModLayout = (): ModLayout => {
   const instance = instanceManager.getInstance(instanceManager.getActiveInstanceId());
-  const declared = instance ? driverRegistry.getDriver(instance.gameId).summary.modLayout : undefined;
-  return { ...DEFAULT_MOD_LAYOUT, ...declared };
+  const summary = instance ? driverRegistry.getDriver(instance.gameId).summary : undefined;
+  const layout: ModLayout = { ...DEFAULT_MOD_LAYOUT, ...summary?.modLayout };
+  // Loaders with their own add-on folder (e.g. plugins/) list that folder instead of mods/.
+  const loaderTarget = instance?.loader ? summary?.bridgeTargets?.[instance.loader] : undefined;
+  if (loaderTarget && instance?.loader !== 'default') layout.modsDir = loaderTarget.dir;
+  return layout;
 };
 
 // Mod Configurations API (/config/*.toml, *.json)
@@ -992,7 +1002,7 @@ app.get('/api/mods/configs/:filename', (req, res, next) => {
 app.post('/api/mods/configs/:filename', (req, res, next) => {
   try {
     ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body, activeModLayout().configDir);
-    broadcast('CONSOLE', `[Hypervisor] Mod config ${req.params.filename} saved.\r\n`);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod config ${req.params.filename} saved.`);
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -1269,7 +1279,7 @@ app.post('/api/config-files/entries', (req, res, next) => {
     const { file, format } = getDeclaredConfigFile(req.query.path);
     const updates = parseConfigUpdates(req.body);
     writeConfigFile(file, format, updates);
-    broadcast('CONSOLE', `[Hypervisor] ${path.basename(file)} updated on disk.\r\n`);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] ${path.basename(file)} updated on disk.`);
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -1503,7 +1513,7 @@ wss.on('connection', (ws, req) => {
       if (action === 'KILL') sup.kill();
       if (action === 'COMMAND' && typeof data === 'string') {
         const sent = sup.sendCommand(data);
-        if (sent) broadcast('CONSOLE', `> ${data}\r\n`);
+        if (sent) logToInstance(instanceManager.getActiveInstanceId(), `> ${data}`);
       }
       // Player actions are declared by the game (`playerActions`): the bridge runs them when it advertises the
       // action, otherwise their console commands are sent. Nothing here knows any game's commands.
@@ -1519,8 +1529,7 @@ wss.on('connection', (ws, req) => {
         }
         const actionValues = sanitizeActionValues(spec, values);
         if (spec.bridgeAction && registry.sendBridgeAction(instance!.id, toBridgeAction(spec, username, actionValues))) {
-          broadcast('CONSOLE', `[Hypervisor] ${spec.id} applied to ${username} via Bridge.
-`);
+          logToInstance(instance!.id, `[Hypervisor] ${spec.id} applied to ${username} via Bridge.`);
           return;
         }
         const commands = renderActionCommands(spec, username, actionValues);
@@ -1534,8 +1543,7 @@ wss.on('connection', (ws, req) => {
           return;
         }
         for (const command of commands) {
-          if (sup.sendCommand(command)) broadcast('CONSOLE', `> ${command}
-`);
+          if (sup.sendCommand(command)) logToInstance(instance!.id, `> ${command}`);
         }
       }
       // Inventory inspection is a bridge capability (`inventory.view`), shared by every game that implements it.

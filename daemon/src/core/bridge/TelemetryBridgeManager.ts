@@ -289,7 +289,17 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
       throw new DaemonError('BRIDGE_ASSET_MISSING', 'The bridge file is missing from this Hosty installation.');
     }
     fs.copyFileSync(source, targetFile);
+    if (target.dir === 'mods') this.ensureBridgeConfig(instanceDir);
     return targetFile;
+  }
+
+  /** Creates `config/mc-nexus-bridge.json` (never overwrites) so the bridge shows up with its settings. */
+  private ensureBridgeConfig(instanceDir: string): void {
+    const configDir = path.join(instanceDir, 'config');
+    const file = path.join(configDir, BRIDGE_CONFIG_FILE);
+    if (fs.existsSync(file)) return;
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ telemetryIntervalMs: DEFAULT_TELEMETRY_INTERVAL_MS }, null, 2), 'utf-8');
   }
 
   /** Deletes the bridge jar from the given folders; returns how many files were removed. */
@@ -309,6 +319,9 @@ export class TelemetryBridgeManager extends EventEmitter<TelemetryBridgeEvents> 
     return folders.some((folder) => fs.existsSync(path.join(instanceDir, folder, 'mc-nexus-bridge.jar')));
   }
 }
+
+const BRIDGE_CONFIG_FILE = 'mc-nexus-bridge.json';
+const DEFAULT_TELEMETRY_INTERVAL_MS = 1000;
 
 export type BridgeInstallTargets = Record<string, { dir: string; asset: string }>;
 

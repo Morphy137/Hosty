@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDaemonSocket } from './hooks/useDaemonSocket';
 import { useDaemonHealth } from './hooks/useDaemonHealth';
@@ -15,7 +15,8 @@ import {
   installServer,
   uploadServerFile,
   waitForProvisionJob,
-  cancelProvisionJob
+  cancelProvisionJob,
+  fetchConsoleBuffer
 } from './api/daemonApi';
 import type { DaemonErrorPayload, InstanceSettings, PlayerState } from './types/daemon';
 import { useTheme } from './hooks/useTheme';
@@ -73,7 +74,8 @@ export default function App() {
     connectionState,
     sendAction,
     clearError,
-    resetProvisionLogs
+    resetProvisionLogs,
+    resetInstanceView
   } = useDaemonSocket();
 
   const health = useDaemonHealth(connectionState);
@@ -88,6 +90,25 @@ export default function App() {
   }, [clearError]);
 
   const instances = useInstances(connectionState, handleError);
+
+  // Each server has its own console, status, metrics and players: switching servers swaps the whole view.
+  const instanceStatusesRef = useRef(instanceStatuses);
+  useEffect(() => {
+    instanceStatusesRef.current = instanceStatuses;
+  }, [instanceStatuses]);
+  const viewedInstanceId = instances.activeId;
+  useEffect(() => {
+    if (!viewedInstanceId || connectionState !== 'open') return;
+    let ignore = false;
+    void fetchConsoleBuffer(viewedInstanceId)
+      .catch(() => [] as string[])
+      .then((lines) => {
+        if (!ignore) resetInstanceView(lines, instanceStatusesRef.current[viewedInstanceId] ?? 'OFFLINE');
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [viewedInstanceId, connectionState, resetInstanceView]);
   const hasNoServers = !instances.isLoading && instances.instances.length === 0;
 
   // Servers exist but none is active (fresh registry): pick the first so the panel is never empty.
@@ -108,12 +129,21 @@ export default function App() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
-  const modFiles = useModFiles(connectionState, instances.activeId, handleError);
+  const modFiles = useModFiles(
+    connectionState,
+    instances.activeId,
+    handleError,
+    `${instances.activeInstance?.bridgeInstalled ?? false}:${instances.activeInstance?.loader ?? ''}`
+  );
   // Bridge-only features appear only when the connected bridge advertised them (or in mock mode).
   const canInspectInventory =
     (metrics.bridgeCapabilities?.includes('inventory.view') ?? false) || (health?.mockEnabled ?? false);
   const configFiles = useConfigFiles(connectionState, instances.activeId, handleError);
-  const modConfigs = useModConfigs(connectionState, handleError);
+  const modConfigs = useModConfigs(
+    connectionState,
+    handleError,
+    `${instances.activeId}:${instances.activeInstance?.bridgeInstalled ?? false}:${instances.activeInstance?.loader ?? ''}`
+  );
 
   const activeError = lastError || localError;
 
