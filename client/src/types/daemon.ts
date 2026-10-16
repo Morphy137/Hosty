@@ -298,10 +298,35 @@ export interface ConfigFileInfo {
   exists?: boolean;
 }
 
+export interface PackAuthor {
+  name: string;
+  url?: string;
+}
+
+/** A pack of the signed game catalog, with what is installed locally. */
+export interface CatalogPack {
+  id: string;
+  name: string;
+  version: string;
+  author: PackAuthor | null;
+  description: LocalizedText | null;
+  category: string | null;
+  status: string;
+  logoUrl: string | null;
+  hasCode: boolean;
+  /** Total download size in bytes. */
+  size: number;
+  installedVersion: string | null;
+  updateAvailable: boolean;
+}
+
 export interface GamePackInfo {
   id: string | null;
   name: string | null;
   version: string | null;
+  author: PackAuthor | null;
+  description: LocalizedText | null;
+  category: string | null;
   dir: string;
   hasCode: boolean;
   trusted: boolean;
