@@ -6,7 +6,7 @@
 
 Crea, ejecuta y administra servidores dedicados en tu propio PC, sin terminales, sin buscar archivos de configuración y sin dolores de cabeza.
 
-![Versión](https://img.shields.io/badge/version-0.3.1--alpha-blue)
+![Versión](https://img.shields.io/badge/version-0.3.2--alpha-blue)
 ![Plataforma](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![Licencia](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
