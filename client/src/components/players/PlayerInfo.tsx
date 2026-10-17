@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart, Snowflake, VolumeX, Wifi } from 'lucide-react';
 import type { GameDriverSummary, PlayerState } from '../../types/daemon';
-import { cn } from '../../utils/cn';
 import { resolveDimension } from '../../utils/dimensions';
 import { formatDecimal } from '../../utils/format';
 import { playerAvatarUrl } from '../../utils/playerActions';
@@ -58,18 +57,13 @@ export const PlayerBadges: React.FC<{ player: PlayerState }> = ({ player }) => {
   );
 };
 
-/** Fixed cell widths (in `ch` of the mono font) so a value changing never moves its neighbours. */
-const FACT_CELL = {
-  dimension: 'min-w-[6.5rem]',
-  coordinates: 'w-[26ch]',
-  health: 'w-[12ch]',
-  food: 'w-[9ch]',
-  ping: 'w-[6ch]'
-} as const;
+/** Fixed food width (in `ch` of the mono font) so a changing value never moves the ping beside it. */
+const FOOD_CELL_WIDTH = 'w-[9ch]';
 
-const FACT_CELL_BASE = 'shrink-0 overflow-hidden whitespace-nowrap tabular-nums';
-
-/** What the game says it can show about a player: dimension, coordinates, vitals, ping. */
+/**
+ * What the game says it can show about a player, stacked in a fixed order so nothing reflows when a
+ * value changes: dimension, coordinates, health, then food with the ping beside it.
+ */
 export const PlayerFacts: React.FC<{ player: PlayerState; game: GameDriverSummary | undefined }> = ({ player, game }) => {
   const { t, i18n } = useTranslation();
   const view = game?.playerView;
@@ -82,40 +76,40 @@ export const PlayerFacts: React.FC<{ player: PlayerState; game: GameDriverSummar
       : player.maxHealth
         ? `${number(player.health)}/${number(player.maxHealth)}`
         : number(player.health);
+  const showFood = view?.vitals && player.food !== undefined;
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-mute">
+    <div className="flex flex-col items-start gap-1 font-mono text-[11px] tabular-nums text-mute">
       {dimension && (
-        <span
-          className={cn(
-            FACT_CELL.dimension,
-            'inline-flex shrink-0 items-center gap-1 rounded-[3px] border border-hairline bg-surface-2 px-1.5 py-0.5 text-body'
-          )}
-        >
+        <span className="inline-flex max-w-full items-center gap-1 rounded-[3px] border border-hairline bg-surface-2 px-1.5 py-0.5 text-body">
           <DimensionIcon dimension={dimension} className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{dimension.label}</span>
         </span>
       )}
       {view?.coordinates && (
-        <span className={cn(FACT_CELL.coordinates, FACT_CELL_BASE, 'truncate')} title={coordinates}>
+        <span className="max-w-full truncate whitespace-nowrap" title={coordinates}>
           {coordinates}
         </span>
       )}
       {view?.vitals && player.health !== undefined && (
-        <span className={cn(FACT_CELL.health, FACT_CELL_BASE, 'inline-flex items-center gap-0.5 text-danger-fg')}>
+        <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-danger-fg">
           <Heart className="h-2.5 w-2.5 shrink-0 fill-danger-fg" />
-          <span className="truncate">{health} HP</span>
+          {health} HP
         </span>
       )}
-      {view?.vitals && player.food !== undefined && (
-        <span className={cn(FACT_CELL.food, FACT_CELL_BASE, 'truncate')}>
-          {t('overview.players.food')}: {number(player.food)}
-        </span>
-      )}
-      {player.ping !== undefined && (
-        <span className={cn(FACT_CELL.ping, FACT_CELL_BASE, 'inline-flex items-center gap-0.5 text-success-fg')}>
-          <Wifi className="h-2.5 w-2.5 shrink-0" />
-          {number(player.ping)}ms
-        </span>
+      {(showFood || player.ping !== undefined) && (
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          {showFood && (
+            <span className={FOOD_CELL_WIDTH}>
+              {t('overview.players.food')}: {number(player.food as number)}
+            </span>
+          )}
+          {player.ping !== undefined && (
+            <span className="inline-flex items-center gap-0.5 text-success-fg">
+              <Wifi className="h-2.5 w-2.5 shrink-0" />
+              {number(player.ping)}ms
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
