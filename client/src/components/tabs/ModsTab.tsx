@@ -10,6 +10,8 @@ interface ModsTabProps {
   entries: ConfigEntry[];
   filter: string;
   onFilterChange: (filter: string) => void;
+  fileFilter: string;
+  onFileFilterChange: (filter: string) => void;
   onSelectFile: (filename: string) => void;
   onUpdateEntry: (key: string, value: ConfigValue) => void;
   onSave: () => Promise<void>;
@@ -21,6 +23,8 @@ export const ModsTab: React.FC<ModsTabProps> = ({
   entries,
   filter,
   onFilterChange,
+  fileFilter,
+  onFileFilterChange,
   onSelectFile,
   onUpdateEntry,
   onSave
@@ -40,6 +44,8 @@ export const ModsTab: React.FC<ModsTabProps> = ({
     }
   };
 
+  const filteredFiles = files.filter((file) => file.toLowerCase().includes(fileFilter.trim().toLowerCase()));
+
   const filteredEntries = entries.filter((entry) =>
     entry.key.toLowerCase().includes(filter.toLowerCase())
   );
@@ -53,13 +59,24 @@ export const ModsTab: React.FC<ModsTabProps> = ({
             {t('mods.directory_hint')}
           </span>
         </div>
+        <div className="relative border-b border-hairline p-2">
+          <Search className="w-4 h-4 text-mute absolute left-5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={fileFilter}
+            onChange={(e) => onFileFilterChange(e.target.value)}
+            placeholder={t('mods.file_search_placeholder')}
+            aria-label={t('mods.file_search_placeholder')}
+            className="w-full h-8 pl-8 pr-3 rounded-[6px] bg-surface border border-hairline text-[13px] text-ink placeholder-mute focus:outline-none focus:border-ink"
+          />
+        </div>
         <div className="flex-1 overflow-y-auto divide-y divide-hairline">
-          {files.length === 0 ? (
+          {filteredFiles.length === 0 ? (
             <div className="p-4 text-[13px] text-mute text-center">
-              {t('mods.no_files')}
+              {files.length === 0 ? t('mods.no_files') : t('mods.no_file_matches')}
             </div>
           ) : (
-            files.map((file) => (
+            filteredFiles.map((file) => (
               <button
                 key={file}
                 type="button"

@@ -251,6 +251,8 @@
     }
   },
   "mods": {
+    "file_search_placeholder": "Search config files...",
+    "no_file_matches": "No config files match your search.",
     "search_placeholder": "Filter config entries...",
     "save": "Save Config",
     "saved": "Saved!",

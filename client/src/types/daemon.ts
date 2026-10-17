@@ -414,6 +414,7 @@ export interface ModFileInfo {
   modifiedAt: string;
   enabled: boolean;
   hasConfig: boolean;
+  configFiles: string[];
 }
 
 export type DaemonMessage =
