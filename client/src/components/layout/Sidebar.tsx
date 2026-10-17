@@ -4,13 +4,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import {
   FolderInput,
   FolderOpen,
-  Globe,
   MoreHorizontal,
   Moon,
   Pencil,
   Plus,
   Puzzle,
   RefreshCw,
+  Settings,
   Settings2,
   Sparkles,
   Star,
@@ -18,8 +18,6 @@ import {
   Trash2
 } from 'lucide-react';
 import type { InstanceInfo, ServerStatus } from '../../types/daemon';
-import type { LanguageOption } from '../../hooks/useLocales';
-import type { Theme } from '../../hooks/useTheme';
 import { ServerAvatar } from '../common/ServerAvatar';
 import { StatusDot } from '../common/StatusDot';
 import { Button } from '../ui/Button';
@@ -39,16 +37,15 @@ interface SidebarProps {
   onCreate: () => void;
   onImport: () => void;
   onOpenGamePacks: () => void;
-  languages: LanguageOption[];
-  currentLanguage: string;
-  onChangeLanguage: (code: string) => void;
   onEditInstance: (id: string) => void;
   onOpenFolder: (id: string) => void;
   onRenameInstance: (id: string, name: string) => Promise<void> | void;
   onToggleFavorite: (id: string, favorite: boolean) => Promise<void> | void;
   onRemoveInstance: (id: string) => Promise<void> | void;
-  theme: Theme;
+  isDark: boolean;
   onToggleTheme: () => void;
+  onOpenSettings: () => void;
+  isSettingsOpen: boolean;
   appVersion: string | null;
   onCheckUpdates?: () => void;
   isCheckingUpdates?: boolean;
@@ -64,28 +61,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreate,
   onImport,
   onOpenGamePacks,
-  languages,
-  currentLanguage,
-  onChangeLanguage,
   onEditInstance,
   onOpenFolder,
   onRenameInstance,
   onToggleFavorite,
   onRemoveInstance,
-  theme,
+  isDark,
   onToggleTheme,
+  onOpenSettings,
+  isSettingsOpen,
   appVersion,
   onCheckUpdates,
   isCheckingUpdates,
   onMock
 }) => {
   const { t } = useTranslation();
-  const currentLang = currentLanguage;
-  const languageItems: MenuItem[] = languages.map((language) => ({
-    id: language.code,
-    label: `${language.name}${language.code === currentLanguage ? '  ✓' : ''}`,
-    onSelect: () => onChangeLanguage(language.code)
-  }));
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState<InstanceInfo | null>(null);
@@ -223,16 +213,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="space-y-2 border-t border-hairline p-3">
         <div className="flex items-center gap-1.5">
-          <DropdownMenu
-            align="start"
-            items={languageItems}
-            trigger={
-              <IconButton label={t('sidebar.language')} variant="secondary">
-                <Globe className="h-3.5 w-3.5 text-mute" />
-              </IconButton>
-            }
-          />
-          <span className="font-mono text-[11px] uppercase text-mute">{currentLang}</span>
+          <IconButton
+            label={t('sidebar.settings')}
+            variant="secondary"
+            aria-pressed={isSettingsOpen}
+            className={cn(isSettingsOpen && 'border-ink')}
+            onClick={onOpenSettings}
+          >
+            <Settings className={cn('h-3.5 w-3.5', isSettingsOpen ? 'text-ink' : 'text-mute')} />
+          </IconButton>
           <div className="flex-1" />
           <IconButton label={t('sidebar.game_packs')} variant="secondary" onClick={onOpenGamePacks}>
             <Puzzle className="h-3.5 w-3.5 text-mute" />
@@ -243,11 +232,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </IconButton>
           )}
           <IconButton
-            label={theme === 'dark' ? t('header.theme_light') : t('header.theme_dark')}
+            label={isDark ? t('header.theme_light') : t('header.theme_dark')}
             variant="secondary"
             onClick={onToggleTheme}
           >
-            {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-warning" /> : <Moon className="h-3.5 w-3.5 text-mute" />}
+            {isDark ? <Sun className="h-3.5 w-3.5 text-warning" /> : <Moon className="h-3.5 w-3.5 text-mute" />}
           </IconButton>
         </div>
 

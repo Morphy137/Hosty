@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import es from './locales/es.json';
+import { loadPreferences } from '../settings/storage';
 
 /** Languages bundled with the app. Others are loaded at runtime from the daemon's locales folder. */
 export const BUILTIN_LANGUAGES = [
@@ -10,13 +11,11 @@ export const BUILTIN_LANGUAGES = [
 ] as const;
 export type SupportedLanguage = string;
 
-const STORAGE_KEY = 'mc_nexus_lang';
-
 function detectInitialLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') return 'en';
 
   // A saved community language may not be loaded yet; useLocales fetches it once the daemon is up.
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = loadPreferences().general.language;
   if (saved) return saved;
 
   const browserLang = navigator.language?.toLowerCase() ?? 'en';
@@ -28,11 +27,9 @@ export function registerLocalePack(code: string, resources: Record<string, unkno
   i18n.addResourceBundle(code, 'translation', resources, true, true);
 }
 
+/** Switches the UI language; the caller stores the choice in the preferences. */
 export function changeLanguage(lang: SupportedLanguage): void {
-  i18n.changeLanguage(lang);
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, lang);
-  }
+  void i18n.changeLanguage(lang);
 }
 
 i18n

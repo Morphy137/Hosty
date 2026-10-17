@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Update } from '@tauri-apps/plugin-updater';
 
 export type UpdateCheckResult =
@@ -21,7 +21,8 @@ export interface AppUpdaterState {
   dismissUpdate: () => void;
 }
 
-export function useAppUpdater(): AppUpdaterState {
+/** `checkOnStart`: look for a new version shortly after launch (Settings > General). */
+export function useAppUpdater(checkOnStart = true): AppUpdaterState {
   const [isChecking, setIsChecking] = useState(false);
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
@@ -32,6 +33,8 @@ export function useAppUpdater(): AppUpdaterState {
   const [error, setError] = useState<string | null>(null);
 
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  // Only the value at launch matters: turning the setting on later must not trigger a check.
+  const checkOnStartRef = useRef(checkOnStart);
 
   const checkForUpdates = useCallback(async (): Promise<UpdateCheckResult> => {
     if (!isTauri) return { status: 'up_to_date' };
@@ -99,7 +102,7 @@ export function useAppUpdater(): AppUpdaterState {
 
   // Automatic check on launch (3s after startup in production)
   useEffect(() => {
-    if (!isTauri || import.meta.env.DEV) return;
+    if (!isTauri || import.meta.env.DEV || !checkOnStartRef.current) return;
     const timer = setTimeout(() => {
       checkForUpdates();
     }, 3000);

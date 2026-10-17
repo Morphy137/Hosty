@@ -106,6 +106,32 @@ function deleteRequest<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
 }
 
+/** App-wide defaults for new servers (Settings > Servers). */
+export interface AppSettings {
+  defaultMemoryMb: number | null;
+  defaultJavaPath: string;
+  defaultAutostart: boolean;
+}
+
+export type AppFolderId = 'instances' | 'games' | 'locales';
+
+export interface AppSettingsResponse {
+  settings: AppSettings;
+  folders: Record<AppFolderId, string>;
+}
+
+export function fetchAppSettings(): Promise<AppSettingsResponse> {
+  return request<AppSettingsResponse>('/api/settings');
+}
+
+export function updateAppSettings(patch: Partial<AppSettings>): Promise<AppSettingsResponse> {
+  return request<AppSettingsResponse>('/api/settings', { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(patch) });
+}
+
+export function openAppFolder(id: AppFolderId): Promise<{ ok: boolean; dir: string }> {
+  return postJson<{ ok: boolean; dir: string }>(`/api/settings/folders/${id}/open`, {});
+}
+
 export function fetchNetworkInfo(): Promise<NetworkInfo> {
   return request<NetworkInfo>('/api/system/network');
 }
