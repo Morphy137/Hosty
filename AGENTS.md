@@ -14,13 +14,12 @@ Naming note: the product is "Hosty", but legacy "MC-Nexus" naming remains in env
 hosty/
 ├─ client/   React 19 + Vite + Tailwind CSS 4 + Tauri v2 (src-tauri/) frontend
 ├─ daemon/   Express 5 + ws process supervisor, game drivers, provisioning
-├─ bridge/   In-game telemetry/admin plugins (Paper plugin, Fabric mod)
 ├─ instances/ Runtime server data (gitignored: worlds, jars, logs)
 └─ .github/workflows/release.yml  Tauri release build on `v*` tags
 ```
 
 - **Client ⇄ daemon**: REST (`/api/...`) + WebSocket. Default daemon URL `http://localhost:4000` (`VITE_DAEMON_URL`, see `client/.env.example`). Dev client runs on `http://localhost:5173`.
-- **Daemon ⇄ bridge**: protocol v1 over WebSocket (spec: [docs/bridge-protocol.md](docs/bridge-protocol.md), schema + tester in `packages/bridge-protocol`). The daemon writes `<instance>/.hosty/bridge.json` (url + per-instance token) before a server starts; the bridge sends `HELLO` with its capabilities and the UI only enables advertised features. Pre-v1 bridges are rejected. Bridge jars live in `daemon/assets/bridge/` and are installed via `POST /api/instances/:id/bridge/install` (Paper/Purpur/Spigot/Fabric; none for Forge/NeoForge yet).
+- **Daemon ⇄ bridge**: protocol v1 over WebSocket (spec: [docs/bridge-protocol.md](docs/bridge-protocol.md), schema + tester in `packages/bridge-protocol`). The daemon writes `<instance>/.hosty/bridge.json` (url + per-instance token) before a server starts; the bridge sends `HELLO` with its capabilities and the UI only enables advertised features. Pre-v1 bridges are rejected. The bridge source lives in its own repository, [Hosty-Bridge](https://github.com/Morphy137/Hosty-Bridge); its built jars are vendored in `daemon/assets/bridge/` and are installed via `POST /api/instances/:id/bridge/install` (Paper/Purpur/Spigot/Fabric; none for Forge/NeoForge yet).
 - **UI ⇄ daemon auth**: in the desktop app Rust generates `MC_NEXUS_API_TOKEN` per run and exposes it with `get_daemon_token`; REST uses `x-hosty-token`, WebSocket/`<img>` URLs use `?token=`.
 - **Tauri shell** (`client/src-tauri`) wraps the frontend and supervises the daemon as a sidecar (`binaries/hosty-daemon-<triple>`, built by `npm --prefix daemon run build:sidecar` with esbuild + Node SEA). In release builds Rust picks the port (4000 or a free one), passes `MC_NEXUS_INSTANCE_DIR`/`MC_NEXUS_ASSETS_DIR`, exposes it via the `get_daemon_url` command and logs the sidecar to `app_log_dir/daemon.log`. On exit it writes `shutdown` to the sidecar stdin so Java servers stop gracefully. In `tauri dev` the sidecar is not spawned; run `npm run dev:daemon`.
 
@@ -44,9 +43,9 @@ hosty/
 - **Design system**: colours are semantic tokens defined once in `src/index.css` (`bg-surface`, `text-ink`, `border-hairline`, ...; dark mode only swaps the variable values, so no `dark:` colour pairs). Hex colours outside `index.css` and native `<select>` fail `test/designSystem.test.ts`. Reusable primitives live in `components/ui/` (Button, IconButton, Input, Select, Dialog, Tabs, Badge, Tooltip, DropdownMenu, Toast, Skeleton, Stepper, Slider, Dropzone; Radix-based). Shell: `layout/TitleBar` (frameless window, Tauri only), `layout/Sidebar` (server list + settings), `layout/ServerHeader` (single Start/Stop button + menu); tabs come from driver capabilities (`utils/tabs.ts`). Players (tab, Overview, inventory) use the shared `components/players/*` driven by `playerActions`, `playerView`, `dimensions` and `performance` from the manifest; there is no per-game UI.
 - Game logos in `public/logos` and `src/assets/logos`.
 
-### Bridge (`bridge/`)
+### Bridge (separate repository)
 
-- `paper/` (Maven, one jar for MC 1.16–1.21+, Paper/Purpur/Spigot) and `fabric/` (Gradle, server-side, 1.20.x–1.21.x and unobfuscated 26.x: `GameAccess` picks Yarn calls or Mojang names by reflection, and any game incompatibility switches the bridge off instead of crashing the server); both implement protocol v1. Build: `mvn clean package` / `./gradlew build`; copy outputs into `daemon/assets/bridge/` (as `mc-nexus-bridge-paper.jar`, `mc-nexus-bridge-fabric.jar` and the generic `mc-nexus-bridge.jar`) when updated.
+The in-game plugins (Paper/Purpur/Spigot plugin, Fabric mod) live in [Hosty-Bridge](https://github.com/Morphy137/Hosty-Bridge) (MIT) and implement protocol v1. This repo keeps the protocol spec and tester (`docs/bridge-protocol.md`, `packages/bridge-protocol`) as the contract. To update a bridge, build it in that repo and copy the jars into `daemon/assets/bridge/` (as `mc-nexus-bridge-paper.jar`, `mc-nexus-bridge-fabric.jar` and the generic `mc-nexus-bridge.jar`).
 
 ## Adding a new game
 
