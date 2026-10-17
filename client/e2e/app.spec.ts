@@ -13,9 +13,29 @@ test('shows the empty state and switches theme and language', async ({ page }) =
   await page.getByRole('button', { name: 'Switch to Dark Mode' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 
-  await page.getByRole('button', { name: 'Language' }).click();
-  await page.getByRole('menuitem', { name: 'Español', exact: true }).click();
+  // The language lives in Settings > General.
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Language' }).click();
+  await page.getByRole('option', { name: 'Español', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a los servidores' }).click();
   await expect(page.getByRole('heading', { name: 'Bienvenido a Hosty' })).toBeVisible();
+});
+
+test('customises the terminal from settings and keeps it after a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Control+,');
+  await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Terminal', exact: true }).click();
+  await page.getByRole('radio', { name: 'Vampire' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-console-theme', 'vampire');
+
+  await page.getByPlaceholder('Search settings').fill('font size');
+  await expect(page.getByRole('heading', { name: 'Font size' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Line height' })).toBeHidden();
+
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-console-theme', 'vampire');
 });
 
 test('walks the creation wizard up to the review step', async ({ page }) => {
