@@ -1,15 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Cpu,
   HardDrive,
   Users,
-  Terminal,
-
-
-
-
-  ChevronRight,
   Server,
   Settings,
   RotateCcw,
@@ -17,10 +11,7 @@ import {
   Check,
   Layers,
   Search,
-  Activity,
-
-
-
+  Activity
 } from 'lucide-react';
 import type { GameDriverSummary, InstanceInfo, Metrics, PlayerState, ServerStatus } from '../../types/daemon';
 import { PlayerCard } from '../players/PlayerCard';
@@ -35,6 +26,9 @@ import { BridgeBadge, ServerStatusBadge } from '../common/ServerStatusBadge';
 import { AnimatedNumber } from '../motion/AnimatedNumber';
 import { Sparkline } from '../common/Sparkline';
 import type { MetricsHistory } from '../../hooks/useMetricsHistory';
+import { ConsolePanel } from '../console/ConsolePanel';
+import { usePreferences } from '../../settings/preferencesContext';
+import { resolveQuickCommands } from '../../utils/quickCommands';
 
 interface OverviewTabProps {
   metrics: Metrics;
@@ -43,6 +37,7 @@ interface OverviewTabProps {
   instance: InstanceInfo | null;
   status: ServerStatus;
   onSendCommand: (command: string) => void;
+  onClearConsole?: () => void;
   onRunAction: RunPlayerAction;
   onOpenEditModal: () => void;
   onRestart: () => void;
@@ -52,8 +47,6 @@ interface OverviewTabProps {
   game?: GameDriverSummary;
 }
 
-const CONSOLE_FOLLOW_THRESHOLD_PX = 120;
-
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   metrics,
   players,
@@ -61,6 +54,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   instance,
   status,
   onSendCommand,
+  onClearConsole,
   onRunAction,
   onOpenEditModal,
   onRestart,
@@ -69,14 +63,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   game
 }) => {
   const { t } = useTranslation();
-  const [commandInput, setCommandInput] = useState('');
   const [playerSearch, setPlayerSearch] = useState('');
   const [copiedIp, setCopiedIp] = useState(false);
-  const consoleEndRef = useRef<HTMLDivElement>(null);
 
   const ramPercent = calculateRamPercent(metrics.ramMb, metrics.maxRamMb);
   const gameName = game?.name;
-  const quickCommands = game?.quickCommands ?? [];
+  const terminalPrefs = usePreferences().preferences.terminal;
+  const quickCommands = resolveQuickCommands(game?.quickCommands ?? [], game ? terminalPrefs.quickCommands[game.id] : undefined);
   const serverPort = instance?.port || game?.defaultPort || 0;
   const shareableHost = useShareableHost();
   const serverAddress = `${shareableHost}:${serverPort}`;
@@ -93,34 +86,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const filteredOverviewPlayers = players.filter((p) =>
     p.username.toLowerCase().includes(playerSearch.toLowerCase())
   );
-
-  // Jump straight to the end when the tab opens (no scroll animation through the whole history), then
-  // follow new lines smoothly, but only while the user has not scrolled up to read.
-  const hasPositionedConsole = useRef(false);
-  const previousLogCount = useRef(0);
-  useEffect(() => {
-    const end = consoleEndRef.current;
-    if (!end) return;
-    // A shorter list means another server's console was loaded: position it like a fresh open.
-    if (logs.length < previousLogCount.current) hasPositionedConsole.current = false;
-    previousLogCount.current = logs.length;
-    if (!hasPositionedConsole.current) {
-      hasPositionedConsole.current = true;
-      end.scrollIntoView({ behavior: 'auto' });
-      return;
-    }
-    const container = end.parentElement;
-    const distanceFromBottom = container ? container.scrollHeight - container.scrollTop - container.clientHeight : 0;
-    if (distanceFromBottom <= CONSOLE_FOLLOW_THRESHOLD_PX) end.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
-
-  const handleCommandSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = commandInput.trim();
-    if (!trimmed) return;
-    onSendCommand(trimmed);
-    setCommandInput('');
-  };
 
   const handleCopyIp = () => {
     navigator.clipboard.writeText(serverAddress);
@@ -429,81 +394,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         {/* Right Column: Console */}
-        <div className="col-span-7 rounded-[8px] bg-console border border-white/10 text-white flex flex-col overflow-hidden shadow-sm">
-          <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-white/50" />
-              <span className="font-mono text-[12px] text-on-dark">
-                {t('overview.console_source')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {quickCommands.map((item) => (
-                <button
-                  key={item.command}
-                  type="button"
-                  onClick={() => onSendCommand(item.command)}
-                  className="px-2 py-0.5 rounded-[4px] bg-white/10 hover:bg-white/20 font-mono text-[11px] text-white/50 hover:text-white transition cursor-pointer"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className="flex-1 p-4 overflow-y-auto select-text cursor-text font-mono text-[13px] leading-[20px] space-y-1"
-            onContextMenu={() => {
-              // Right click copies the current selection (the native menu is suppressed globally).
-              const selected = window.getSelection()?.toString();
-              if (selected) void navigator.clipboard?.writeText(selected).catch(() => undefined);
-            }}
-          >
-            {logs.length === 0 ? (
-              <div className="text-white/50">
-                {t('overview.console_ready')}
-              </div>
-            ) : (
-              logs.map((line, idx) => (
-                <div
-                  key={idx}
-                  className={`break-all ${
-                    line.includes('WARN')
-                      ? 'text-warning'
-                      : line.includes('ERROR')
-                      ? 'text-red-400'
-                      : line.startsWith('>')
-                      ? 'text-success'
-                      : 'text-on-dark'
-                  }`}
-                >
-                  {line}
-                </div>
-              ))
-            )}
-            <div ref={consoleEndRef} />
-          </div>
-
-          <form
-            onSubmit={handleCommandSubmit}
-            className="p-2.5 border-t border-white/10 bg-transparent flex items-center gap-2"
-          >
-            <ChevronRight className="w-4 h-4 text-white/50 ml-1" />
-            <input
-              type="text"
-              value={commandInput}
-              onChange={(e) => setCommandInput(e.target.value)}
-              placeholder={t('overview.console.placeholder')}
-              className="flex-1 bg-transparent font-mono text-[13px] text-white placeholder-white/40 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="h-7 px-3 rounded-[6px] bg-white hover:bg-white/80 text-black text-[12px] font-medium transition cursor-pointer"
-            >
-              {t('overview.console.send')}
-            </button>
-          </form>
-        </div>
+        <ConsolePanel
+          key={instance?.id ?? ''}
+          className="col-span-7"
+          logs={logs}
+          instanceId={instance?.id ?? ''}
+          quickCommands={quickCommands}
+          onSendCommand={onSendCommand}
+          onClear={onClearConsole}
+        />
       </div>
 
     </>

@@ -56,7 +56,8 @@
     },
     "console": {
       "placeholder": "Type a console command...",
-      "send": "Send"
+      "send": "Send",
+      "clear": "Clear console"
     },
     "copy_ip_title": "Click to copy IP",
     "console_source": "stdout",
@@ -371,7 +372,7 @@
     "remove_imported_desc": "\"{{name}}\" will disappear from Hosty. Its folder and files are NOT deleted, so you can import it again later.",
     "delete_title": "Delete server?",
     "delete_created_desc": "\"{{name}}\" and all of its files (worlds, mods, configs) will be permanently deleted from disk.",
-    "language": "Language"
+    "settings": "Settings"
   },
   "server_icon": {
     "hint_game": "Also used as the server icon inside {{game}} ({{file}}). It must be a {{size}}×{{size}} PNG: any image is cropped and resized automatically.",
@@ -593,5 +594,324 @@
     "firewall_button": "Allow port {{port}} in the firewall",
     "firewall_confirm": "Create inbound firewall rules for port {{port}}? Needs administrator rights.",
     "firewall_done": "Firewall rules added for port {{port}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "Back to servers",
+    "search_placeholder": "Search settings",
+    "no_results": "No settings match \"{{query}}\".",
+    "reset": "Reset to default",
+    "modified": "Changed from default",
+    "sections": {
+      "general": {
+        "title": "General",
+        "description": "Language, startup and confirmations."
+      },
+      "appearance": {
+        "title": "Appearance",
+        "description": "Theme, colours, density and motion of the app."
+      },
+      "terminal": {
+        "title": "Terminal",
+        "description": "How the server console looks and behaves."
+      },
+      "servers": {
+        "title": "Servers",
+        "description": "Defaults for new servers and where Hosty keeps its files."
+      },
+      "advanced": {
+        "title": "Advanced",
+        "description": "Back up, restore or reset your preferences."
+      }
+    },
+    "general": {
+      "language": {
+        "label": "Language",
+        "description": "Language of the interface. Community translations appear here once installed."
+      },
+      "launch_at_login": {
+        "label": "Start Hosty with the system",
+        "description": "Open Hosty automatically when you sign in to your computer.",
+        "failed": "Could not change the startup setting"
+      },
+      "check_updates": {
+        "label": "Check for updates on launch",
+        "description": "Look for a new Hosty version a few seconds after it opens."
+      },
+      "confirm_stop": {
+        "label": "Confirm before stopping with players online",
+        "description": "Ask before stopping or restarting a server that has connected players."
+      }
+    },
+    "appearance": {
+      "mode": {
+        "label": "Colour mode",
+        "description": "System follows your operating system and switches live.",
+        "options": {
+          "system": "System",
+          "light": "Light",
+          "dark": "Dark"
+        }
+      },
+      "theme": {
+        "label": "Theme",
+        "description": "Colour palette of the whole app. Each theme has a light and a dark version.",
+        "options": {
+          "hosty": "Hosty",
+          "contrast": "High contrast",
+          "midnight": "Midnight",
+          "forest": "Forest",
+          "sand": "Sand"
+        }
+      },
+      "accent": {
+        "label": "Accent colour",
+        "description": "Used for selections, progress bars and highlights.",
+        "custom": "Custom",
+        "options": {
+          "blue": "Blue",
+          "violet": "Violet",
+          "green": "Green",
+          "orange": "Orange",
+          "pink": "Pink",
+          "red": "Red",
+          "teal": "Teal"
+        }
+      },
+      "tokens": {
+        "label": "Advanced colours",
+        "description": "Override individual colours of the theme. Changes apply to the mode you are using now.",
+        "editing_light": "Editing the light mode colours.",
+        "editing_dark": "Editing the dark mode colours.",
+        "contrast_warning": "Low contrast: {{tokens}} may be hard to read on the surface colour.",
+        "names": {
+          "canvas": "Background",
+          "surface": "Surface",
+          "surface-2": "Surface (raised)",
+          "surface-3": "Surface (hover)",
+          "ink": "Text",
+          "body": "Body text",
+          "mute": "Muted text",
+          "hairline": "Borders",
+          "hairline-strong": "Strong borders",
+          "danger-fg": "Error text",
+          "success-fg": "Success text",
+          "warning-fg": "Warning text",
+          "accent-fg": "Accent text"
+        }
+      },
+      "density": {
+        "label": "Density",
+        "description": "Compact reduces the spacing around pages and console lines.",
+        "options": {
+          "comfortable": "Comfortable",
+          "compact": "Compact"
+        }
+      },
+      "ui_scale": {
+        "label": "Interface size",
+        "description": "Zoom the whole interface in or out."
+      },
+      "motion": {
+        "label": "Animations",
+        "description": "System follows the reduced motion setting of your operating system.",
+        "options": {
+          "system": "System",
+          "full": "Full",
+          "reduced": "Reduced"
+        }
+      },
+      "theme_transfer": {
+        "label": "Share theme",
+        "description": "Export the theme, accent and custom colours to share them, or import one.",
+        "import_title": "Import theme",
+        "import_description": "Paste an exported Hosty theme or load its file. Only colours change."
+      }
+    },
+    "terminal": {
+      "preview": {
+        "label": "Preview",
+        "description": "Every change below shows here and in the server console."
+      },
+      "theme": {
+        "label": "Terminal theme",
+        "description": "Colours of the console, independent from the app theme.",
+        "options": {
+          "app": "Follow app",
+          "hosty": "Hosty",
+          "paper": "Paper",
+          "solar": "Solar",
+          "vampire": "Vampire",
+          "glacier": "Glacier",
+          "phosphor": "Phosphor"
+        }
+      },
+      "font": {
+        "label": "Font",
+        "description": "Fonts that are not installed fall back to Geist Mono.",
+        "options": {
+          "geist": "Geist Mono",
+          "cascadia": "Cascadia Mono",
+          "consolas": "Consolas",
+          "jetbrains": "JetBrains Mono",
+          "fira": "Fira Code",
+          "system": "System monospace"
+        }
+      },
+      "font_size": {
+        "label": "Font size",
+        "description": "Size of the console text."
+      },
+      "line_height": {
+        "label": "Line height",
+        "description": "Space between console lines."
+      },
+      "wrap": {
+        "label": "Wrap long lines",
+        "description": "When off, long lines scroll horizontally."
+      },
+      "timestamps": {
+        "label": "Show timestamps",
+        "description": "Show the time at the start of each log line."
+      },
+      "highlight_levels": {
+        "label": "Highlight log levels",
+        "description": "Colour warnings, errors and the commands you send."
+      },
+      "rules": {
+        "label": "Highlight rules",
+        "description": "Colour lines that match a pattern (regular expression). The first matching rule wins.",
+        "empty": "No rules yet.",
+        "pattern": "Pattern",
+        "pattern_placeholder": "e.g. joined the game",
+        "color": "Colour",
+        "case_sensitive": "Match case",
+        "remove": "Remove rule",
+        "invalid": "Invalid pattern: it is ignored until fixed.",
+        "add": "Add rule",
+        "colors": {
+          "green": "Green",
+          "yellow": "Yellow",
+          "red": "Red",
+          "blue": "Blue",
+          "magenta": "Magenta",
+          "cyan": "Cyan",
+          "mute": "Muted"
+        }
+      },
+      "autoscroll": {
+        "label": "Auto-scroll",
+        "description": "When the console follows new output.",
+        "options": {
+          "bottom": "When at the bottom",
+          "always": "Always",
+          "never": "Never"
+        }
+      },
+      "buffer": {
+        "label": "Lines kept",
+        "description": "How many lines the console keeps in memory. More lines use more memory."
+      },
+      "history": {
+        "label": "Command history",
+        "description": "Commands remembered per server (Up and Down arrows). 0 turns it off."
+      },
+      "clear_on_restart": {
+        "label": "Clear on start",
+        "description": "Empty the console every time the server starts."
+      },
+      "quick_commands": {
+        "label": "Quick commands",
+        "description": "Buttons above the console. Hide the ones from the game or add your own.",
+        "no_games": "No games are installed.",
+        "game": "Game",
+        "from_game": "From the game",
+        "custom": "Your commands",
+        "label_field": "Label",
+        "command_field": "Command",
+        "remove": "Remove command",
+        "add": "Add command"
+      }
+    },
+    "servers": {
+      "save_failed": "Could not save the setting",
+      "unavailable": "Available when the daemon is connected.",
+      "default_memory": {
+        "label": "Default memory",
+        "description": "Memory for new servers. When off, each game uses its own default.",
+        "custom": "Custom"
+      },
+      "default_java": {
+        "label": "Default Java",
+        "description": "Java executable for new servers. Empty uses the detected Java.",
+        "placeholder": "java"
+      },
+      "default_autostart": {
+        "label": "Start new servers with Hosty",
+        "description": "New servers start automatically when Hosty opens."
+      },
+      "folders": {
+        "label": "Folders",
+        "description": "Where Hosty keeps servers, game packs and translations.",
+        "instances": "Servers",
+        "games": "Game packs",
+        "locales": "Translations",
+        "open": "Open",
+        "open_failed": "Could not open the folder",
+        "hint": "These locations come from the environment (MC_NEXUS_*); changing them needs a restart."
+      }
+    },
+    "advanced": {
+      "transfer": {
+        "label": "Preferences",
+        "description": "Export every preference as JSON, import a saved file or restore the defaults.",
+        "reset_all": "Reset all",
+        "import_title": "Import preferences",
+        "import_description": "Paste exported Hosty preferences or load the file. Your current preferences are replaced.",
+        "reset_title": "Reset all preferences?",
+        "reset_description": "Theme, terminal and general preferences go back to their defaults. Servers are not affected.",
+        "reset_done": "Preferences restored to their defaults"
+      },
+      "daemon": {
+        "label": "Daemon",
+        "description": "Address of the background service that runs your servers.",
+        "open_logs": "Open logs"
+      },
+      "clear_history": {
+        "label": "Command history",
+        "description": "Forget the console commands remembered for every server.",
+        "action": "Clear history",
+        "done": "Command history cleared"
+      },
+      "mock": {
+        "label": "Simulated telemetry",
+        "description": "Development only: fills the panel with fake players and metrics.",
+        "disabled": "Mock data is disabled in the daemon."
+      }
+    },
+    "transfer": {
+      "copy": "Copy",
+      "save_file": "Save file",
+      "import": "Import",
+      "copied": "Copied to the clipboard",
+      "copy_failed": "Could not copy to the clipboard",
+      "imported": "Imported",
+      "invalid": "This is not a valid Hosty export.",
+      "too_large": "The file is too large.",
+      "cancel": "Cancel",
+      "apply": "Import",
+      "paste_label": "Exported JSON",
+      "paste_placeholder": "Paste the exported JSON here",
+      "load_file": "Load file"
+    },
+    "stop_confirm": {
+      "title": "Players are online",
+      "stop_description_one": "{{count}} player is connected and will be disconnected.",
+      "stop_description_other": "{{count}} players are connected and will be disconnected.",
+      "restart_description_one": "{{count}} player is connected and will be disconnected during the restart.",
+      "restart_description_other": "{{count}} players are connected and will be disconnected during the restart.",
+      "stop_action": "Stop anyway",
+      "restart_action": "Restart anyway"
+    }
   }
 }

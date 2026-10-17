@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import { fetchLocale, fetchLocales, type LocaleInfo } from '../api/daemonApi';
 import { BUILTIN_LANGUAGES, changeLanguage, registerLocalePack } from '../i18n';
 import type { SocketConnectionState } from '../types/daemon';
+import { usePreferences } from '../settings/preferencesContext';
 
 export interface LanguageOption {
   code: string;
@@ -16,6 +17,7 @@ const BUILTIN_OPTIONS: LanguageOption[] = BUILTIN_LANGUAGES.map((language) => ({
 export function useLocales(connectionState: SocketConnectionState) {
   const [packs, setPacks] = useState<LocaleInfo[]>([]);
   const [current, setCurrent] = useState<string>(i18n.language || 'en');
+  const { update } = usePreferences();
 
   const loadPack = useCallback(async (code: string): Promise<boolean> => {
     try {
@@ -55,8 +57,9 @@ export function useLocales(connectionState: SocketConnectionState) {
       if (!isBuiltin && !(await loadPack(code))) return;
       changeLanguage(code);
       setCurrent(code);
+      update('general', { language: code });
     },
-    [loadPack]
+    [loadPack, update]
   );
 
   const options: LanguageOption[] = [

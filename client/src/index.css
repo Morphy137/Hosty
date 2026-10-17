@@ -33,9 +33,28 @@
   --warning: #f5a623;
   --warning-fg: #c2410c;
   --warning-soft: #fff8eb;
-  --info-soft: #e6f7ff;
+  --info-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  --on-accent: #ffffff;
   --on-dark: #e5e5e5;
   --console: #171717;
+  --console-fg: #e5e5e5;
+  --console-mute: #8a8a8a;
+  --console-border: #2a2a2a;
+  --console-chip: #262626;
+  --console-chip-hover: #333333;
+  --console-red: #f87171;
+  --console-yellow: #f5a623;
+  --console-green: #50e3c2;
+  --console-blue: #60a5fa;
+  --console-magenta: #c084fc;
+  --console-cyan: #67e8f9;
+  --console-selection: rgba(255, 255, 255, 0.2);
+  --console-font: var(--font-mono);
+  --console-font-size: 13px;
+  --console-line-height: 1.55;
+  --page-padding: 1.5rem;
+  --page-gap: 1.5rem;
+  --console-line-gap: 0.25rem;
   --scrollbar: #e0e0e0;
   --scrollbar-hover: #a1a1a1;
   --shadow-color: rgba(0, 0, 0, 0.06);
@@ -65,12 +84,369 @@
   --warning: #f5a623;
   --warning-fg: #fdba74;
   --warning-soft: #3b280c;
-  --info-soft: #071f38;
+  --info-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
   --on-dark: #e5e5e5;
   --console: #0a0a0a;
   --scrollbar: #2a2a2a;
   --scrollbar-hover: #404040;
   --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * App themes (Settings > Appearance). Each one defines the same tokens for light and dark. The selectors are not
+ * tied to :root so a preview card can show a theme by carrying its data attribute.
+ */
+
+[data-theme="hosty"] {
+  --canvas: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f5f5f5;
+  --ink: #171717;
+  --ink-hover: #333333;
+  --on-ink: #ffffff;
+  --body: #4d4d4d;
+  --soft: #666666;
+  --mute: #888888;
+  --hairline: #ebebeb;
+  --hairline-strong: #d4d4d4;
+  --scrollbar: #e0e0e0;
+  --scrollbar-hover: #a1a1a1;
+}
+
+.dark[data-theme="hosty"],
+.dark [data-theme="hosty"] {
+  --canvas: #050505;
+  --surface: #0d0d0d;
+  --surface-2: #141414;
+  --surface-3: #1f1f1f;
+  --ink: #ededed;
+  --ink-hover: #ffffff;
+  --on-ink: #171717;
+  --body: #a1a1a1;
+  --soft: #a1a1a1;
+  --mute: #a1a1a1;
+  --hairline: #262626;
+  --hairline-strong: #333333;
+  --scrollbar: #2a2a2a;
+  --scrollbar-hover: #404040;
+}
+
+[data-theme="contrast"] {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f5f5;
+  --surface-3: #e5e5e5;
+  --ink: #000000;
+  --ink-hover: #1a1a1a;
+  --on-ink: #ffffff;
+  --body: #1f1f1f;
+  --soft: #2e2e2e;
+  --mute: #4a4a4a;
+  --hairline: #8a8a8a;
+  --hairline-strong: #5c5c5c;
+  --scrollbar: #a3a3a3;
+  --scrollbar-hover: #5c5c5c;
+}
+
+.dark[data-theme="contrast"],
+.dark [data-theme="contrast"] {
+  --canvas: #000000;
+  --surface: #000000;
+  --surface-2: #0f0f0f;
+  --surface-3: #262626;
+  --ink: #ffffff;
+  --ink-hover: #f0f0f0;
+  --on-ink: #000000;
+  --body: #e5e5e5;
+  --soft: #d4d4d4;
+  --mute: #bdbdbd;
+  --hairline: #6b6b6b;
+  --hairline-strong: #a3a3a3;
+  --scrollbar: #525252;
+  --scrollbar-hover: #a3a3a3;
+}
+
+[data-theme="midnight"] {
+  --canvas: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #f7f8fc;
+  --surface-3: #eceff7;
+  --ink: #0f172a;
+  --ink-hover: #1e293b;
+  --on-ink: #ffffff;
+  --body: #3b4560;
+  --soft: #55607a;
+  --mute: #6b7590;
+  --hairline: #e2e6f0;
+  --hairline-strong: #cbd2e1;
+  --scrollbar: #d5dbe8;
+  --scrollbar-hover: #9aa5bd;
+}
+
+.dark[data-theme="midnight"],
+.dark [data-theme="midnight"] {
+  --canvas: #070b16;
+  --surface: #0c1222;
+  --surface-2: #111a2e;
+  --surface-3: #1a2540;
+  --ink: #e6ebf5;
+  --ink-hover: #ffffff;
+  --on-ink: #0c1222;
+  --body: #a3aec4;
+  --soft: #a3aec4;
+  --mute: #8792ab;
+  --hairline: #1e2a44;
+  --hairline-strong: #2b3a5c;
+  --scrollbar: #24314f;
+  --scrollbar-hover: #34466f;
+}
+
+[data-theme="forest"] {
+  --canvas: #f5f8f4;
+  --surface: #ffffff;
+  --surface-2: #f6f9f5;
+  --surface-3: #ebf1e9;
+  --ink: #14231a;
+  --ink-hover: #1f3527;
+  --on-ink: #ffffff;
+  --body: #3e5245;
+  --soft: #566b5d;
+  --mute: #6b7f71;
+  --hairline: #e0e8dd;
+  --hairline-strong: #c7d4c3;
+  --scrollbar: #d3ddd0;
+  --scrollbar-hover: #97a99b;
+}
+
+.dark[data-theme="forest"],
+.dark [data-theme="forest"] {
+  --canvas: #060b07;
+  --surface: #0b130d;
+  --surface-2: #111c14;
+  --surface-3: #19281d;
+  --ink: #e3eee5;
+  --ink-hover: #ffffff;
+  --on-ink: #0b130d;
+  --body: #9fb4a5;
+  --soft: #9fb4a5;
+  --mute: #84998a;
+  --hairline: #1c2d21;
+  --hairline-strong: #2a4031;
+  --scrollbar: #22362a;
+  --scrollbar-hover: #33503d;
+}
+
+[data-theme="sand"] {
+  --canvas: #faf7f2;
+  --surface: #fffdf9;
+  --surface-2: #faf6ef;
+  --surface-3: #f2ebdf;
+  --ink: #2a2118;
+  --ink-hover: #3d3125;
+  --on-ink: #fffdf9;
+  --body: #5a4c3d;
+  --soft: #6e604f;
+  --mute: #80725f;
+  --hairline: #ebe2d4;
+  --hairline-strong: #d8cbb7;
+  --scrollbar: #e0d5c4;
+  --scrollbar-hover: #b3a48e;
+}
+
+.dark[data-theme="sand"],
+.dark [data-theme="sand"] {
+  --canvas: #0d0a07;
+  --surface: #15110c;
+  --surface-2: #1c1711;
+  --surface-3: #282118;
+  --ink: #f0e8dc;
+  --ink-hover: #ffffff;
+  --on-ink: #15110c;
+  --body: #b8aa96;
+  --soft: #b8aa96;
+  --mute: #9d8f7c;
+  --hairline: #2c241a;
+  --hairline-strong: #3d3326;
+  --scrollbar: #382e22;
+  --scrollbar-hover: #4f4232;
+}
+
+/* Accent colours: `--accent` fills, `--accent-fg` is the readable text variant for each mode. */
+
+:root[data-accent="violet"] {
+  --accent: #7c3aed;
+  --accent-fg: #6d28d9;
+}
+
+:root.dark[data-accent="violet"] {
+  --accent-fg: #a78bfa;
+}
+
+:root[data-accent="green"] {
+  --accent: #16a34a;
+  --accent-fg: #15803d;
+}
+
+:root.dark[data-accent="green"] {
+  --accent-fg: #4ade80;
+}
+
+:root[data-accent="orange"] {
+  --accent: #ea580c;
+  --accent-fg: #c2410c;
+}
+
+:root.dark[data-accent="orange"] {
+  --accent-fg: #fb923c;
+}
+
+:root[data-accent="pink"] {
+  --accent: #db2777;
+  --accent-fg: #be185d;
+}
+
+:root.dark[data-accent="pink"] {
+  --accent-fg: #f472b6;
+}
+
+:root[data-accent="red"] {
+  --accent: #dc2626;
+  --accent-fg: #b91c1c;
+}
+
+:root.dark[data-accent="red"] {
+  --accent-fg: #f87171;
+}
+
+:root[data-accent="teal"] {
+  --accent: #0d9488;
+  --accent-fg: #0f766e;
+}
+
+:root.dark[data-accent="teal"] {
+  --accent-fg: #2dd4bf;
+}
+
+/* Swatches shown by the accent picker (same fills as the rules above). */
+
+:root {
+  --swatch-blue: #0070f3;
+  --swatch-violet: #7c3aed;
+  --swatch-green: #16a34a;
+  --swatch-orange: #ea580c;
+  --swatch-pink: #db2777;
+  --swatch-red: #dc2626;
+  --swatch-teal: #0d9488;
+}
+
+/* Terminal themes (Settings > Terminal), independent from the app theme; `hosty` is the base above. */
+
+[data-console-theme="hosty"] {
+  --console: #171717;
+  --console-fg: #e5e5e5;
+  --console-mute: #8a8a8a;
+  --console-border: #2a2a2a;
+  --console-chip: #262626;
+  --console-chip-hover: #333333;
+  --console-red: #f87171;
+  --console-yellow: #f5a623;
+  --console-green: #50e3c2;
+  --console-blue: #60a5fa;
+  --console-magenta: #c084fc;
+  --console-cyan: #67e8f9;
+  --console-selection: rgba(255, 255, 255, 0.2);
+}
+
+.dark[data-console-theme="hosty"],
+.dark [data-console-theme="hosty"] {
+  --console: #0a0a0a;
+}
+
+[data-console-theme="paper"] {
+  --console: #fbfbfa;
+  --console-fg: #1f2328;
+  --console-mute: #6e7781;
+  --console-border: #e5e7eb;
+  --console-chip: #eef0f2;
+  --console-chip-hover: #e2e5e9;
+  --console-red: #cf222e;
+  --console-yellow: #9a6700;
+  --console-green: #1a7f37;
+  --console-blue: #0969da;
+  --console-magenta: #8250df;
+  --console-cyan: #1b7c83;
+  --console-selection: rgba(9, 105, 218, 0.18);
+}
+
+[data-console-theme="solar"] {
+  --console: #002b36;
+  --console-fg: #93a1a1;
+  --console-mute: #657b83;
+  --console-border: #0d3a45;
+  --console-chip: #073642;
+  --console-chip-hover: #0e4552;
+  --console-red: #dc322f;
+  --console-yellow: #b58900;
+  --console-green: #859900;
+  --console-blue: #268bd2;
+  --console-magenta: #d33682;
+  --console-cyan: #2aa198;
+  --console-selection: rgba(147, 161, 161, 0.22);
+}
+
+[data-console-theme="vampire"] {
+  --console: #282a36;
+  --console-fg: #f8f8f2;
+  --console-mute: #7b88c2;
+  --console-border: #343746;
+  --console-chip: #343746;
+  --console-chip-hover: #44475a;
+  --console-red: #ff5555;
+  --console-yellow: #f1fa8c;
+  --console-green: #50fa7b;
+  --console-blue: #7aa2f7;
+  --console-magenta: #ff79c6;
+  --console-cyan: #8be9fd;
+  --console-selection: rgba(98, 114, 164, 0.5);
+}
+
+[data-console-theme="glacier"] {
+  --console: #2e3440;
+  --console-fg: #d8dee9;
+  --console-mute: #8a96ad;
+  --console-border: #3b4252;
+  --console-chip: #3b4252;
+  --console-chip-hover: #434c5e;
+  --console-red: #bf616a;
+  --console-yellow: #ebcb8b;
+  --console-green: #a3be8c;
+  --console-blue: #81a1c1;
+  --console-magenta: #b48ead;
+  --console-cyan: #88c0d0;
+  --console-selection: rgba(136, 192, 208, 0.25);
+}
+
+[data-console-theme="phosphor"] {
+  --console: #050805;
+  --console-fg: #33ff66;
+  --console-mute: #2aa84a;
+  --console-border: #0f2a14;
+  --console-chip: #0c1f10;
+  --console-chip-hover: #133019;
+  --console-red: #ff5f5f;
+  --console-yellow: #e6ff5f;
+  --console-green: #7dff9a;
+  --console-blue: #5fd7ff;
+  --console-magenta: #d787ff;
+  --console-cyan: #5fffd7;
+  --console-selection: rgba(51, 255, 102, 0.22);
+}
+
+:root[data-density="compact"] {
+  --page-padding: 1rem;
+  --page-gap: 1rem;
+  --console-line-gap: 0;
 }
 
 @theme inline {
@@ -99,7 +475,19 @@
   --color-warning-soft: var(--warning-soft);
   --color-info-soft: var(--info-soft);
   --color-on-dark: var(--on-dark);
+  --color-on-accent: var(--on-accent);
   --color-console: var(--console);
+  --color-console-fg: var(--console-fg);
+  --color-console-mute: var(--console-mute);
+  --color-console-border: var(--console-border);
+  --color-console-chip: var(--console-chip);
+  --color-console-chip-hover: var(--console-chip-hover);
+  --color-console-red: var(--console-red);
+  --color-console-yellow: var(--console-yellow);
+  --color-console-green: var(--console-green);
+  --color-console-blue: var(--console-blue);
+  --color-console-magenta: var(--console-magenta);
+  --color-console-cyan: var(--console-cyan);
 
   --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -183,14 +571,33 @@
   --enter-scale: 0.95;
 }
 
+/* Settings > Appearance > Motion: `system` follows the OS, `full` ignores it, `reduced` always reduces. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.console-output {
+  font-family: var(--console-font);
+  font-size: var(--console-font-size);
+  line-height: var(--console-line-height);
+}
+
+.console-output ::selection {
+  background: var(--console-selection);
 }
 
 ::-webkit-scrollbar {

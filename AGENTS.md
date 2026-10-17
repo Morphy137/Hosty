@@ -37,6 +37,7 @@ hosty/
 ### Client (`client/src`)
 
 - `App.tsx` root; `components/{layout,tabs,modals,common}`; tabs: Overview, Players, Mods, Mod Configs, server.properties (+ Provisioning).
+- **Settings** (`components/settings`, `settings/`): full-height view opened from the Sidebar gear or `Ctrl+,`. UI preferences are one versioned object (`settings/schema.ts`, `normalizePreferences` sanitises storage and imports) in `localStorage['hosty.preferences']` (legacy theme/language keys are migrated once), exposed by `PreferencesProvider`/`usePreferences`. `settings/appearance.ts` maps them to `<html>` attributes (`data-theme`, `data-accent`, `data-density`, `data-motion`, `data-console-theme`) and inline variables (token overrides, custom accent, console font); theme/accent/terminal presets live only in `index.css`. Rows are declared in `settings/registry.ts` (labels `settings.<section>.<id>.label|description`) and rendered by the section components. The console (`components/console`) uses the `--console-*` tokens. Daemon-side defaults for new servers (memory, Java, autostart) use `GET/PUT /api/settings` (`core/AppSettingsStore`, `<instances>/app-settings.json`); "start with the system" uses `tauri-plugin-autostart`.
 - `hooks/` (data + socket + theme), `state/daemonSocketReducer.ts`, `api/daemonApi.ts`, `types/daemon.ts`, `utils/`.
 - **i18n**: `i18n/locales/en.json` and `es.json`; parity enforced by `test/i18nParity.test.ts`.
 - **Creation wizard** (`components/wizard`): origin (create/import) → game → setup → customize → install → done. Game cards come from `/api/games` (`status`: available/beta/coming_soon); the setup step renders the driver's `setupSchema` (`SchemaFields`) or a registered custom component (`steps/customSetupComponents.ts`: `installer`, the generic `InstallerStep` driven by the manifest `installer`). `wizardPlan.ts` maps the draft to the daemon operation (install / upload / create / import). Import uses `POST /api/instances/inspect-folder`; the daemon also exposes `GET /api/system/ports/:port`.
@@ -72,7 +73,7 @@ Requirements: Windows 10/11 x64, Node >= 20 (22 LTS recommended), stable Rust, J
 
 ## Conventions
 
-- **Versioning** `a.b.c` (current: `0.2.9`). The **source of truth is the `version` field in the root [package.json](package.json)**; every other version must be set to the same value:
+- **Versioning** `a.b.c` (current: `0.4.0`). The **source of truth is the `version` field in the root [package.json](package.json)**; every other version must be set to the same value:
   - `daemon/package.json`, `client/package.json`, `client/src-tauri/tauri.conf.json` and `client/src-tauri/Cargo.toml` (`[package] version`).
   - Lockfiles, refreshed by the tools and never edited by hand: `version` in `daemon/package-lock.json` and `client/package-lock.json` (`npm --prefix <dir> install --package-lock-only`), and the `hosty` entry in `client/src-tauri/Cargo.lock` (any `cargo` command, e.g. `cargo metadata`).
   - `a` (major): `0` while the tool is not yet fully functional. It becomes `1.0.0` only when the product is complete, and only after explicit manual approval.

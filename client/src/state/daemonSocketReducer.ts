@@ -28,6 +28,8 @@ export interface DaemonSocketState {
   /** Latest status pushed by the daemon for each instance id. */
   instanceStatuses: Record<string, ServerStatus>;
   lastError: DaemonErrorPayload | null;
+  /** How many console lines are kept (Settings > Terminal > Buffer). */
+  consoleLimit: number;
 }
 
 export type DaemonSocketEvent =
@@ -35,6 +37,8 @@ export type DaemonSocketEvent =
   | { kind: 'clearError' }
   | { kind: 'clearInventory' }
   | { kind: 'resetProvisionLogs'; lines: string[] }
+  | { kind: 'setConsoleLimit'; limit: number }
+  | { kind: 'clearConsole' }
   /** The viewed server changed: drop everything that belonged to the previous one. */
   | { kind: 'resetInstanceView'; lines: string[]; status: ServerStatus; keepLive?: boolean };
 
@@ -48,7 +52,8 @@ export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   provisionLogs: [],
   provisionJob: null,
   instanceStatuses: {},
-  lastError: null
+  lastError: null,
+  consoleLimit: MAX_CONSOLE_LINES
 };
 
 const KNOWN_MESSAGE_TYPES: ReadonlySet<DaemonMessageType> = new Set([
@@ -97,7 +102,7 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
     case 'PLAYERS':
       return { ...state, players: Array.isArray(message.payload) ? message.payload : [] };
     case 'CONSOLE':
-      return { ...state, logs: appendCapped(state.logs, message.payload, MAX_CONSOLE_LINES) };
+      return { ...state, logs: appendCapped(state.logs, message.payload, state.consoleLimit) };
     case 'PROVISION_LOG':
       return {
         ...state,
@@ -129,7 +134,7 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
     case 'resetInstanceView':
       return {
         ...state,
-        logs: event.lines.slice(-MAX_CONSOLE_LINES),
+        logs: event.lines.slice(-state.consoleLimit),
         status: event.status,
         // On the first view the socket already delivered this server's live data; only a switch clears it.
         metrics: event.keepLive ? state.metrics : INITIAL_DAEMON_SOCKET_STATE.metrics,
@@ -140,5 +145,11 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
       };
     case 'resetProvisionLogs':
       return { ...state, provisionLogs: event.lines.slice(-MAX_PROVISION_LOG_LINES), provisionJob: null };
+    case 'setConsoleLimit': {
+      const limit = Math.max(1, Math.floor(event.limit));
+      return { ...state, consoleLimit: limit, logs: state.logs.length > limit ? state.logs.slice(-limit) : state.logs };
+    }
+    case 'clearConsole':
+      return { ...state, logs: [] };
   }
 }

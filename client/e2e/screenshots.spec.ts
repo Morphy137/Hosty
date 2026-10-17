@@ -86,4 +86,13 @@ test('captures the documentation screenshots', async ({ page }) => {
   await page.waitForTimeout(600);
   await allImagesLoaded(page);
   await page.screenshot({ path: path.join(OUTPUT, 'overview-dark.png') });
+
+  // 6. Settings: appearance and terminal
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Appearance', exact: true }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(OUTPUT, 'settings-appearance.png') });
+  await page.getByRole('button', { name: 'Terminal', exact: true }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(OUTPUT, 'settings-terminal.png') });
 });
