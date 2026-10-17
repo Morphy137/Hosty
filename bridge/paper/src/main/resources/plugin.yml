@@ -1,6 +1,0 @@
-name: MCNexusBridge
-version: 1.2.1
-main: com.mcnexus.bridge.NexusBridgePlugin
-api-version: '1.16'
-author: MorphyCD
-description: Real-time telemetry and management bridge for MC-Nexus.

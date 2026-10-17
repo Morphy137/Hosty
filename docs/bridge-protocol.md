@@ -2,7 +2,7 @@
 
 A **bridge** is a small component that runs inside a game server (a plugin, a mod, a script) and
 talks to the Hosty daemon to expose live telemetry and admin actions. The Minecraft bridges
-(`bridge/paper`, `bridge/fabric`) are the reference implementations; anyone can write one for another game
+([Hosty-Bridge](https://github.com/Morphy137/Hosty-Bridge): `paper`, `fabric`) are the reference implementations; anyone can write one for another game
 by following this document. Frames are JSON text messages over a WebSocket.
 
 - JSON Schema: [`packages/bridge-protocol/schema/bridge-v1.schema.json`](../packages/bridge-protocol/schema/bridge-v1.schema.json)
@@ -184,6 +184,6 @@ frames; they are **specified, not implemented yet**:
 
 | Bridge | Loader | Notes |
 |---|---|---|
-| `bridge/paper` | Paper, Purpur, Spigot (MC 1.16–1.21+) | Telemetry, all actions, inventory. Mute is implemented via a chat listener. |
-| `bridge/fabric` | Fabric (1.20.x–1.21.x) | Telemetry, inventory and the actions that map to vanilla commands (no mute). |
+| Hosty-Bridge `paper` | Paper, Purpur, Spigot (MC 1.16–1.21+) | Telemetry, all actions, inventory. Mute is implemented via a chat listener. |
+| Hosty-Bridge `fabric` | Fabric (1.20.x–1.21.x) | Telemetry, inventory and the actions that map to vanilla commands (no mute). |
 | Forge / NeoForge | — | **Not available yet.** `POST /bridge/install` answers with a clear error. |
