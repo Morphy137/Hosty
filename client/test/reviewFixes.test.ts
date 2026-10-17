@@ -13,7 +13,8 @@ const mod = (originalName: string, sizeBytes: number, modifiedAt: string, enable
   sizeFormatted: `${sizeBytes} B`,
   modifiedAt,
   enabled,
-  hasConfig: false
+  hasConfig: false,
+  configFiles: []
 });
 
 describe('sortModFiles', () => {

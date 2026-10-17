@@ -22,7 +22,7 @@ interface ModFilesTabProps {
   onFilterChange: (filter: string) => void;
   onToggleMod: (filename: string) => Promise<void>;
   onDeleteMod: (filename: string) => Promise<void>;
-  onOpenConfigTab: () => void;
+  onOpenConfigTab: (configFile: string) => void;
   /** Present only when the game declares a mod catalog. */
   onBrowseCatalog?: () => void;
 }
@@ -210,10 +210,10 @@ export const ModFilesTab: React.FC<ModFilesTabProps> = ({
                 </div>
 
                 <div className="col-span-2 flex items-center justify-end gap-2">
-                  {mod.hasConfig && (
+                  {mod.configFiles.length > 0 && (
                     <button
                       type="button"
-                      onClick={onOpenConfigTab}
+                      onClick={() => onOpenConfigTab(mod.configFiles[0])}
                       className="p-1.5 rounded hover:bg-surface-3 text-body transition cursor-pointer"
                       title={t('mod_files.open_config')}
                     >

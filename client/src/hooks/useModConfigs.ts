@@ -9,6 +9,8 @@ export interface ModConfigsState {
   entries: ConfigEntry[];
   filter: string;
   setFilter: (filter: string) => void;
+  fileFilter: string;
+  setFileFilter: (filter: string) => void;
   selectFile: (filename: string) => void;
   updateEntry: (key: string, value: ConfigValue) => void;
   save: () => Promise<void>;
@@ -24,6 +26,7 @@ export function useModConfigs(
   const [selectedFile, setSelectedFile] = useState('');
   const [entries, setEntries] = useState<ConfigEntry[]>([]);
   const [filter, setFilter] = useState('');
+  const [fileFilter, setFileFilter] = useState('');
   const latestRequestIdRef = useRef(0);
 
   const selectFile = useCallback(
@@ -72,5 +75,5 @@ export function useModConfigs(
     }
   }, [selectedFile, entries, onError]);
 
-  return { files, selectedFile, entries, filter, setFilter, selectFile, updateEntry, save };
+  return { files, selectedFile, entries, filter, setFilter, fileFilter, setFileFilter, selectFile, updateEntry, save };
 }

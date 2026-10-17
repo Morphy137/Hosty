@@ -525,7 +525,11 @@ export default function App() {
                     onFilterChange={modFiles.setFilter}
                     onToggleMod={modFiles.toggleMod}
                     onDeleteMod={modFiles.deleteMod}
-                    onOpenConfigTab={() => setActiveTab('mods')}
+                    onOpenConfigTab={(configFile) => {
+                      modConfigs.setFileFilter('');
+                      modConfigs.selectFile(configFile);
+                      setActiveTab('mods');
+                    }}
                     onBrowseCatalog={activeGame?.modSources?.length ? () => setIsCatalogOpen(true) : undefined}
                   />
                 )}
@@ -537,6 +541,8 @@ export default function App() {
                     entries={modConfigs.entries}
                     filter={modConfigs.filter}
                     onFilterChange={modConfigs.setFilter}
+                    fileFilter={modConfigs.fileFilter}
+                    onFileFilterChange={modConfigs.setFileFilter}
                     onSelectFile={modConfigs.selectFile}
                     onUpdateEntry={modConfigs.updateEntry}
                     onSave={async () => {

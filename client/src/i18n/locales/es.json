@@ -251,6 +251,8 @@
     }
   },
   "mods": {
+    "file_search_placeholder": "Buscar archivos de configuración...",
+    "no_file_matches": "Ningún archivo de configuración coincide con la búsqueda.",
     "search_placeholder": "Filtrar opciones de configuración...",
     "save": "Guardar Configuración",
     "saved": "¡Guardado!",

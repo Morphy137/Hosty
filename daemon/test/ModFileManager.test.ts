@@ -28,6 +28,20 @@ describe('ModFileManager', () => {
     expect(ModFileManager.validateModFilename('jei-1.21.jar.disable')).toBe('jei-1.21.jar.disable');
   });
 
+  it('reports the config files that belong to each mod', () => {
+    fs.mkdirSync(path.join(tmpDir, 'mods'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, 'config'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'mods', 'create-1.21.jar'), 'x');
+    fs.writeFileSync(path.join(tmpDir, 'mods', 'lonely.jar'), 'x');
+    fs.writeFileSync(path.join(tmpDir, 'config', 'create-1.21.toml'), '');
+    fs.writeFileSync(path.join(tmpDir, 'config', 'create-1.21.txt'), '');
+    fs.writeFileSync(path.join(tmpDir, 'config', 'other.json'), '{}');
+
+    const byName = new Map(ModFileManager.listModFiles(tmpDir).map((mod) => [mod.originalName, mod]));
+    expect(byName.get('create-1.21.jar')).toMatchObject({ hasConfig: true, configFiles: ['create-1.21.toml'] });
+    expect(byName.get('lonely.jar')).toMatchObject({ hasConfig: false, configFiles: [] });
+  });
+
   it('lists mod files with formatted size and enabled flag', () => {
     const modsDir = path.join(tmpDir, 'mods');
     fs.mkdirSync(modsDir, { recursive: true });
