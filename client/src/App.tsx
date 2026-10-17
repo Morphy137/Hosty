@@ -65,6 +65,7 @@ export default function App() {
     metrics,
     players,
     inventory,
+    inventoryError,
     clearInventory,
     logs,
     provisionLogs,
@@ -202,9 +203,10 @@ export default function App() {
 
   const handleRefreshInventory = useCallback(() => {
     if (inspectingPlayer) {
+      clearInventory();
       sendAction('INVENTORY_VIEW', { username: inspectingPlayer.username });
     }
-  }, [inspectingPlayer, sendAction]);
+  }, [clearInventory, inspectingPlayer, sendAction]);
 
   // The game names the player action that empties an inventory (`playerView.inventoryClearAction`).
   const inventoryClearAction = activeGame?.playerView?.inventoryClearAction;
@@ -546,6 +548,7 @@ export default function App() {
         <PlayerInventoryModal
           player={inspectingPlayer}
           inventory={inventory}
+          error={inventoryError}
           isLoading={!inventory}
           onClose={handleCloseInventory}
           game={activeGame}

@@ -85,7 +85,27 @@ final class YarnGameAccess implements GameAccess {
             stack.getCount(),
             stack.isDamageable() ? stack.getDamage() : null,
             stack.isDamageable() ? stack.getMaxDamage() : null,
-            stack.hasCustomName() ? stack.getName().getString() : null
+            customName(stack)
         );
+    }
+
+    /** False once `ItemStack.hasCustomName` proved missing (Minecraft 1.20.5+ moved names into item components). */
+    private static volatile boolean hasCustomNameAvailable = true;
+
+    /**
+     * The name the player gave the stack, or null. Cosmetic, so it must never break an inventory read: where the
+     * direct call does not exist the name is compared with the item's default one instead.
+     */
+    private static String customName(ItemStack stack) {
+        if (hasCustomNameAvailable) {
+            try {
+                return stack.hasCustomName() ? stack.getName().getString() : null;
+            } catch (LinkageError missing) {
+                hasCustomNameAvailable = false;
+            }
+        }
+        String shown = stack.getName().getString();
+        String standard = stack.getItem().getName().getString();
+        return shown.equals(standard) ? null : shown;
     }
 }

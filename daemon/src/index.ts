@@ -199,6 +199,20 @@ registry.on('failure', (instanceId, failure) => {
   }
 });
 
+/** Prefix of the action id of an inventory request, so a failed answer can be told apart from other results. */
+const INVENTORY_ACTION_PREFIX = 'inventory:';
+
+// A bridge that cannot read an inventory answers with a failed RESULT instead of an INVENTORY frame.
+telemetryBridge.on('action_result', (instanceId, result) => {
+  const { actionId, success, message } = (result ?? {}) as { actionId?: unknown; success?: unknown; message?: unknown };
+  if (instanceId !== instanceManager.getActiveInstanceId() || success !== false) return;
+  if (typeof actionId !== 'string' || !actionId.startsWith(INVENTORY_ACTION_PREFIX)) return;
+  broadcast('INVENTORY_ERROR', {
+    username: actionId.slice(INVENTORY_ACTION_PREFIX.length),
+    message: typeof message === 'string' ? message : ''
+  });
+});
+
 telemetryBridge.on('inventory_data', (instanceId, inventory) => {
   if (instanceId === instanceManager.getActiveInstanceId()) {
     broadcast('INVENTORY_DATA', inventory);
@@ -1688,7 +1702,11 @@ wss.on('connection', (ws, req) => {
       if (action === 'INVENTORY_VIEW' && data && typeof data === 'object') {
         const { username } = data as { username?: unknown };
         if (typeof username !== 'string') return;
-        const sent = registry.sendBridgeAction(instanceManager.getActiveInstanceId(), { action: 'INVENTORY_VIEW', username });
+        const sent = registry.sendBridgeAction(instanceManager.getActiveInstanceId(), {
+          action: 'INVENTORY_VIEW',
+          username,
+          actionId: `${INVENTORY_ACTION_PREFIX}${username}`
+        });
         if (!sent && config.mockEnabled) broadcast('INVENTORY_DATA', createMockInventory(username));
       }
       if (action === 'MOCK' && config.mockEnabled) {

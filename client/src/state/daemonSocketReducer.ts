@@ -19,6 +19,8 @@ export interface DaemonSocketState {
   metrics: Metrics;
   players: PlayerState[];
   inventory: PlayerInventoryData | null;
+  /** Why the bridge could not read the inspected inventory (empty text when it gave no reason). */
+  inventoryError: string | null;
   logs: string[];
   provisionLogs: string[];
   /** Latest installation job reported by the daemon (progress, phase, outcome). */
@@ -41,6 +43,7 @@ export const INITIAL_DAEMON_SOCKET_STATE: DaemonSocketState = {
   metrics: { cpu: 0, ramMb: 0, maxRamMb: DEFAULT_MAX_RAM_MB, uptime: 0 },
   players: [],
   inventory: null,
+  inventoryError: null,
   logs: [],
   provisionLogs: [],
   provisionJob: null,
@@ -57,7 +60,8 @@ const KNOWN_MESSAGE_TYPES: ReadonlySet<DaemonMessageType> = new Set([
   'PROVISION_PROGRESS',
   'ERROR',
   'INSTANCE_STATUS',
-  'INVENTORY_DATA'
+  'INVENTORY_DATA',
+  'INVENTORY_ERROR'
 ]);
 
 /** Appends a line and drops the oldest entries so the buffer never exceeds `cap`. */
@@ -108,7 +112,9 @@ function applyMessage(state: DaemonSocketState, message: DaemonMessage): DaemonS
         ? { ...state, instanceStatuses: { ...state.instanceStatuses, [message.payload.instanceId]: message.payload.status } }
         : state;
     case 'INVENTORY_DATA':
-      return { ...state, inventory: message.payload };
+      return { ...state, inventory: message.payload, inventoryError: null };
+    case 'INVENTORY_ERROR':
+      return { ...state, inventoryError: message.payload.message };
   }
 }
 
@@ -119,7 +125,7 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
     case 'clearError':
       return { ...state, lastError: null };
     case 'clearInventory':
-      return { ...state, inventory: null };
+      return { ...state, inventory: null, inventoryError: null };
     case 'resetInstanceView':
       return {
         ...state,
@@ -129,6 +135,7 @@ export function daemonSocketReducer(state: DaemonSocketState, event: DaemonSocke
         metrics: event.keepLive ? state.metrics : INITIAL_DAEMON_SOCKET_STATE.metrics,
         players: event.keepLive ? state.players : [],
         inventory: null,
+        inventoryError: null,
         lastError: null
       };
     case 'resetProvisionLogs':

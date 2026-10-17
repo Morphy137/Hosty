@@ -7,6 +7,7 @@ import {
   Trash2,
   Shield,
   Loader2,
+  AlertCircle,
   Sparkles,
   Package
 } from 'lucide-react';
@@ -21,6 +22,8 @@ interface PlayerInventoryModalProps {
   player: PlayerState | null;
   inventory: PlayerInventoryData | null;
   isLoading: boolean;
+  /** The bridge could not read the inventory: its reason (may be empty). */
+  error?: string | null;
   onClose: () => void;
   onRefresh: () => void;
   /** Present when the game declares an action that empties an inventory. */
@@ -28,10 +31,14 @@ interface PlayerInventoryModalProps {
   game?: GameDriverSummary;
 }
 
+/** How long the modal waits for the bridge before saying it did not answer. */
+const INVENTORY_TIMEOUT_MS = 10_000;
+
 export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
   player,
   inventory,
   isLoading,
+  error,
   onClose,
   onRefresh,
   onClearInventory,
@@ -43,6 +50,19 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
     x: number;
     y: number;
   } | null>(null);
+
+  // The bridge may never answer (it stopped, or the game version is not supported): stop spinning after a while.
+  const [timedOut, setTimedOut] = useState(false);
+  const waiting = isLoading && !inventory && !error;
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setTimedOut(true), INVENTORY_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+      setTimedOut(false);
+    };
+  }, [waiting]);
+  const failed = !inventory && (error !== null && error !== undefined || timedOut);
 
   // Prevent background scrollbar triggers while inventory modal is open
   useEffect(() => {
@@ -182,7 +202,16 @@ export const PlayerInventoryModal: React.FC<PlayerInventoryModalProps> = ({
         </div>
 
         {/* Content Body */}
-        {isLoading && !inventory ? (
+        {failed ? (
+          <div className="h-64 flex flex-col items-center justify-center p-8 text-center space-y-3">
+            <AlertCircle className="w-8 h-8 text-warning" />
+            <p className="text-[13px] font-medium text-ink">{t('inventory.failed')}</p>
+            <p className="max-w-sm text-[12px] leading-relaxed text-mute">
+              {error ? `${error}. ` : ''}
+              {t('inventory.failed_hint')}
+            </p>
+          </div>
+        ) : isLoading && !inventory ? (
           <div className="h-64 flex flex-col items-center justify-center p-8 text-center space-y-3">
             <Loader2 className="w-8 h-8 text-accent-fg animate-spin" />
             <p className="text-[13px] text-mute">{t('inventory.loading')}</p>

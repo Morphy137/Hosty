@@ -5,6 +5,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import net.minecraft.server.MinecraftServer;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -14,8 +16,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Hosty bridge for Fabric (server side). Speaks Hosty bridge protocol v1 (docs/bridge-protocol.md).
@@ -24,11 +24,12 @@ import java.util.logging.Logger;
  * incompatible game version switches the bridge off so Hosty falls back to reading the server log.
  */
 public class NexusBridgeMod implements DedicatedServerModInitializer {
-    private static final Logger LOGGER = Logger.getLogger("Hosty-Bridge");
+    // log4j, like the game itself, so bridge messages reach logs/latest.log (java.util.logging does not).
+    private static final Logger LOGGER = LogManager.getLogger("Hosty-Bridge");
     private static final Gson GSON = new Gson();
     private static final int PROTOCOL_VERSION = 1;
     private static final String IMPLEMENTATION_NAME = "hosty-bridge-fabric";
-    private static final String IMPLEMENTATION_VERSION = "1.3.0";
+    private static final String IMPLEMENTATION_VERSION = "1.3.1";
     private static final String[] CAPABILITIES = {
         "telemetry.server", "telemetry.players", "inventory.view",
         "action.heal", "action.damage", "action.kill", "action.kick", "action.teleport",
@@ -58,7 +59,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         try {
             access = GameAccess.detect();
         } catch (LinkageError e) {
-            LOGGER.log(Level.WARNING, "[Hosty Bridge] This Minecraft version is not supported; the bridge stays off.", e);
+            LOGGER.warn("[Hosty Bridge] This Minecraft version is not supported; the bridge stays off.", e);
             return;
         }
         connectToDaemon();
@@ -99,7 +100,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         } catch (LinkageError e) {
             disable(what, e);
         } catch (Throwable t) {
-            LOGGER.log(Level.WARNING, "[Hosty Bridge] " + what + " failed: " + t, t);
+            LOGGER.warn("[Hosty Bridge] " + what + " failed: " + t, t);
         }
     }
 
@@ -109,7 +110,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         authenticated = false;
         telemetryTimer.cancel();
         reconnectTimer.cancel();
-        LOGGER.log(Level.SEVERE, "[Hosty Bridge] This Minecraft version is not supported by the bridge (" + what
+        LOGGER.error("[Hosty Bridge] This Minecraft version is not supported by the bridge (" + what
             + "). The bridge is now off; Hosty keeps working from the server log. Please update the bridge.", cause);
         WebSocketClient client = wsClient;
         if (client != null && client.isOpen()) client.close(CLOSE_UNSUPPORTED, "UNSUPPORTED_GAME_VERSION");
@@ -122,7 +123,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
 
             File configFile = new File(new File(serverDir, ".hosty"), "bridge.json");
             if (!configFile.exists()) {
-                LOGGER.warning("[Hosty Bridge] .hosty/bridge.json not found. Start the server from Hosty so it can be generated.");
+                LOGGER.warn("[Hosty Bridge] .hosty/bridge.json not found. Start the server from Hosty so it can be generated.");
                 return false;
             }
             JsonObject config = GSON.fromJson(Files.readString(configFile.toPath()), JsonObject.class);
@@ -131,7 +132,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
             token = config.has("token") ? config.get("token").getAsString() : "";
             return !token.isEmpty();
         } catch (Exception e) {
-            LOGGER.warning("[Hosty Bridge] Could not read bridge configuration: " + e.getMessage());
+            LOGGER.warn("[Hosty Bridge] Could not read bridge configuration: " + e.getMessage());
             return false;
         }
     }
@@ -184,7 +185,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
             wsClient.setDaemon(true);
             wsClient.connect();
         } catch (Exception e) {
-            LOGGER.warning("[Hosty Bridge] Error connecting: " + e.getMessage());
+            LOGGER.warn("[Hosty Bridge] Error connecting: " + e.getMessage());
             scheduleReconnect();
         }
     }
@@ -221,7 +222,7 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
                 if (authenticated) {
                     LOGGER.info("[Hosty Bridge] Connected to Hosty (protocol v" + PROTOCOL_VERSION + ").");
                 } else {
-                    LOGGER.warning("[Hosty Bridge] Hosty refused the connection: " + raw);
+                    LOGGER.warn("[Hosty Bridge] Hosty refused the connection: " + raw);
                 }
                 return;
             }
@@ -229,11 +230,30 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
             if (authenticated && "ACTION".equals(type)) {
                 MinecraftServer current = server;
                 if (current != null) {
-                    current.execute(() -> guarded("action", () -> executeAction(current, obj)));
+                    current.execute(() -> runAction(current, obj));
                 }
             }
         } catch (Exception e) {
-            LOGGER.warning("[Hosty Bridge] Failed to handle daemon message: " + e.getMessage());
+            LOGGER.warn("[Hosty Bridge] Failed to handle daemon message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Runs one admin action. Telemetry is what the bridge is for, so an action that needs a game method this Minecraft
+     * version does not have only fails by itself (the panel is told why) and the bridge keeps reporting.
+     */
+    private void runAction(MinecraftServer current, JsonObject message) {
+        if (shuttingDown) return;
+        String actionId = message.has("actionId") && !message.get("actionId").isJsonNull()
+            ? message.get("actionId").getAsString() : null;
+        try {
+            executeAction(current, message);
+        } catch (LinkageError e) {
+            LOGGER.warn("[Hosty Bridge] An action is not supported on this Minecraft version: " + e, e);
+            sendResult(actionId, false, "Not supported on this Minecraft version");
+        } catch (Throwable t) {
+            LOGGER.warn("[Hosty Bridge] action failed: " + t, t);
+            sendResult(actionId, false, "The action failed on the server");
         }
     }
 
@@ -274,8 +294,9 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
 
         switch (action) {
             case "inventory_view":
-                sendInventory(current, who);
-                break;
+                // The INVENTORY frame is the answer; a RESULT is only sent when it could not be produced.
+                if (!sendInventory(current, who)) sendResult(actionId, false, "Could not read the inventory");
+                return;
             case "heal": {
                 int amplifier = (int) Math.max(0, Math.min(255, params.has("amount") ? params.get("amount").getAsInt() : 20));
                 run(current, "effect give " + who + " minecraft:instant_health 1 " + amplifier + " true");
@@ -333,15 +354,17 @@ public class NexusBridgeMod implements DedicatedServerModInitializer {
         access.runCommand(current, command);
     }
 
-    private void sendInventory(MinecraftServer current, String playerName) {
+    /** Sends the player's INVENTORY frame; false when there is no connection or the player is gone. */
+    private boolean sendInventory(MinecraftServer current, String playerName) {
         WebSocketClient client = wsClient;
-        if (client == null || !client.isOpen()) return;
+        if (client == null || !client.isOpen()) return false;
         JsonObject inventory = access.inventory(current, playerName);
-        if (inventory == null) return;
+        if (inventory == null) return false;
         JsonObject frame = new JsonObject();
         frame.addProperty("type", "INVENTORY");
         for (String key : inventory.keySet()) frame.add(key, inventory.get(key));
         client.send(GSON.toJson(frame));
+        return true;
     }
 
     private void requestTelemetry() {

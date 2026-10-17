@@ -17,6 +17,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.java_websocket.client.WebSocketClient;
@@ -142,6 +143,8 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
                     getLogger().log(Level.FINE, "[Hosty Bridge] WS error: " + ex.getMessage());
                 }
             };
+            // Non-daemon socket threads would keep the JVM alive after `stop`, so Hosty had to kill the server.
+            wsClient.setDaemon(true);
             wsClient.connect();
         } catch (Exception e) {
             getLogger().warning("[Hosty Bridge] Failed to initialize WebSocket: " + e.getMessage());
@@ -151,7 +154,11 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
 
     private void scheduleReconnect() {
         if (shuttingDown) return;
-        Bukkit.getScheduler().runTaskLater(this, this::connectToDaemon, reconnectDelayTicks);
+        try {
+            Bukkit.getScheduler().runTaskLater(this, this::connectToDaemon, reconnectDelayTicks);
+        } catch (IllegalPluginAccessException disabled) {
+            // The plugin was disabled meanwhile.
+        }
     }
 
     private void sendHello() {
@@ -184,8 +191,13 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
             frame.addProperty("type", "TELEMETRY");
 
             JsonObject server = new JsonObject();
-            double[] tpsArr = Bukkit.getTPS();
-            double tps = tpsArr.length > 0 ? Math.min(20.0, Math.round(tpsArr[0] * 100.0) / 100.0) : 20.0;
+            double tps = 20.0;
+            try {
+                double[] tpsArr = Bukkit.getTPS();
+                if (tpsArr.length > 0) tps = Math.min(20.0, Math.round(tpsArr[0] * 100.0) / 100.0);
+            } catch (Throwable ignored) {
+                // Spigot has no TPS API: report a healthy 20.
+            }
             server.addProperty("tps", tps);
 
             double mspt = 10.0;
@@ -242,8 +254,8 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
             frame.add("players", players);
 
             wsClient.send(GSON.toJson(frame));
-        } catch (Exception e) {
-            getLogger().log(Level.WARNING, "[Hosty Bridge] Telemetry error: " + e.getMessage());
+        } catch (Throwable e) {
+            getLogger().log(Level.WARNING, "[Hosty Bridge] Telemetry error: " + e);
         }
     }
 
@@ -288,7 +300,7 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
             if ("ACTION".equals(type)) {
                 final JsonObject message = obj;
                 // Bukkit API must be used from the main server thread
-                Bukkit.getScheduler().runTask(this, () -> executeAction(message));
+                Bukkit.getScheduler().runTask(this, () -> runAction(message));
             }
         } catch (Exception e) {
             getLogger().warning("[Hosty Bridge] Failed to handle daemon message: " + e.getMessage());
@@ -308,6 +320,18 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
     private static JsonObject paramsOf(JsonObject message) {
         JsonElement params = message.get("params");
         return params != null && params.isJsonObject() ? params.getAsJsonObject() : new JsonObject();
+    }
+
+    /** Runs one action; a failure is reported to Hosty instead of leaving the panel waiting for an answer. */
+    private void runAction(JsonObject message) {
+        try {
+            executeAction(message);
+        } catch (Throwable t) {
+            getLogger().log(Level.WARNING, "[Hosty Bridge] Action failed: " + t, t);
+            String actionId = message.has("actionId") && !message.get("actionId").isJsonNull()
+                ? message.get("actionId").getAsString() : null;
+            sendResult(actionId, false, "The action failed on the server");
+        }
     }
 
     private void executeAction(JsonObject message) {
@@ -330,8 +354,9 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
 
         switch (action) {
             case "inventory_view":
-                sendInventory(player);
-                break;
+                // The INVENTORY frame is the answer; a RESULT is only sent when it could not be produced.
+                if (!sendInventory(player)) sendResult(actionId, false, "Could not read the inventory");
+                return;
 
             case "freeze":
                 frozenPlayers.add(player.getUniqueId());
@@ -419,8 +444,9 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
         sendResult(actionId, true, null);
     }
 
-    private void sendInventory(Player player) {
-        if (wsClient == null || !wsClient.isOpen()) return;
+    /** Sends the player's INVENTORY frame; false when it could not be built or sent. */
+    private boolean sendInventory(Player player) {
+        if (wsClient == null || !wsClient.isOpen()) return false;
 
         try {
             JsonObject root = new JsonObject();
@@ -461,8 +487,10 @@ public class NexusBridgePlugin extends JavaPlugin implements Listener {
 
             root.add("containers", containers);
             wsClient.send(GSON.toJson(root));
-        } catch (Exception e) {
-            getLogger().warning("[Hosty Bridge] Error serializing inventory: " + e.getMessage());
+            return true;
+        } catch (Throwable e) {
+            getLogger().log(Level.WARNING, "[Hosty Bridge] Error serializing inventory: " + e, e);
+            return false;
         }
     }
 

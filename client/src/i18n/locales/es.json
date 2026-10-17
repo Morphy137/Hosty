@@ -292,7 +292,9 @@
     "clear_inventory_button": "Vaciar Inventario",
     "count": "Cantidad",
     "durability": "Durabilidad",
-    "enchantments": "Encantamientos"
+    "enchantments": "Encantamientos",
+    "failed": "No se pudo cargar el inventario",
+    "failed_hint": "El bridge no respondió. Revisa la consola del servidor y, si el bridge se detuvo, reinstálalo desde la pestaña Mods."
   },
   "errors": {
     "JAR_MISSING": "No se encontró el archivo del servidor. Instala primero el software del servidor.",
