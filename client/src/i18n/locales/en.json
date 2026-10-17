@@ -292,7 +292,9 @@
     "clear_inventory_button": "Clear Inventory",
     "count": "Count",
     "durability": "Durability",
-    "enchantments": "Enchantments"
+    "enchantments": "Enchantments",
+    "failed": "Could not load the inventory",
+    "failed_hint": "The bridge did not answer. Check the server console and, if the bridge stopped, reinstall it from the Mods tab."
   },
   "errors": {
     "JAR_MISSING": "Server file not found. Install the server software first.",

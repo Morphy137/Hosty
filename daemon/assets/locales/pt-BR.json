@@ -295,7 +295,9 @@
     "clear_inventory_button": "Limpar inventário",
     "count": "Quantidade",
     "durability": "Durabilidade",
-    "enchantments": "Encantamentos"
+    "enchantments": "Encantamentos",
+    "failed": "Não foi possível carregar o inventário",
+    "failed_hint": "O bridge não respondeu. Confira o console do servidor e, se o bridge parou, reinstale-o na aba Mods."
   },
   "errors": {
     "JAR_MISSING": "Arquivo do servidor não encontrado. Instale primeiro o software do servidor.",

@@ -95,3 +95,23 @@ describe('daemonSocketReducer', () => {
     expect(maxAllocatableRamMb(16384)).toBe(14336);
   });
 });
+
+describe('inventory inspection', () => {
+  it('keeps the bridge failure until a new request or an inventory arrives', () => {
+    const failed = daemonSocketReducer(INITIAL_DAEMON_SOCKET_STATE, {
+      kind: 'message',
+      message: { type: 'INVENTORY_ERROR', payload: { username: 'Steve', message: 'Not supported on this Minecraft version' } }
+    });
+    expect(failed.inventoryError).toBe('Not supported on this Minecraft version');
+    expect(daemonSocketReducer(failed, { kind: 'clearInventory' }).inventoryError).toBeNull();
+
+    const inventory = { username: 'Steve', armor: [], offhand: null, hotbar: [], inventory: [] };
+    const recovered = daemonSocketReducer(failed, { kind: 'message', message: { type: 'INVENTORY_DATA', payload: inventory } });
+    expect(recovered).toMatchObject({ inventory, inventoryError: null });
+  });
+
+  it('accepts the new message type from the socket', () => {
+    const raw = JSON.stringify({ type: 'INVENTORY_ERROR', payload: { username: 'Steve', message: '' } });
+    expect(parseDaemonMessage(raw)).toMatchObject({ type: 'INVENTORY_ERROR' });
+  });
+});

@@ -425,7 +425,8 @@ export type DaemonMessage =
   | { type: 'PROVISION_PROGRESS'; payload: ProvisionJobState }
   | { type: 'ERROR'; payload: DaemonErrorPayload }
   | { type: 'INSTANCE_STATUS'; payload: { instanceId: string; status: ServerStatus } }
-  | { type: 'INVENTORY_DATA'; payload: PlayerInventoryData };
+  | { type: 'INVENTORY_DATA'; payload: PlayerInventoryData }
+  | { type: 'INVENTORY_ERROR'; payload: { username: string; message: string } };
 
 export type DaemonMessageType = DaemonMessage['type'];
 

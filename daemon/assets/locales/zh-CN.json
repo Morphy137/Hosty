@@ -295,7 +295,9 @@
     "clear_inventory_button": "清空背包",
     "count": "数量",
     "durability": "耐久度",
-    "enchantments": "附魔"
+    "enchantments": "附魔",
+    "failed": "无法加载背包",
+    "failed_hint": "Bridge 没有响应。请查看服务器控制台；如果 Bridge 已停止，请在“Mods”标签页中重新安装。"
   },
   "errors": {
     "JAR_MISSING": "未找到服务器文件。请先安装服务器软件。",
