@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   clampPercent,
   calculateRamPercent,
+  formatDecimal,
   formatRowIndex,
   formatUptime
 } from '../src/utils/format';
@@ -42,5 +43,19 @@ describe('formatBytes', () => {
     expect(formatBytes(11167)).toBe('11 KB');
     expect(formatBytes(544372)).toBe('532 KB');
     expect(formatBytes(1_468_006)).toBe('1.4 MB');
+  });
+});
+
+describe('formatDecimal', () => {
+  it('rounds to one decimal and drops a trailing zero', () => {
+    expect(formatDecimal(62.22842788696289, 'en')).toBe('62.2');
+    expect(formatDecimal(20, 'en')).toBe('20');
+    expect(formatDecimal(10.54, 'es')).toBe('10,5');
+  });
+
+  it('keeps the decimal when asked for fixed width and never groups digits', () => {
+    expect(formatDecimal(223, 'en', true)).toBe('223.0');
+    expect(formatDecimal(-9025.123, 'en', true)).toBe('-9025.1');
+    expect(formatDecimal(Number.NaN, 'en')).toBe('-');
   });
 });
