@@ -4,6 +4,21 @@ const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_HOUR = 3600;
 const SECONDS_PER_DAY = 86400;
 
+const DISPLAY_DECIMALS = 1;
+
+/**
+ * Game numbers (health, coordinates) for the UI, rounded to one decimal in the user's language.
+ * `fixed` always shows the decimal (`223.0`) so columns keep the same width.
+ */
+export function formatDecimal(value: number, locale?: string, fixed = false): string {
+  if (!Number.isFinite(value)) return '-';
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: fixed ? DISPLAY_DECIMALS : 0,
+    maximumFractionDigits: DISPLAY_DECIMALS,
+    useGrouping: false
+  }).format(value);
+}
+
 export function clampPercent(value: number): number {
   if (!Number.isFinite(value) || value < 0) return 0;
   return Math.min(MAX_PERCENT, value);
