@@ -96,8 +96,16 @@ const INSTANCE_SETTINGS_FILE = 'instance.json';
 const DEFAULT_MIN_RAM_MB = 1024;
 const DEFAULT_MAX_RAM_MB = 4096;
 
+/** App-wide defaults for new servers (Settings > Servers); explicit creation settings always win. */
+export interface CreationDefaults {
+  memoryMb?: number | null;
+  javaPath?: string;
+  autostart?: boolean;
+}
+
 export class InstanceManager {
   private activeId: string;
+  private creationDefaults: () => CreationDefaults = () => ({});
   private readonly instancesBaseDir: string;
   private readonly registryFilePath: string;
 
@@ -206,17 +214,19 @@ export class InstanceManager {
     // The driver creates the game's initial files (e.g. a default config), core stays game-agnostic.
     driver.scaffoldInstance?.(targetDir, { port, motd, maxPlayers });
 
+    const defaults = this.creationDefaults();
+    const maxRamMb = customSettings?.maxRamMb ?? defaults.memoryMb ?? DEFAULT_MAX_RAM_MB;
     const settings: InstanceSettings = {
       name: serverName,
       motd,
       port,
       maxPlayers,
-      minRamMb: customSettings?.minRamMb ?? DEFAULT_MIN_RAM_MB,
-      maxRamMb: customSettings?.maxRamMb ?? DEFAULT_MAX_RAM_MB,
+      minRamMb: customSettings?.minRamMb ?? Math.min(DEFAULT_MIN_RAM_MB, maxRamMb),
+      maxRamMb,
       jvmArgs: customSettings?.jvmArgs ?? [],
-      javaPath: customSettings?.javaPath ?? '',
+      javaPath: customSettings?.javaPath ?? defaults.javaPath ?? '',
       forceSaveOnStop: customSettings?.forceSaveOnStop ?? true,
-      autostart: customSettings?.autostart ?? false,
+      autostart: customSettings?.autostart ?? defaults.autostart ?? false,
       loader: customSettings?.loader,
       loaderVersion: customSettings?.loaderVersion,
       gameId,
@@ -226,6 +236,11 @@ export class InstanceManager {
     writeJsonAtomic(path.join(targetDir, INSTANCE_SETTINGS_FILE), settings);
 
     return this.inspectInstance(safeId, targetDir, false, serverName);
+  }
+
+  /** Source of the app-wide defaults applied by `createInstance`. */
+  public setCreationDefaults(provider: () => CreationDefaults): void {
+    this.creationDefaults = provider;
   }
 
   public updateInstanceSettings(id: string, patch: Partial<InstanceSettings>): InstanceInfo {
