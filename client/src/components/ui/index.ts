@@ -23,3 +23,6 @@ export { Slider } from './Slider';
 export type { SliderVariant } from './Slider';
 export { Dropzone } from './Dropzone';
 export { Switch } from './Switch';
+export { SegmentedControl } from './SegmentedControl';
+export type { SegmentedOption } from './SegmentedControl';
+export { ColorPicker } from './ColorPicker';

@@ -10,6 +10,8 @@ export interface ModFileInfo {
   modifiedAt: string;
   enabled: boolean;
   hasConfig: boolean;
+  /** Files in the config folder that belong to this mod (the ones the config editor lists). */
+  configFiles: string[];
 }
 
 const BYTES_PER_KB = 1024;
@@ -64,7 +66,9 @@ export class ModFileManager {
     }
 
     const configDir = path.join(instanceDir, layout.configDir);
-    const existingConfigFiles = fs.existsSync(configDir) ? fs.readdirSync(configDir) : [];
+    const existingConfigFiles = fs.existsSync(configDir)
+      ? fs.readdirSync(configDir).filter((cfg) => /\.(toml|json)$/.test(cfg))
+      : [];
 
     const files = fs.readdirSync(modsDir);
     const modItems: ModFileInfo[] = [];
@@ -80,7 +84,7 @@ export class ModFileManager {
       const cleanModName = active.slice(0, active.length - path.extname(active).length).toLowerCase();
 
       // Check if there is a config with matching prefix in config/
-      const hasConfig = existingConfigFiles.some((cfg) => {
+      const configFiles = existingConfigFiles.filter((cfg) => {
         const cleanCfgName = cfg.replace(/\.(toml|json)$/, '').toLowerCase();
         return cleanCfgName.includes(cleanModName) || cleanModName.includes(cleanCfgName);
       });
@@ -92,7 +96,8 @@ export class ModFileManager {
         sizeFormatted: this.formatFileSize(stat.size),
         modifiedAt: stat.mtime.toISOString(),
         enabled,
-        hasConfig
+        hasConfig: configFiles.length > 0,
+        configFiles
       });
     }
 
@@ -137,7 +142,8 @@ export class ModFileManager {
       sizeFormatted: this.formatFileSize(stat.size),
       modifiedAt: stat.mtime.toISOString(),
       enabled,
-      hasConfig: false
+      hasConfig: false,
+      configFiles: []
     };
   }
 

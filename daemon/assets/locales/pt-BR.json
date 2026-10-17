@@ -59,7 +59,8 @@
     },
     "console": {
       "placeholder": "Digite um comando do console...",
-      "send": "Enviar"
+      "send": "Enviar",
+      "clear": "Limpar console"
     },
     "copy_ip_title": "Clique para copiar o IP",
     "console_source": "stdout",
@@ -253,6 +254,8 @@
     }
   },
   "mods": {
+    "file_search_placeholder": "Buscar arquivos de configuração...",
+    "no_file_matches": "Nenhum arquivo de configuração corresponde à busca.",
     "search_placeholder": "Filtrar entradas de configuração...",
     "save": "Salvar configuração",
     "saved": "Salvo!",
@@ -374,7 +377,7 @@
     "remove_imported_desc": "\"{{name}}\" desaparecerá do Hosty. A pasta e os arquivos NÃO são excluídos, então você pode importá-lo novamente depois.",
     "delete_title": "Excluir servidor?",
     "delete_created_desc": "\"{{name}}\" e todos os seus arquivos (mundos, mods, configurações) serão excluídos permanentemente do disco.",
-    "language": "Idioma"
+    "settings": "Configurações"
   },
   "server_icon": {
     "hint_game": "Também é usado como ícone do servidor dentro de {{game}} ({{file}}). Deve ser um PNG de {{size}}×{{size}}: qualquer imagem é recortada e redimensionada automaticamente.",
@@ -596,5 +599,324 @@
     "firewall_button": "Permitir a porta {{port}} no firewall",
     "firewall_confirm": "Criar regras de entrada no firewall para a porta {{port}}? Exige administrador.",
     "firewall_done": "Regras de firewall adicionadas para a porta {{port}}"
+  },
+  "settings": {
+    "title": "Configurações",
+    "back": "Voltar aos servidores",
+    "search_placeholder": "Buscar configurações",
+    "no_results": "Nenhuma configuração corresponde a \"{{query}}\".",
+    "reset": "Restaurar padrão",
+    "modified": "Diferente do padrão",
+    "sections": {
+      "general": {
+        "title": "Geral",
+        "description": "Idioma, inicialização e confirmações."
+      },
+      "appearance": {
+        "title": "Aparência",
+        "description": "Tema, cores, densidade e animações do app."
+      },
+      "terminal": {
+        "title": "Terminal",
+        "description": "Aparência e comportamento do console do servidor."
+      },
+      "servers": {
+        "title": "Servidores",
+        "description": "Padrões para novos servidores e onde o Hosty guarda seus arquivos."
+      },
+      "advanced": {
+        "title": "Avançado",
+        "description": "Faça backup, restaure ou redefina suas preferências."
+      }
+    },
+    "general": {
+      "language": {
+        "label": "Idioma",
+        "description": "Idioma da interface. Traduções da comunidade aparecem aqui depois de instaladas."
+      },
+      "launch_at_login": {
+        "label": "Iniciar o Hosty com o sistema",
+        "description": "Abre o Hosty automaticamente ao entrar no computador.",
+        "failed": "Não foi possível alterar a inicialização automática"
+      },
+      "check_updates": {
+        "label": "Verificar atualizações ao abrir",
+        "description": "Procura uma nova versão do Hosty alguns segundos após abrir."
+      },
+      "confirm_stop": {
+        "label": "Confirmar antes de parar com jogadores online",
+        "description": "Pergunta antes de parar ou reiniciar um servidor com jogadores conectados."
+      }
+    },
+    "appearance": {
+      "mode": {
+        "label": "Modo de cor",
+        "description": "Sistema segue o sistema operacional e muda em tempo real.",
+        "options": {
+          "system": "Sistema",
+          "light": "Claro",
+          "dark": "Escuro"
+        }
+      },
+      "theme": {
+        "label": "Tema",
+        "description": "Paleta de cores de todo o app. Cada tema tem versão clara e escura.",
+        "options": {
+          "hosty": "Hosty",
+          "contrast": "Alto contraste",
+          "midnight": "Meia-noite",
+          "forest": "Floresta",
+          "sand": "Areia"
+        }
+      },
+      "accent": {
+        "label": "Cor de destaque",
+        "description": "Usada em seleções, barras de progresso e destaques.",
+        "custom": "Personalizada",
+        "options": {
+          "blue": "Azul",
+          "violet": "Violeta",
+          "green": "Verde",
+          "orange": "Laranja",
+          "pink": "Rosa",
+          "red": "Vermelho",
+          "teal": "Turquesa"
+        }
+      },
+      "tokens": {
+        "label": "Cores avançadas",
+        "description": "Altere cores individuais do tema. As mudanças valem para o modo em uso.",
+        "editing_light": "Editando as cores do modo claro.",
+        "editing_dark": "Editando as cores do modo escuro.",
+        "contrast_warning": "Contraste baixo: {{tokens}} pode ficar difícil de ler sobre a cor da superfície.",
+        "names": {
+          "canvas": "Fundo",
+          "surface": "Superfície",
+          "surface-2": "Superfície (elevada)",
+          "surface-3": "Superfície (hover)",
+          "ink": "Texto",
+          "body": "Texto do corpo",
+          "mute": "Texto atenuado",
+          "hairline": "Bordas",
+          "hairline-strong": "Bordas fortes",
+          "danger-fg": "Texto de erro",
+          "success-fg": "Texto de sucesso",
+          "warning-fg": "Texto de aviso",
+          "accent-fg": "Texto de destaque"
+        }
+      },
+      "density": {
+        "label": "Densidade",
+        "description": "Compacta reduz o espaço ao redor das páginas e das linhas do console.",
+        "options": {
+          "comfortable": "Confortável",
+          "compact": "Compacta"
+        }
+      },
+      "ui_scale": {
+        "label": "Tamanho da interface",
+        "description": "Aumenta ou diminui toda a interface."
+      },
+      "motion": {
+        "label": "Animações",
+        "description": "Sistema segue a configuração de movimento reduzido do sistema operacional.",
+        "options": {
+          "system": "Sistema",
+          "full": "Completas",
+          "reduced": "Reduzidas"
+        }
+      },
+      "theme_transfer": {
+        "label": "Compartilhar tema",
+        "description": "Exporte o tema, o destaque e as cores personalizadas para compartilhar, ou importe um.",
+        "import_title": "Importar tema",
+        "import_description": "Cole um tema exportado do Hosty ou carregue o arquivo. Só as cores mudam."
+      }
+    },
+    "terminal": {
+      "preview": {
+        "label": "Prévia",
+        "description": "Cada mudança aparece aqui e no console do servidor."
+      },
+      "theme": {
+        "label": "Tema do terminal",
+        "description": "Cores do console, independentes do tema do app.",
+        "options": {
+          "app": "Seguir o app",
+          "hosty": "Hosty",
+          "paper": "Papel",
+          "solar": "Solar",
+          "vampire": "Vampiro",
+          "glacier": "Geleira",
+          "phosphor": "Fósforo"
+        }
+      },
+      "font": {
+        "label": "Fonte",
+        "description": "Fontes não instaladas usam Geist Mono.",
+        "options": {
+          "geist": "Geist Mono",
+          "cascadia": "Cascadia Mono",
+          "consolas": "Consolas",
+          "jetbrains": "JetBrains Mono",
+          "fira": "Fira Code",
+          "system": "Monoespaçada do sistema"
+        }
+      },
+      "font_size": {
+        "label": "Tamanho da fonte",
+        "description": "Tamanho do texto do console."
+      },
+      "line_height": {
+        "label": "Altura da linha",
+        "description": "Espaço entre as linhas do console."
+      },
+      "wrap": {
+        "label": "Quebrar linhas longas",
+        "description": "Desativado, as linhas longas rolam na horizontal."
+      },
+      "timestamps": {
+        "label": "Mostrar horário",
+        "description": "Mostra o horário no início de cada linha do log."
+      },
+      "highlight_levels": {
+        "label": "Destacar níveis do log",
+        "description": "Colore avisos, erros e os comandos que você envia."
+      },
+      "rules": {
+        "label": "Regras de destaque",
+        "description": "Colore linhas que correspondem a um padrão (expressão regular). Vale a primeira regra que corresponder.",
+        "empty": "Nenhuma regra ainda.",
+        "pattern": "Padrão",
+        "pattern_placeholder": "ex.: joined the game",
+        "color": "Cor",
+        "case_sensitive": "Diferenciar maiúsculas",
+        "remove": "Remover regra",
+        "invalid": "Padrão inválido: será ignorado até ser corrigido.",
+        "add": "Adicionar regra",
+        "colors": {
+          "green": "Verde",
+          "yellow": "Amarelo",
+          "red": "Vermelho",
+          "blue": "Azul",
+          "magenta": "Magenta",
+          "cyan": "Ciano",
+          "mute": "Atenuado"
+        }
+      },
+      "autoscroll": {
+        "label": "Rolagem automática",
+        "description": "Quando o console acompanha a nova saída.",
+        "options": {
+          "bottom": "Quando estiver no fim",
+          "always": "Sempre",
+          "never": "Nunca"
+        }
+      },
+      "buffer": {
+        "label": "Linhas mantidas",
+        "description": "Quantas linhas o console mantém na memória. Mais linhas usam mais memória."
+      },
+      "history": {
+        "label": "Histórico de comandos",
+        "description": "Comandos lembrados por servidor (setas para cima e para baixo). 0 desativa."
+      },
+      "clear_on_restart": {
+        "label": "Limpar ao iniciar",
+        "description": "Esvazia o console sempre que o servidor inicia."
+      },
+      "quick_commands": {
+        "label": "Comandos rápidos",
+        "description": "Botões acima do console. Oculte os do jogo ou adicione os seus.",
+        "no_games": "Nenhum jogo instalado.",
+        "game": "Jogo",
+        "from_game": "Do jogo",
+        "custom": "Seus comandos",
+        "label_field": "Rótulo",
+        "command_field": "Comando",
+        "remove": "Remover comando",
+        "add": "Adicionar comando"
+      }
+    },
+    "servers": {
+      "save_failed": "Não foi possível salvar a configuração",
+      "unavailable": "Disponível quando o daemon está conectado.",
+      "default_memory": {
+        "label": "Memória padrão",
+        "description": "Memória para novos servidores. Desativado, cada jogo usa a sua.",
+        "custom": "Personalizada"
+      },
+      "default_java": {
+        "label": "Java padrão",
+        "description": "Executável Java para novos servidores. Vazio usa o Java detectado.",
+        "placeholder": "java"
+      },
+      "default_autostart": {
+        "label": "Iniciar novos servidores com o Hosty",
+        "description": "Novos servidores iniciam sozinhos quando o Hosty abre."
+      },
+      "folders": {
+        "label": "Pastas",
+        "description": "Onde o Hosty guarda servidores, pacotes de jogos e traduções.",
+        "instances": "Servidores",
+        "games": "Pacotes de jogos",
+        "locales": "Traduções",
+        "open": "Abrir",
+        "open_failed": "Não foi possível abrir a pasta",
+        "hint": "Esses locais vêm do ambiente (MC_NEXUS_*); alterá-los exige reiniciar."
+      }
+    },
+    "advanced": {
+      "transfer": {
+        "label": "Preferências",
+        "description": "Exporte todas as preferências como JSON, importe um arquivo salvo ou restaure os padrões.",
+        "reset_all": "Redefinir tudo",
+        "import_title": "Importar preferências",
+        "import_description": "Cole preferências exportadas do Hosty ou carregue o arquivo. Suas preferências atuais serão substituídas.",
+        "reset_title": "Redefinir todas as preferências?",
+        "reset_description": "Tema, terminal e preferências gerais voltam ao padrão. Os servidores não são afetados.",
+        "reset_done": "Preferências restauradas ao padrão"
+      },
+      "daemon": {
+        "label": "Daemon",
+        "description": "Endereço do serviço em segundo plano que executa seus servidores.",
+        "open_logs": "Abrir logs"
+      },
+      "clear_history": {
+        "label": "Histórico de comandos",
+        "description": "Esquece os comandos do console lembrados de todos os servidores.",
+        "action": "Limpar histórico",
+        "done": "Histórico de comandos limpo"
+      },
+      "mock": {
+        "label": "Telemetria simulada",
+        "description": "Só desenvolvimento: preenche o painel com jogadores e métricas falsos.",
+        "disabled": "Os dados simulados estão desativados no daemon."
+      }
+    },
+    "transfer": {
+      "copy": "Copiar",
+      "save_file": "Salvar arquivo",
+      "import": "Importar",
+      "copied": "Copiado para a área de transferência",
+      "copy_failed": "Não foi possível copiar",
+      "imported": "Importado",
+      "invalid": "Não é uma exportação válida do Hosty.",
+      "too_large": "O arquivo é grande demais.",
+      "cancel": "Cancelar",
+      "apply": "Importar",
+      "paste_label": "JSON exportado",
+      "paste_placeholder": "Cole aqui o JSON exportado",
+      "load_file": "Carregar arquivo"
+    },
+    "stop_confirm": {
+      "title": "Há jogadores online",
+      "stop_description_one": "{{count}} jogador está conectado e será desconectado.",
+      "stop_description_other": "{{count}} jogadores estão conectados e serão desconectados.",
+      "restart_description_one": "{{count}} jogador está conectado e será desconectado durante a reinicialização.",
+      "restart_description_other": "{{count}} jogadores estão conectados e serão desconectados durante a reinicialização.",
+      "stop_action": "Parar mesmo assim",
+      "restart_action": "Reiniciar mesmo assim"
+    }
   }
 }

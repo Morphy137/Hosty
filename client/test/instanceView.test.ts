@@ -16,4 +16,12 @@ describe('instance view reset', () => {
     expect(next.players).toEqual([]);
     expect(next.inventory).toBeNull();
   });
+
+  it('keeps the live data the socket already sent when the same server is shown again', () => {
+    const live = daemonSocketReducer(INITIAL_DAEMON_SOCKET_STATE, { kind: 'message', message: { type: 'STATUS', payload: 'ONLINE' } });
+    const state = daemonSocketReducer(live, { kind: 'resetInstanceView', lines: ['a'], status: 'ONLINE', keepLive: true });
+
+    expect(state.status).toBe('ONLINE');
+    expect(state.logs).toEqual(['a']);
+  });
 });

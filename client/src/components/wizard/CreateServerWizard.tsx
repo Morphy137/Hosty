@@ -72,6 +72,8 @@ interface CreateServerWizardProps {
   onCancelInstall: () => void;
   /** Called from the final step; `start` requests an immediate server start. */
   onFinish: (instanceId: string, start: boolean) => void;
+  /** Memory chosen in Settings > Servers for every new server (overrides the game default). */
+  defaultMemoryMb?: number | null;
 }
 
 const SLIDE = {
@@ -90,7 +92,8 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
   provisionLogs,
   provisionJob,
   onCancelInstall,
-  onFinish
+  onFinish,
+  defaultMemoryMb
 }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -138,7 +141,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
       port: nextFreePort(selected.defaultPort, selected.portStride, instances, games),
       maxPlayers: selected.defaultMaxPlayers,
       ramMb: Math.min(
-        selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
+        defaultMemoryMb ?? selected.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
         maxAllocatableRamMb(systemRamMb)
       )
     };
@@ -426,6 +429,7 @@ export const CreateServerWizard: React.FC<CreateServerWizardProps> = ({
                   game={game}
                   instances={instances}
                   systemRamMb={systemRamMb}
+                  defaultMemoryMb={defaultMemoryMb}
                 />
               )}
               {step === 'review' && (

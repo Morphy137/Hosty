@@ -62,7 +62,7 @@ export const GameStep: React.FC<GameStepProps> = ({ draft, disabled, games, onSe
               <span
                 className={cn(
                   'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                  isSelected ? 'border-accent bg-accent text-white' : 'border-hairline-strong'
+                  isSelected ? 'border-accent bg-accent text-on-accent' : 'border-hairline-strong'
                 )}
               >
                 {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}

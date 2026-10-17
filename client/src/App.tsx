@@ -18,8 +18,13 @@ import {
   cancelProvisionJob,
   fetchConsoleBuffer
 } from './api/daemonApi';
-import type { DaemonErrorPayload, InstanceSettings, PlayerState, ServerStatus } from './types/daemon';
-import { useTheme } from './hooks/useTheme';
+import type { DaemonAction, DaemonErrorPayload, InstanceSettings, PlayerState, ServerStatus } from './types/daemon';
+import { usePreferences } from './settings/preferencesContext';
+import { useAppSettings } from './hooks/useAppSettings';
+import { SettingsView } from './components/settings/SettingsView';
+import type { SettingsEnvironment } from './components/settings/settingsEnvironment';
+import { Dialog } from './components/ui/Dialog';
+import { Button } from './components/ui/Button';
 import { TitleBar } from './components/layout/TitleBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { ServerHeader } from './components/layout/ServerHeader';
@@ -30,7 +35,7 @@ import { useLocales } from './hooks/useLocales';
 import { useAppVersion } from './hooks/useAppVersion';
 import { useMetricsHistory } from './hooks/useMetricsHistory';
 import { useToast } from './components/ui/toastContext';
-import { isTauriRuntime } from './config/daemon';
+import { getDaemonHttpUrl, isTauriRuntime } from './config/daemon';
 import { ErrorAlert } from './components/common/ErrorAlert';
 import { OverviewTab } from './components/tabs/OverviewTab';
 import { PlayersTab } from './components/tabs/PlayersTab';
@@ -50,8 +55,12 @@ import { UpdateBanner } from './components/common/UpdateBanner';
 
 export default function App() {
   const { t } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
-  const updater = useAppUpdater();
+  const { preferences, isDark, update: updatePreferences } = usePreferences();
+  const updater = useAppUpdater(preferences.general.checkUpdatesOnStart);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+  // Stop/restart requests waiting for confirmation because players are online.
+  const [pendingStop, setPendingStop] = useState<'STOP' | 'RESTART' | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [localError, setLocalError] = useState<DaemonErrorPayload | null>(null);
   const [wizard, setWizard] = useState<{ open: boolean; origin: WizardOrigin }>({ open: false, origin: 'create' });
@@ -76,8 +85,34 @@ export default function App() {
     sendAction,
     clearError,
     resetProvisionLogs,
-    resetInstanceView
+    resetInstanceView,
+    setConsoleLimit,
+    clearConsole
   } = useDaemonSocket();
+
+  const { bufferLines, clearOnRestart } = preferences.terminal;
+  useEffect(() => {
+    setConsoleLimit(bufferLines);
+  }, [bufferLines, setConsoleLimit]);
+
+  // Settings > Terminal > "Clear on start": a fresh console every time the server boots.
+  const previousStatusRef = useRef(status);
+  useEffect(() => {
+    if (clearOnRestart && status === 'STARTING' && previousStatusRef.current !== 'STARTING') clearConsole();
+    previousStatusRef.current = status;
+  }, [clearConsole, clearOnRestart, status]);
+
+  // Ctrl+, opens and closes the settings screen.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+        event.preventDefault();
+        setIsSettingsOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const health = useDaemonHealth(connectionState);
 
@@ -140,6 +175,7 @@ export default function App() {
   const appVersion = useAppVersion();
   const activeGame = games.find((game) => game.id === instances.activeInstance?.gameId);
   const locales = useLocales(connectionState);
+  const appSettings = useAppSettings(connectionState);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const tabs = availableTabs(activeGame);
   const currentTab = resolveActiveTab(activeTab, tabs);
@@ -219,13 +255,52 @@ export default function App() {
     }
   }, [handleRunPlayerAction, inspectingPlayer, inventoryClearAction, sendAction]);
 
-  const handleRestartServer = useCallback(async () => {
+  const restartServerNow = useCallback(async () => {
     try {
       await instances.restartServer(instances.activeId);
     } catch (err) {
       handleError(err);
     }
   }, [handleError, instances]);
+
+  const needsStopConfirmation = preferences.general.confirmStopWithPlayers && players.length > 0;
+
+  const handleRestartServer = useCallback(async () => {
+    if (needsStopConfirmation) {
+      setPendingStop('RESTART');
+      return;
+    }
+    await restartServerNow();
+  }, [needsStopConfirmation, restartServerNow]);
+
+  // Stopping with players online asks first (Settings > General); every other action goes straight through.
+  const handleHeaderAction = useCallback(
+    (action: DaemonAction, data?: string) => {
+      if (action === 'STOP' && needsStopConfirmation) {
+        setPendingStop('STOP');
+        return true;
+      }
+      return sendAction(action, data);
+    },
+    [needsStopConfirmation, sendAction]
+  );
+
+  const confirmPendingStop = () => {
+    if (pendingStop === 'STOP') sendAction('STOP');
+    if (pendingStop === 'RESTART') void restartServerNow();
+    setPendingStop(null);
+  };
+
+  const settingsEnv: SettingsEnvironment = {
+    games,
+    languages: locales.options,
+    currentLanguage: locales.current,
+    onChangeLanguage: (code) => void locales.select(code),
+    appSettings,
+    isDesktop: isTauriRuntime(),
+    daemonUrl: getDaemonHttpUrl(),
+    onMock: import.meta.env.DEV && health?.mockEnabled ? () => sendAction('MOCK') : undefined
+  };
 
   const handleCreateServer = useCallback(
     async (params: {
@@ -342,14 +417,12 @@ export default function App() {
           activeInstanceId={instances.activeId}
           statuses={instanceStatuses}
           onSelectInstance={(id) => {
+            setIsSettingsOpen(false);
             void instances.selectInstance(id);
           }}
           onCreate={() => openWizard('create')}
           onImport={() => openWizard('import')}
           onOpenGamePacks={() => setIsPacksOpen(true)}
-          languages={locales.options}
-          currentLanguage={locales.current}
-          onChangeLanguage={(code) => void locales.select(code)}
           onEditInstance={(id) => {
             void instances.selectInstance(id).then(() => setIsEditModalOpen(true));
           }}
@@ -372,8 +445,10 @@ export default function App() {
           onRemoveInstance={async (id) => {
             await instances.deleteInstance(id).catch(() => undefined);
           }}
-          theme={theme}
-          onToggleTheme={toggleTheme}
+          isDark={isDark}
+          onToggleTheme={() => updatePreferences('appearance', { mode: isDark ? 'light' : 'dark' })}
+          onOpenSettings={() => setIsSettingsOpen((open) => !open)}
+          isSettingsOpen={isSettingsOpen}
           appVersion={appVersion}
           onCheckUpdates={isTauriRuntime() ? handleManualUpdateCheck : undefined}
           isCheckingUpdates={updater.isChecking}
@@ -381,7 +456,9 @@ export default function App() {
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          {instances.activeInstance && !hasNoServers && (
+          {isSettingsOpen && <SettingsView env={settingsEnv} onClose={closeSettings} />}
+
+          {!isSettingsOpen && instances.activeInstance && !hasNoServers && (
             <ServerHeader
               instance={instances.activeInstance}
               status={status}
@@ -389,7 +466,7 @@ export default function App() {
               tabs={tabs}
               activeTab={currentTab}
               onTabChange={setActiveTab}
-              onSendAction={sendAction}
+              onSendAction={handleHeaderAction}
               onRestart={handleRestartServer}
               onEdit={() => setIsEditModalOpen(true)}
             />
@@ -397,7 +474,7 @@ export default function App() {
 
           <ErrorAlert error={activeError} onDismiss={handleDismissError} />
 
-          <main className="flex-1 overflow-hidden">
+          <main className={isSettingsOpen ? 'hidden' : 'flex-1 overflow-hidden'}>
             {hasNoServers || !instances.activeInstance ? (
               instances.isLoading ? (
                 <div className="space-y-4 p-6">
@@ -410,7 +487,7 @@ export default function App() {
                 />
               )
             ) : (
-              <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-6 p-6">
+              <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-[var(--page-gap)] p-[var(--page-padding)]">
                 {currentTab === 'overview' && (
                   <OverviewTab
                     metrics={metrics}
@@ -419,6 +496,7 @@ export default function App() {
                     instance={instances.activeInstance}
                     status={status}
                     onSendCommand={handleSendCommand}
+                    onClearConsole={clearConsole}
                     onRunAction={handleRunPlayerAction}
                     onOpenEditModal={() => setIsEditModalOpen(true)}
                     onRestart={handleRestartServer}
@@ -447,7 +525,11 @@ export default function App() {
                     onFilterChange={modFiles.setFilter}
                     onToggleMod={modFiles.toggleMod}
                     onDeleteMod={modFiles.deleteMod}
-                    onOpenConfigTab={() => setActiveTab('mods')}
+                    onOpenConfigTab={(configFile) => {
+                      modConfigs.setFileFilter('');
+                      modConfigs.selectFile(configFile);
+                      setActiveTab('mods');
+                    }}
                     onBrowseCatalog={activeGame?.modSources?.length ? () => setIsCatalogOpen(true) : undefined}
                   />
                 )}
@@ -459,6 +541,8 @@ export default function App() {
                     entries={modConfigs.entries}
                     filter={modConfigs.filter}
                     onFilterChange={modConfigs.setFilter}
+                    fileFilter={modConfigs.fileFilter}
+                    onFileFilterChange={modConfigs.setFileFilter}
                     onSelectFile={modConfigs.selectFile}
                     onUpdateEntry={modConfigs.updateEntry}
                     onSave={async () => {
@@ -511,6 +595,28 @@ export default function App() {
         provisionJob={provisionJob}
         onCancelInstall={handleCancelInstall}
         onFinish={handleWizardFinish}
+        defaultMemoryMb={appSettings.data?.settings.defaultMemoryMb}
+      />
+
+      <Dialog
+        open={pendingStop !== null}
+        onOpenChange={(open) => !open && setPendingStop(null)}
+        size="sm"
+        title={t('settings.stop_confirm.title', { count: players.length })}
+        description={t(
+          pendingStop === 'RESTART' ? 'settings.stop_confirm.restart_description' : 'settings.stop_confirm.stop_description',
+          { count: players.length }
+        )}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setPendingStop(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="danger" onClick={confirmPendingStop}>
+              {t(pendingStop === 'RESTART' ? 'settings.stop_confirm.restart_action' : 'settings.stop_confirm.stop_action')}
+            </Button>
+          </>
+        }
       />
 
       <GamePacksDialog

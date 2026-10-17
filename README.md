@@ -40,7 +40,7 @@ Every game is a **pack** (an add-on) that Hosty copies into its games folder the
 - **Guided server creation** — a step-by-step wizard picks the game, installs the server for you (including Forge and NeoForge), lets you pick the game version and the loader build, detects the loader of a jar you bring and sets sensible defaults.
 - **One-click control** — a single Start/Stop button per server, with restart and a confirmed force-close in the menu, and safe saving on shutdown.
 - **Live dashboard** — watch CPU, memory, server performance and who is online, in real time.
-- **Live console** — read the server output and send commands, with handy shortcuts.
+- **Live console** — read the server output and send commands, with command history, your own quick commands and highlight rules.
 - **Player management** — see where everyone is and heal, gift, hurt, kick or inspect inventories without typing commands.
 - **Mods made easy** — enable, disable or remove mods, and edit their settings from the app.
 - **Easy settings** — tweak server properties with a clean editor instead of raw text files.
@@ -48,7 +48,8 @@ Every game is a **pack** (an add-on) that Hosty copies into its games folder the
 - **Multiple servers** — keep several servers in the sidebar and switch between them instantly.
 - **Signed game catalog** — install and update game packs from inside the app; every file is verified against a signature before it is installed.
 - **Extensible** — add games with a small [game pack](docs/game-packs.md) and connect in-game bridges through an open [protocol](docs/bridge-protocol.md).
-- **Light & dark themes**, available in **English** and **Spanish** (more languages can be added as community translations).
+- **Make it yours** — a Settings screen (`Ctrl+,`) with light/dark/system mode, themes, accent colours, per-colour overrides, terminal themes and fonts, interface size and defaults for new servers.
+- Available in **English** and **Spanish** (more languages can be added as community translations).
 
 <table>
   <tr>
@@ -58,6 +59,14 @@ Every game is a **pack** (an add-on) that Hosty copies into its games folder the
   <tr>
     <td align="center"><sub>Manage players at a glance</sub></td>
     <td align="center"><sub>Create a server in a few steps</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/settings-appearance.png" alt="Appearance settings" /></td>
+    <td><img src="docs/screenshots/settings-terminal.png" alt="Terminal settings" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Themes, accents and custom colours</sub></td>
+    <td align="center"><sub>Terminal themes, fonts and highlighting</sub></td>
   </tr>
 </table>
 

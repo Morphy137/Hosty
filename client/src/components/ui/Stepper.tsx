@@ -36,7 +36,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, current, onSelect, disa
             <span
               className={cn(
                 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-mono',
-                isPast && 'border-accent bg-accent text-white',
+                isPast && 'border-accent bg-accent text-on-accent',
                 isCurrent && 'border-accent text-accent-fg',
                 !isPast && !isCurrent && 'border-hairline-strong text-mute'
               )}

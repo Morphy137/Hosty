@@ -6,7 +6,8 @@ import App from './App.tsx'
 import { DaemonGate } from './components/common/DaemonGate'
 import { TooltipProvider } from './components/ui/Tooltip'
 import { ToastProvider } from './components/ui/Toast'
-import { MotionConfig } from 'motion/react'
+import { PreferencesProvider } from './settings/PreferencesProvider'
+import { applyInitialAppearance } from './settings/bootstrap'
 import { isTauriRuntime, openExternalUrl } from './config/daemon'
 
 // The WebView's native menu (Back / Refresh / Print / Share) is not meant for an app UI.
@@ -28,9 +29,11 @@ document.addEventListener('click', (event) => {
   void openExternalUrl(href)
 })
 
+applyInitialAppearance()
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MotionConfig reducedMotion="user">
+    <PreferencesProvider>
       <TooltipProvider>
         <ToastProvider>
           <DaemonGate>
@@ -38,6 +41,6 @@ createRoot(document.getElementById('root')!).render(
           </DaemonGate>
         </ToastProvider>
       </TooltipProvider>
-    </MotionConfig>
+    </PreferencesProvider>
   </StrictMode>,
 )

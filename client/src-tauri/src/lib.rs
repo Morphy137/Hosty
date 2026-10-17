@@ -244,6 +244,11 @@ pub fn run() {
       {
         app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
         app.handle().plugin(tauri_plugin_process::init())?;
+        // Settings > General > "Start Hosty with Windows" (registry Run key on Windows).
+        app.handle().plugin(tauri_plugin_autostart::init(
+          tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+          None,
+        ))?;
       }
 
       if cfg!(debug_assertions) {

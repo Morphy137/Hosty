@@ -12,8 +12,12 @@
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "core:window:allow-is-maximized",
+    "core:webview:allow-set-webview-zoom",
     "dialog:default",
     "updater:default",
-    "process:default"
+    "process:default",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

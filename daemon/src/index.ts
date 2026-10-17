@@ -29,6 +29,7 @@ import { DaemonError, toErrorResponse } from './errors';
 import { detectJavaEnvironment, resolveJavaExecutable } from './core/EnvironmentDetector';
 import { inspectServerFolder } from './core/FolderInspector';
 import { openFolder } from './core/FolderOpener';
+import { APP_SETTINGS_FILE, AppSettingsStore, parseAppSettingsPatch } from './core/AppSettingsStore';
 import { BackupManager } from './core/BackupManager';
 import { firewallRuleName, getPublicIp, isValidPort, listLanAddresses, openFirewallPort } from './core/NetworkInfo';
 import { createPackFromTemplate } from './core/gamepacks/PackTemplate';
@@ -92,6 +93,15 @@ const wss = new WebSocketServer({ server });
 // Instance Manager oversees all folders under instances/
 const instancesRootDir = path.dirname(config.instanceDir);
 const instanceManager = new InstanceManager(instancesRootDir, config.instanceId);
+const appSettings = new AppSettingsStore(path.join(instancesRootDir, APP_SETTINGS_FILE));
+instanceManager.setCreationDefaults(() => {
+  const current = appSettings.get();
+  return {
+    memoryMb: current.defaultMemoryMb,
+    javaPath: current.defaultJavaPath || undefined,
+    autostart: current.defaultAutostart
+  };
+});
 
 // Supervisor Registry for multi-instance process management
 const registry = new SupervisorRegistry({
@@ -228,6 +238,52 @@ app.get('/api/health', (_req, res) => {
     serverStatus: sup ? sup.getStatus() : 'OFFLINE',
     activeInstance: instanceManager.getActiveInstanceId() || null
   });
+});
+
+// ---- App-wide settings (Settings > Servers) -----------------------------------------------------
+/** Folders the settings screen can show and open; ids are fixed so no path comes from the client. */
+const APP_FOLDERS = {
+  instances: () => instancesRootDir,
+  games: () => config.gamesDir,
+  locales: () => config.localesDir
+} as const;
+type AppFolderId = keyof typeof APP_FOLDERS;
+const isAppFolderId = (value: unknown): value is AppFolderId =>
+  typeof value === 'string' && Object.prototype.hasOwnProperty.call(APP_FOLDERS, value);
+
+const appSettingsResponse = () => ({
+  settings: appSettings.get(),
+  folders: Object.fromEntries(Object.entries(APP_FOLDERS).map(([id, resolve]) => [id, resolve()]))
+});
+
+app.get('/api/settings', (_req, res) => {
+  res.json(appSettingsResponse());
+});
+
+app.put('/api/settings', (req, res, next) => {
+  try {
+    appSettings.update(parseAppSettingsPatch(req.body));
+    res.json(appSettingsResponse());
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/settings/folders/:id/open', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isAppFolderId(id)) throw new DaemonError('INVALID_PAYLOAD', `Unknown folder "${id}".`);
+    const dir = APP_FOLDERS[id]();
+    fs.mkdirSync(dir, { recursive: true });
+    try {
+      openFolder(dir);
+    } catch (error) {
+      throw new DaemonError('INVALID_FOLDER', error instanceof Error ? error.message : String(error));
+    }
+    res.json({ ok: true, dir });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // System Environment Check API

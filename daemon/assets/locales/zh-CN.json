@@ -59,7 +59,8 @@
     },
     "console": {
       "placeholder": "输入控制台命令...",
-      "send": "发送"
+      "send": "发送",
+      "clear": "清空控制台"
     },
     "copy_ip_title": "点击复制 IP",
     "console_source": "stdout",
@@ -253,6 +254,8 @@
     }
   },
   "mods": {
+    "file_search_placeholder": "搜索配置文件...",
+    "no_file_matches": "没有匹配搜索的配置文件。",
     "search_placeholder": "筛选配置项...",
     "save": "保存配置",
     "saved": "已保存！",
@@ -374,7 +377,7 @@
     "remove_imported_desc": "“{{name}}”将从 Hosty 中消失。其文件夹和文件不会被删除，之后可以重新导入。",
     "delete_title": "删除服务器？",
     "delete_created_desc": "“{{name}}”及其所有文件（世界、模组、配置）将从磁盘永久删除。",
-    "language": "语言"
+    "settings": "设置"
   },
   "server_icon": {
     "hint_game": "也会作为 {{game}} 内的服务器图标（{{file}}）。必须是 {{size}}×{{size}} 的 PNG：任何图片都会自动裁剪并缩放。",
@@ -596,5 +599,324 @@
     "firewall_button": "在防火墙中允许端口 {{port}}",
     "firewall_confirm": "为端口 {{port}} 创建入站防火墙规则？需要管理员权限。",
     "firewall_done": "已为端口 {{port}} 添加防火墙规则"
+  },
+  "settings": {
+    "title": "设置",
+    "back": "返回服务器",
+    "search_placeholder": "搜索设置",
+    "no_results": "没有与“{{query}}”匹配的设置。",
+    "reset": "恢复默认值",
+    "modified": "已更改默认值",
+    "sections": {
+      "general": {
+        "title": "常规",
+        "description": "语言、启动和确认。"
+      },
+      "appearance": {
+        "title": "外观",
+        "description": "应用的主题、颜色、密度和动画。"
+      },
+      "terminal": {
+        "title": "终端",
+        "description": "服务器控制台的外观和行为。"
+      },
+      "servers": {
+        "title": "服务器",
+        "description": "新服务器的默认值以及 Hosty 存放文件的位置。"
+      },
+      "advanced": {
+        "title": "高级",
+        "description": "备份、恢复或重置你的偏好设置。"
+      }
+    },
+    "general": {
+      "language": {
+        "label": "语言",
+        "description": "界面语言。安装后社区翻译会显示在这里。"
+      },
+      "launch_at_login": {
+        "label": "随系统启动 Hosty",
+        "description": "登录电脑时自动打开 Hosty。",
+        "failed": "无法更改开机启动设置"
+      },
+      "check_updates": {
+        "label": "启动时检查更新",
+        "description": "Hosty 打开几秒后检查新版本。"
+      },
+      "confirm_stop": {
+        "label": "有玩家在线时停止前确认",
+        "description": "停止或重启有玩家连接的服务器前先询问。"
+      }
+    },
+    "appearance": {
+      "mode": {
+        "label": "颜色模式",
+        "description": "“系统”跟随操作系统并实时切换。",
+        "options": {
+          "system": "系统",
+          "light": "浅色",
+          "dark": "深色"
+        }
+      },
+      "theme": {
+        "label": "主题",
+        "description": "整个应用的配色。每个主题都有浅色和深色版本。",
+        "options": {
+          "hosty": "Hosty",
+          "contrast": "高对比度",
+          "midnight": "午夜",
+          "forest": "森林",
+          "sand": "沙丘"
+        }
+      },
+      "accent": {
+        "label": "强调色",
+        "description": "用于选中项、进度条和高亮。",
+        "custom": "自定义",
+        "options": {
+          "blue": "蓝色",
+          "violet": "紫色",
+          "green": "绿色",
+          "orange": "橙色",
+          "pink": "粉色",
+          "red": "红色",
+          "teal": "青色"
+        }
+      },
+      "tokens": {
+        "label": "高级颜色",
+        "description": "覆盖主题中的单个颜色。更改应用于当前使用的模式。",
+        "editing_light": "正在编辑浅色模式的颜色。",
+        "editing_dark": "正在编辑深色模式的颜色。",
+        "contrast_warning": "对比度低：{{tokens}} 在表面颜色上可能难以阅读。",
+        "names": {
+          "canvas": "背景",
+          "surface": "表面",
+          "surface-2": "表面（凸起）",
+          "surface-3": "表面（悬停）",
+          "ink": "文字",
+          "body": "正文",
+          "mute": "弱化文字",
+          "hairline": "边框",
+          "hairline-strong": "强边框",
+          "danger-fg": "错误文字",
+          "success-fg": "成功文字",
+          "warning-fg": "警告文字",
+          "accent-fg": "强调文字"
+        }
+      },
+      "density": {
+        "label": "密度",
+        "description": "紧凑会减少页面和控制台行周围的间距。",
+        "options": {
+          "comfortable": "舒适",
+          "compact": "紧凑"
+        }
+      },
+      "ui_scale": {
+        "label": "界面大小",
+        "description": "放大或缩小整个界面。"
+      },
+      "motion": {
+        "label": "动画",
+        "description": "“系统”跟随操作系统的减少动态效果设置。",
+        "options": {
+          "system": "系统",
+          "full": "完整",
+          "reduced": "减少"
+        }
+      },
+      "theme_transfer": {
+        "label": "分享主题",
+        "description": "导出主题、强调色和自定义颜色以便分享，或导入一个主题。",
+        "import_title": "导入主题",
+        "import_description": "粘贴导出的 Hosty 主题或加载其文件。只会更改颜色。"
+      }
+    },
+    "terminal": {
+      "preview": {
+        "label": "预览",
+        "description": "下面的每项更改都会显示在这里和服务器控制台中。"
+      },
+      "theme": {
+        "label": "终端主题",
+        "description": "控制台的颜色，独立于应用主题。",
+        "options": {
+          "app": "跟随应用",
+          "hosty": "Hosty",
+          "paper": "纸张",
+          "solar": "日光",
+          "vampire": "吸血鬼",
+          "glacier": "冰川",
+          "phosphor": "荧光"
+        }
+      },
+      "font": {
+        "label": "字体",
+        "description": "未安装的字体会回退到 Geist Mono。",
+        "options": {
+          "geist": "Geist Mono",
+          "cascadia": "Cascadia Mono",
+          "consolas": "Consolas",
+          "jetbrains": "JetBrains Mono",
+          "fira": "Fira Code",
+          "system": "系统等宽字体"
+        }
+      },
+      "font_size": {
+        "label": "字号",
+        "description": "控制台文字的大小。"
+      },
+      "line_height": {
+        "label": "行高",
+        "description": "控制台行之间的间距。"
+      },
+      "wrap": {
+        "label": "自动换行",
+        "description": "关闭后，长行会水平滚动。"
+      },
+      "timestamps": {
+        "label": "显示时间",
+        "description": "在每行日志开头显示时间。"
+      },
+      "highlight_levels": {
+        "label": "高亮日志级别",
+        "description": "为警告、错误和你发送的命令着色。"
+      },
+      "rules": {
+        "label": "高亮规则",
+        "description": "为匹配某个模式（正则表达式）的行着色。第一条匹配的规则生效。",
+        "empty": "还没有规则。",
+        "pattern": "模式",
+        "pattern_placeholder": "例如 joined the game",
+        "color": "颜色",
+        "case_sensitive": "区分大小写",
+        "remove": "删除规则",
+        "invalid": "模式无效：修正前会被忽略。",
+        "add": "添加规则",
+        "colors": {
+          "green": "绿色",
+          "yellow": "黄色",
+          "red": "红色",
+          "blue": "蓝色",
+          "magenta": "品红",
+          "cyan": "青色",
+          "mute": "弱化"
+        }
+      },
+      "autoscroll": {
+        "label": "自动滚动",
+        "description": "控制台何时跟随新的输出。",
+        "options": {
+          "bottom": "位于底部时",
+          "always": "始终",
+          "never": "从不"
+        }
+      },
+      "buffer": {
+        "label": "保留行数",
+        "description": "控制台在内存中保留的行数。行数越多占用内存越多。"
+      },
+      "history": {
+        "label": "命令历史",
+        "description": "按服务器记住的命令（上下方向键）。0 表示关闭。"
+      },
+      "clear_on_restart": {
+        "label": "启动时清空",
+        "description": "每次服务器启动时清空控制台。"
+      },
+      "quick_commands": {
+        "label": "快捷命令",
+        "description": "控制台上方的按钮。隐藏游戏自带的命令或添加你自己的命令。",
+        "no_games": "没有已安装的游戏。",
+        "game": "游戏",
+        "from_game": "游戏自带",
+        "custom": "你的命令",
+        "label_field": "标签",
+        "command_field": "命令",
+        "remove": "删除命令",
+        "add": "添加命令"
+      }
+    },
+    "servers": {
+      "save_failed": "无法保存设置",
+      "unavailable": "连接守护进程后可用。",
+      "default_memory": {
+        "label": "默认内存",
+        "description": "新服务器的内存。关闭时每个游戏使用自己的默认值。",
+        "custom": "自定义"
+      },
+      "default_java": {
+        "label": "默认 Java",
+        "description": "新服务器使用的 Java 可执行文件。留空则使用检测到的 Java。",
+        "placeholder": "java"
+      },
+      "default_autostart": {
+        "label": "随 Hosty 启动新服务器",
+        "description": "新服务器会在 Hosty 打开时自动启动。"
+      },
+      "folders": {
+        "label": "文件夹",
+        "description": "Hosty 存放服务器、游戏包和翻译的位置。",
+        "instances": "服务器",
+        "games": "游戏包",
+        "locales": "翻译",
+        "open": "打开",
+        "open_failed": "无法打开文件夹",
+        "hint": "这些位置来自环境变量（MC_NEXUS_*）；更改后需要重启。"
+      }
+    },
+    "advanced": {
+      "transfer": {
+        "label": "偏好设置",
+        "description": "将所有偏好设置导出为 JSON、导入保存的文件或恢复默认值。",
+        "reset_all": "全部重置",
+        "import_title": "导入偏好设置",
+        "import_description": "粘贴导出的 Hosty 偏好设置或加载文件。当前的偏好设置将被替换。",
+        "reset_title": "重置所有偏好设置？",
+        "reset_description": "主题、终端和常规偏好设置将恢复默认值。服务器不受影响。",
+        "reset_done": "偏好设置已恢复默认值"
+      },
+      "daemon": {
+        "label": "守护进程",
+        "description": "运行你的服务器的后台服务地址。",
+        "open_logs": "打开日志"
+      },
+      "clear_history": {
+        "label": "命令历史",
+        "description": "清除为所有服务器记住的控制台命令。",
+        "action": "清除历史",
+        "done": "命令历史已清除"
+      },
+      "mock": {
+        "label": "模拟遥测",
+        "description": "仅限开发：用虚假的玩家和指标填充面板。",
+        "disabled": "守护进程已禁用模拟数据。"
+      }
+    },
+    "transfer": {
+      "copy": "复制",
+      "save_file": "保存文件",
+      "import": "导入",
+      "copied": "已复制到剪贴板",
+      "copy_failed": "无法复制到剪贴板",
+      "imported": "已导入",
+      "invalid": "这不是有效的 Hosty 导出文件。",
+      "too_large": "文件过大。",
+      "cancel": "取消",
+      "apply": "导入",
+      "paste_label": "导出的 JSON",
+      "paste_placeholder": "在此粘贴导出的 JSON",
+      "load_file": "加载文件"
+    },
+    "stop_confirm": {
+      "title": "有玩家在线",
+      "stop_description_one": "{{count}} 名玩家已连接，将被断开。",
+      "stop_description_other": "{{count}} 名玩家已连接，将被断开。",
+      "restart_description_one": "{{count}} 名玩家已连接，重启期间将被断开。",
+      "restart_description_other": "{{count}} 名玩家已连接，重启期间将被断开。",
+      "stop_action": "仍然停止",
+      "restart_action": "仍然重启"
+    }
   }
 }

@@ -19,11 +19,20 @@ interface CustomizeStepProps extends StepProps {
   game: GameDriverSummary | undefined;
   instances: InstanceInfo[];
   systemRamMb: number | undefined;
+  defaultMemoryMb?: number | null;
 }
 
 const PORT_DEBOUNCE_MS = 400;
 
-export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, disabled, game, instances, systemRamMb }) => {
+export const CustomizeStep: React.FC<CustomizeStepProps> = ({
+  draft,
+  update,
+  disabled,
+  game,
+  instances,
+  systemRamMb,
+  defaultMemoryMb
+}) => {
   const { t } = useTranslation();
   const iconInputRef = useRef<HTMLInputElement>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -34,8 +43,11 @@ export const CustomizeStep: React.FC<CustomizeStepProps> = ({ draft, update, dis
   const showMotd = hasMotd(game);
   const takenByInstance = instances.some((instance) => instance.port === draft.port);
   const ramLimit = maxAllocatableRamMb(systemRamMb);
-  // The game's declared default wins; otherwise fall back to a size derived from system memory.
-  const defaultRamMb = Math.min(game?.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb), ramLimit);
+  // The app-wide default (Settings > Servers) wins, then the game's declared one, then a size from system memory.
+  const defaultRamMb = Math.min(
+    defaultMemoryMb ?? game?.launchDefaults?.memoryMb ?? recommendedRamMb(systemRamMb),
+    ramLimit
+  );
 
   useEffect(() => {
     if (isImport || draft.port < 1 || draft.port > 65535) return;
