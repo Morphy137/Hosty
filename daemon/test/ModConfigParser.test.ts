@@ -16,20 +16,60 @@ describe('ModConfigParser', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('rejects path traversal in filename', () => {
-    expect(() => ModConfigParser.validateFilename('../evil.toml')).toThrowError(DaemonError);
-    expect(() => ModConfigParser.validateFilename('foo/bar.toml')).toThrowError(DaemonError);
-    expect(() => ModConfigParser.validateFilename('foo\\bar.toml')).toThrowError(DaemonError);
+  const writeConfig = (relative: string, content: string) => {
+    const target = path.join(tmpDir, 'config', relative);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content, 'utf-8');
+  };
+
+  it('rejects paths that leave the config folder', () => {
+    writeConfig('a.toml', 'x = 1');
+    for (const bad of ['../evil.toml', 'foo/../../evil.toml', '/etc/passwd', 'foo//bar.toml', 'foo\\..\\..\\x.toml']) {
+      expect(() => ModConfigParser.resolveFile(tmpDir, bad)).toThrowError(DaemonError);
+    }
   });
 
-  it('rejects unsupported extensions', () => {
-    expect(() => ModConfigParser.validateFilename('script.sh')).toThrowError(DaemonError);
-    expect(() => ModConfigParser.validateFilename('server.jar')).toThrowError(DaemonError);
+  it('refuses binary files and missing files', () => {
+    writeConfig('data.dat', 'x');
+    expect(() => ModConfigParser.resolveFile(tmpDir, 'data.dat')).toThrowError(DaemonError);
+    expect(() => ModConfigParser.resolveFile(tmpDir, 'nope.toml')).toThrowError(DaemonError);
   });
 
-  it('allows valid .toml and .json filenames', () => {
-    expect(ModConfigParser.validateFilename('config.toml')).toBe('config.toml');
-    expect(ModConfigParser.validateFilename('settings.json')).toBe('settings.json');
+  it('lists every text file in its folders and skips binaries', () => {
+    writeConfig('root.toml', 'a = 1');
+    writeConfig('sodium/options.json', '{}');
+    writeConfig('create/deep/client.cfg', 'x');
+    writeConfig('create/icon.png', 'x');
+    expect(ModConfigParser.listConfigs(tmpDir)).toEqual(['create/deep/client.cfg', 'root.toml', 'sodium/options.json']);
+  });
+
+  it('reads non-structured files as text and falls back to text for broken json', () => {
+    writeConfig('mod/server.cfg', 'B:enabled=true\n');
+    writeConfig('mod/broken.json', '{ // comment\n}');
+    expect(ModConfigParser.readConfig(tmpDir, 'mod/server.cfg')).toMatchObject({
+      format: 'text',
+      content: 'B:enabled=true\n'
+    });
+    expect(ModConfigParser.readConfig(tmpDir, 'mod/broken.json').format).toBe('text');
+  });
+
+  it('saves text, validating toml and json', () => {
+    writeConfig('mod/server.cfg', 'old');
+    writeConfig('mod/a.json', '{}');
+    ModConfigParser.saveConfigText(tmpDir, 'mod/server.cfg', 'new');
+    expect(fs.readFileSync(path.join(tmpDir, 'config/mod/server.cfg'), 'utf-8')).toBe('new');
+    expect(() => ModConfigParser.saveConfigText(tmpDir, 'mod/a.json', '{ nope')).toThrowError(DaemonError);
+    expect(fs.readFileSync(path.join(tmpDir, 'config/mod/a.json'), 'utf-8')).toBe('{}');
+  });
+
+  it('keeps arrays the form does not show when saving values', () => {
+    writeConfig('mod/a.json', JSON.stringify({ name: 'x', list: [1, 2], nested: { on: true } }));
+    ModConfigParser.saveConfig(tmpDir, 'mod/a.json', { name: 'y', 'nested.on': false });
+    expect(JSON.parse(fs.readFileSync(path.join(tmpDir, 'config/mod/a.json'), 'utf-8'))).toEqual({
+      name: 'y',
+      list: [1, 2],
+      nested: { on: false }
+    });
   });
 
   it('parses and saves toml configs correctly', () => {

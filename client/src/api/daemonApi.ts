@@ -9,6 +9,7 @@ import type {
   ModVersionInfo,
   ConfigEntry,
   ConfigPayload,
+  ModConfigFile,
   DaemonErrorPayload,
   HealthResponse,
   InstanceInfo,
@@ -495,13 +496,20 @@ export function fetchModConfigFiles(): Promise<string[]> {
   return request<string[]>('/api/mods/configs');
 }
 
-export function fetchModConfig(filename: string): Promise<ConfigEntry[]> {
-  return request<ConfigEntry[]>(`/api/mods/configs/${encodeURIComponent(filename)}`);
+const modConfigUrl = (filePath: string, suffix = ''): string =>
+  `/api/mods/config-file${suffix}?path=${encodeURIComponent(filePath)}`;
+
+export function fetchModConfig(filePath: string): Promise<ModConfigFile> {
+  return request<ModConfigFile>(modConfigUrl(filePath));
 }
 
-export async function saveModConfig(filename: string, entries: ConfigEntry[]): Promise<void> {
+export async function saveModConfig(filePath: string, entries: ConfigEntry[]): Promise<void> {
   const payload: ConfigPayload = toConfigPayload(entries);
-  await postJson<unknown>(`/api/mods/configs/${encodeURIComponent(filename)}`, payload);
+  await postJson<unknown>(modConfigUrl(filePath), payload);
+}
+
+export async function saveModConfigText(filePath: string, content: string): Promise<void> {
+  await postJson<unknown>(modConfigUrl(filePath, '/text'), { content });
 }
 
 // Provisioning (implemented by the game's extension: `installer`)
