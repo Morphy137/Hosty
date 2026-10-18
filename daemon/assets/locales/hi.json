@@ -267,7 +267,11 @@
       "path": "कॉन्फ़िग नोड पथ",
       "type": "प्रकार",
       "value": "मान"
-    }
+    },
+    "editor_mode": "संपादक दृश्य",
+    "mode_form": "फ़ॉर्म",
+    "mode_text": "टेक्स्ट",
+    "text_editor": "कॉन्फ़िग फ़ाइल का टेक्स्ट"
   },
   "provisioning": {
     "loader_label": "सर्वर इंजन चुनें",

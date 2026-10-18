@@ -264,7 +264,11 @@
       "path": "Ruta del Nodo de Configuración",
       "type": "Tipo",
       "value": "Valor"
-    }
+    },
+    "editor_mode": "Vista del editor",
+    "mode_form": "Formulario",
+    "mode_text": "Texto",
+    "text_editor": "Texto del archivo de configuración"
   },
   "provisioning": {
     "loader_label": "Selecciona el Motor del Servidor",

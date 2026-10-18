@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DaemonError } from '../errors';
+import { ModConfigParser } from '../parsers/ModConfigParser';
 
 export interface ModFileInfo {
   filename: string;
@@ -40,6 +41,19 @@ const isAccepted = (file: string, layout: Pick<ModLayout, 'fileTypes'>): boolean
   return layout.fileTypes.length === 0 || layout.fileTypes.some((type) => name.endsWith(type.toLowerCase()));
 };
 
+const MIN_CONFIG_NAME_LENGTH = 3;
+
+/** A config belongs to a mod when its file or any folder on its path is named like the mod (either contains the other). */
+const configBelongsToMod = (configPath: string, cleanModName: string): boolean => {
+  const segments = configPath.split('/');
+  const names = segments.map((segment, index) =>
+    (index === segments.length - 1 ? segment.slice(0, segment.length - path.extname(segment).length) : segment).toLowerCase()
+  );
+  return names.some(
+    (name) => name.length >= MIN_CONFIG_NAME_LENGTH && (name.includes(cleanModName) || cleanModName.includes(name))
+  );
+};
+
 export class ModFileManager {
   public static validateModFilename(rawFilename: string, layout: Pick<ModLayout, 'fileTypes'> = DEFAULT_MOD_LAYOUT): string {
     if (!rawFilename || typeof rawFilename !== 'string') {
@@ -65,10 +79,7 @@ export class ModFileManager {
       return [];
     }
 
-    const configDir = path.join(instanceDir, layout.configDir);
-    const existingConfigFiles = fs.existsSync(configDir)
-      ? fs.readdirSync(configDir).filter((cfg) => /\.(toml|json)$/.test(cfg))
-      : [];
+    const existingConfigFiles = ModConfigParser.listExistingConfigs(instanceDir, layout.configDir);
 
     const files = fs.readdirSync(modsDir);
     const modItems: ModFileInfo[] = [];
@@ -84,10 +95,7 @@ export class ModFileManager {
       const cleanModName = active.slice(0, active.length - path.extname(active).length).toLowerCase();
 
       // Check if there is a config with matching prefix in config/
-      const configFiles = existingConfigFiles.filter((cfg) => {
-        const cleanCfgName = cfg.replace(/\.(toml|json)$/, '').toLowerCase();
-        return cleanCfgName.includes(cleanModName) || cleanModName.includes(cleanCfgName);
-      });
+      const configFiles = existingConfigFiles.filter((cfg) => configBelongsToMod(cfg, cleanModName));
 
       modItems.push({
         filename: file,

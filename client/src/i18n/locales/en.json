@@ -264,7 +264,11 @@
       "path": "Config Node Path",
       "type": "Type",
       "value": "Value"
-    }
+    },
+    "editor_mode": "Editor view",
+    "mode_form": "Form",
+    "mode_text": "Text",
+    "text_editor": "Config file text"
   },
   "provisioning": {
     "loader_label": "Select Server Engine",

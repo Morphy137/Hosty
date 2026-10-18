@@ -538,7 +538,12 @@ export default function App() {
                   <ModsTab
                     files={modConfigs.files}
                     selectedFile={modConfigs.selectedFile}
+                    format={modConfigs.format}
+                    editorMode={modConfigs.editorMode}
+                    onEditorModeChange={modConfigs.setEditorMode}
                     entries={modConfigs.entries}
+                    content={modConfigs.content}
+                    onContentChange={modConfigs.setContent}
                     filter={modConfigs.filter}
                     onFilterChange={modConfigs.setFilter}
                     fileFilter={modConfigs.fileFilter}

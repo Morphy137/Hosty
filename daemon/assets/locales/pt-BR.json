@@ -267,7 +267,11 @@
       "path": "Caminho do nó",
       "type": "Tipo",
       "value": "Valor"
-    }
+    },
+    "editor_mode": "Vista do editor",
+    "mode_form": "Formulário",
+    "mode_text": "Texto",
+    "text_editor": "Texto do arquivo de configuração"
   },
   "provisioning": {
     "loader_label": "Selecione o motor do servidor",

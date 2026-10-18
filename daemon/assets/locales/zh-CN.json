@@ -267,7 +267,11 @@
       "path": "配置节点路径",
       "type": "类型",
       "value": "值"
-    }
+    },
+    "editor_mode": "编辑器视图",
+    "mode_form": "表单",
+    "mode_text": "文本",
+    "text_editor": "配置文件文本"
   },
   "provisioning": {
     "loader_label": "选择服务器引擎",

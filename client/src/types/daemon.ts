@@ -67,6 +67,15 @@ export interface ConfigEntry {
 
 export type ConfigPayload = Record<string, ConfigValue>;
 
+export type ModConfigFormat = 'toml' | 'json' | 'text';
+
+/** One mod config file: key/value rows for toml/json, and always the raw text. */
+export interface ModConfigFile {
+  format: ModConfigFormat;
+  entries: ConfigEntry[];
+  content: string;
+}
+
 export interface DaemonErrorPayload {
   code: string;
   message: string;

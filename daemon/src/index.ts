@@ -1066,7 +1066,9 @@ const activeModLayout = (): ModLayout => {
   return layout;
 };
 
-// Mod Configurations API (/config/*.toml, *.json)
+// Mod Configurations API: every text file under the game's config folder, in its folders.
+const configPathQuery = (req: express.Request): string => (typeof req.query.path === 'string' ? req.query.path : '');
+
 app.get('/api/mods/configs', (_req, res, next) => {
   try {
     res.json(activeGameLoaded() ? ModConfigParser.listConfigs(getActiveDir(), activeModLayout().configDir) : []);
@@ -1075,18 +1077,32 @@ app.get('/api/mods/configs', (_req, res, next) => {
   }
 });
 
-app.get('/api/mods/configs/:filename', (req, res, next) => {
+app.get('/api/mods/config-file', (req, res, next) => {
   try {
-    res.json(ModConfigParser.parseConfig(getActiveDir(), req.params.filename, activeModLayout().configDir));
+    res.json(ModConfigParser.readConfig(getActiveDir(), configPathQuery(req), activeModLayout().configDir));
   } catch (err) {
     next(err);
   }
 });
 
-app.post('/api/mods/configs/:filename', (req, res, next) => {
+// Key/value save for toml/json: the body is a flat map of values.
+app.post('/api/mods/config-file', (req, res, next) => {
   try {
-    ModConfigParser.saveConfig(getActiveDir(), req.params.filename, req.body, activeModLayout().configDir);
-    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod config ${req.params.filename} saved.`);
+    const filePath = configPathQuery(req);
+    ModConfigParser.saveConfig(getActiveDir(), filePath, req.body, activeModLayout().configDir);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod config ${filePath} saved.`);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Text save for any config file; toml/json content is validated first.
+app.post('/api/mods/config-file/text', (req, res, next) => {
+  try {
+    const filePath = configPathQuery(req);
+    ModConfigParser.saveConfigText(getActiveDir(), filePath, req.body?.content, activeModLayout().configDir);
+    logToInstance(instanceManager.getActiveInstanceId(), `[Hypervisor] Mod config ${filePath} saved.`);
     res.json({ ok: true });
   } catch (err) {
     next(err);

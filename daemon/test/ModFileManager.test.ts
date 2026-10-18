@@ -36,10 +36,13 @@ describe('ModFileManager', () => {
     fs.writeFileSync(path.join(tmpDir, 'config', 'create-1.21.toml'), '');
     fs.writeFileSync(path.join(tmpDir, 'config', 'create-1.21.txt'), '');
     fs.writeFileSync(path.join(tmpDir, 'config', 'other.json'), '{}');
+    fs.mkdirSync(path.join(tmpDir, 'config', 'lonely', 'client'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'config', 'lonely', 'client', 'settings.cfg'), '');
 
     const byName = new Map(ModFileManager.listModFiles(tmpDir).map((mod) => [mod.originalName, mod]));
-    expect(byName.get('create-1.21.jar')).toMatchObject({ hasConfig: true, configFiles: ['create-1.21.toml'] });
-    expect(byName.get('lonely.jar')).toMatchObject({ hasConfig: false, configFiles: [] });
+    expect(byName.get('create-1.21.jar')).toMatchObject({ hasConfig: true, configFiles: ['create-1.21.toml', 'create-1.21.txt'] });
+    // A folder named like the mod brings every file inside it.
+    expect(byName.get('lonely.jar')).toMatchObject({ hasConfig: true, configFiles: ['lonely/client/settings.cfg'] });
   });
 
   it('lists mod files with formatted size and enabled flag', () => {
