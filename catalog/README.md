@@ -35,3 +35,6 @@ node catalog/scripts/build-catalog.mjs --packs daemon/assets/games --out catalog
 
 Commit the contents of `catalog/dist` to the catalog repository. Bump a pack's `version` in its `hosty-game.json` to
 make the app offer it as an update.
+
+The daemon tests fail when a bundled pack changes without a version bump (`daemon/game-packs.lock.json`); bump it and
+run `npm --prefix daemon run lock:games` before publishing.
