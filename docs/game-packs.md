@@ -7,6 +7,7 @@ folder, so adding a game never requires rebuilding Hosty.
 - Games folder (Windows): `%APPDATA%\Hosty\games\<pack-id>\` — **Sidebar → Game packs** shows the exact path.
 - Development: `<repo>/games/`, or any folder set with `MC_NEXUS_GAMES_DIR`.
 - Minecraft, Project Zomboid and Hytale are ordinary packs: Hosty copies them into the games folder on first run (and upgrades them when the bundled version is higher). You can disable or uninstall them like any other pack; an uninstalled one is not copied back.
+- Any change to a bundled pack (its manifest, assets or generated `driver.js`) needs a `version` bump, or installed copies never receive it. `daemon/game-packs.lock.json` records each pack's version and content hash; `test/PackLock.test.ts` fails on an unbumped change. After bumping, run `npm --prefix daemon run lock:games`.
 
 ```
 my-game/

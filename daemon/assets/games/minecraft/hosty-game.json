@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "id": "minecraft",
   "name": "Minecraft: Java Edition",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": { "name": "Hosty", "url": "https://github.com/Morphy137/Hosty" },
   "badge": "MC",
   "category": "voxel",

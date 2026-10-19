@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "build:games": "node scripts/build-games.mjs",
+    "lock:games": "npm run build:games && node scripts/lock-games.mjs",
     "pretest": "npm run build:games",
     "lint": "oxlint",
     "test": "vitest run",

@@ -1,0 +1,14 @@
+{
+  "hytale": {
+    "version": "1.0.0",
+    "contentHash": "0799c370f5bb5eb826543ceec6dcc2e3e421e4cef5743ee5b5e61f3a0b60770d"
+  },
+  "minecraft": {
+    "version": "1.0.1",
+    "contentHash": "e66f59c833e813d2c5bf575bab18554934a232c2444a6adcfcf266db10118e9c"
+  },
+  "project-zomboid": {
+    "version": "1.0.0",
+    "contentHash": "f120f6a9cb95de16ebb825aa1b9b9920e4028a453c3e3b92f02fdece1d2a08a2"
+  }
+}
